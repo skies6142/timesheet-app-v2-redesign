@@ -10,6 +10,7 @@ import CalendarTab from './components/tabs/Calendar';
 import InvoicesTab from './components/tabs/Invoices';
 import StatisticsTab from './components/tabs/Statistics';
 import SettingsTab from './components/tabs/Settings';
+import OrgTab from './components/tabs/OrgTab';
 
 const TOP_BAR_H = 52;
 const BOTTOM_NAV_H = 56 + 34; // nav + approx safe area
@@ -63,6 +64,7 @@ export default function App() {
           {activeTab === 'calendar' && <CalendarTab />}
           {activeTab === 'invoices' && <InvoicesTab />}
           {activeTab === 'stats' && <StatisticsTab />}
+          {activeTab === 'team' && <OrgTab />}
           {activeTab === 'settings' && <SettingsTab />}
         </div>
       </main>
