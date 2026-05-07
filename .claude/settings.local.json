@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir -p /Users/jordan/Desktop/pawday)",
+      "Read(//Users/jordan/Desktop/**)",
+      "Bash(mkdir -p app/\\\\\\(auth\\\\\\)/login app/\\\\\\(auth\\\\\\)/signup app/\\\\\\(dashboard\\\\\\)/dashboard app/\\\\\\(dashboard\\\\\\)/pets app/\\\\\\(dashboard\\\\\\)/orders app/\\\\\\(dashboard\\\\\\)/settings \"app/\\(dashboard\\)/pets/[id]\" app/onboarding app/api/cron/birthday app/api/stripe/webhook app/api/stripe/create-checkout app/api/stripe/portal app/api/pets/import app/api/pets/sample-csv components/ui components/layout components/landing components/dashboard components/pets components/orders components/onboarding components/animations lib/supabase lib/stripe lib/resend emails supabase public)",
+      "Bash(npm install:*)",
+      "Bash(/Users/jordan/Desktop/pawday/.env.local:*)",
+      "Bash(/Users/jordan/Desktop/pawday/next.config.mjs:*)",
+      "Bash(pkill -f \"next dev\")",
+      "Bash(npx tsc:*)",
+      "Bash(echo 'not found' ls node_modules/@supabase/supabase-js/dist/main/*.d.ts)",
+      "Bash(npx vite:*)",
+      "Bash(sort echo:*)"
+    ]
+  }
+}
