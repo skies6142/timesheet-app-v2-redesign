@@ -214,7 +214,7 @@ export async function uploadJobMedia(jobId, file, type, caption = '', isOwnerPos
   const { error: uploadError } = await supabase.storage
     .from('job-media')
     .upload(path, file);
-  if (uploadError) throw uploadError;
+  if (uploadError) throw new Error(`Storage: ${uploadError.message}`);
 
   const { error: dbError } = await supabase.from('job_media').insert({
     job_id: jobId,
@@ -224,7 +224,11 @@ export async function uploadJobMedia(jobId, file, type, caption = '', isOwnerPos
     caption,
     is_owner_post: isOwnerPost,
   });
-  if (dbError) throw dbError;
+  if (dbError) {
+    // Remove the uploaded file if the DB insert failed
+    await supabase.storage.from('job-media').remove([path]);
+    throw new Error(`Database: ${dbError.message}`);
+  }
 }
 
 export async function deleteJobMedia(mediaId, storagePath) {

@@ -143,8 +143,8 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
         for (const item of queuedMedia) {
           try {
             await orgApi.uploadJobMedia(newJob.id, item.file, item.type, '', true);
-          } catch {
-            addToast('Some media failed to upload', 'error');
+          } catch (uploadErr) {
+            addToast(`Media upload failed: ${uploadErr.message}`, 'error');
           }
         }
         addToast('Job created', 'success');
@@ -198,8 +198,8 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
       for (const file of files) {
         try {
           await orgApi.uploadJobMedia(job.id, file, 'photo', '', isOwner);
-        } catch {
-          addToast('Failed to upload photo', 'error');
+        } catch (uploadErr) {
+          addToast(`Photo upload failed: ${uploadErr.message}`, 'error');
         }
       }
       setUploading(false);
@@ -230,8 +230,8 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
             await orgApi.uploadJobMedia(job.id, file, 'voice', '', isOwner);
             await loadMedia();
             addToast('Voice memo saved', 'success');
-          } catch {
-            addToast('Failed to upload voice memo', 'error');
+          } catch (uploadErr) {
+            addToast(`Voice upload failed: ${uploadErr.message}`, 'error');
           }
         }
       };
