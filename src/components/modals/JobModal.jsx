@@ -16,40 +16,43 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
   const { addToast } = useApp();
   const { user } = useAuth();
 
-  // Form fields
-  const [title, setTitle]               = useState('');
-  const [description, setDescription]   = useState('');
-  const [date, setDate]                 = useState(defaultDate || '');
-  const [location, setLocation]         = useState('');
-  const [status, setStatus]             = useState('scheduled');
-  const [assignedIds, setAssignedIds]   = useState([]);
+  // Form
+  const [title, setTitle]             = useState('');
+  const [description, setDescription] = useState('');
+  const [date, setDate]               = useState(defaultDate || '');
+  const [location, setLocation]       = useState('');
+  const [status, setStatus]           = useState('scheduled');
+  const [assignedIds, setAssignedIds] = useState([]);
 
   // Location autocomplete
-  const [locationInput, setLocationInput]       = useState('');
-  const [suggestions, setSuggestions]           = useState([]);
-  const [showSuggestions, setShowSuggestions]   = useState(false);
+  const [locationInput, setLocationInput]     = useState('');
+  const [suggestions, setSuggestions]         = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const suggestTimer = useRef(null);
 
-  // Media
+  // Media for existing jobs (fetched from Supabase)
   const [media, setMedia]               = useState([]);
   const [mediaLoading, setMediaLoading] = useState(false);
 
+  // Queued media for NEW jobs — held in memory, uploaded after job is created
+  const [queuedMedia, setQueuedMedia] = useState([]);
+
   // Recording
-  const [recording, setRecording]       = useState(false);
-  const [recSecs, setRecSecs]           = useState(0);
+  const [recording, setRecording] = useState(false);
+  const [recSecs, setRecSecs]     = useState(0);
   const recorderRef = useRef(null);
   const recTimerRef = useRef(null);
 
   // UI
-  const [saving, setSaving]             = useState(false);
-  const [deleting, setDeleting]         = useState(false);
-  const [uploading, setUploading]       = useState(false);
+  const [saving, setSaving]     = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const photoInputRef = useRef(null);
 
-  const isNew = !job?.id;
-  const canEdit = isOwner;
+  const isNew    = !job?.id;
+  const canEdit  = isOwner;
 
-  // Populate form when job/defaultDate changes
+  // Reset form when opening with a different job / defaultDate
   useEffect(() => {
     if (job) {
       setTitle(job.title || '');
@@ -68,11 +71,16 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
       setStatus('scheduled');
       setAssignedIds([]);
     }
+    // Revoke any blob URLs from the previous open
+    setQueuedMedia(prev => {
+      prev.forEach(item => { try { URL.revokeObjectURL(item.preview); } catch {} });
+      return [];
+    });
     setSuggestions([]);
     setMedia([]);
   }, [job, defaultDate]);
 
-
+  // Load media for existing jobs
   const loadMedia = useCallback(async () => {
     if (!job?.id) return;
     setMediaLoading(true);
@@ -90,7 +98,7 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
 
   if (!isOpen) return null;
 
-  // Location autocomplete handlers
+  // ── Location autocomplete ──────────────────────────────────────
   const handleLocationChange = (val) => {
     setLocationInput(val);
     setLocation(val);
@@ -110,10 +118,8 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
   };
 
   const selectSuggestion = (s) => {
-    // If user typed a house number but OSM didn't return one, prepend it
     const numMatch = locationInput.trim().match(/^(\d+[a-zA-Z]?)\s/);
-    const hasHouseNum = s.address?.house_number;
-    const name = (numMatch && !hasHouseNum)
+    const name = (numMatch && !s.address?.house_number)
       ? `${numMatch[1]} ${s.display_name}`
       : s.display_name;
     setLocation(name);
@@ -122,20 +128,31 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
     setShowSuggestions(false);
   };
 
+  // ── Save / delete ──────────────────────────────────────────────
   const handleSave = async () => {
     if (!title.trim()) { addToast('Title is required', 'error'); return; }
-    if (!date) { addToast('Date is required', 'error'); return; }
+    if (!date)         { addToast('Date is required',  'error'); return; }
     setSaving(true);
     try {
       if (isNew) {
         const newJob = await orgApi.createJob(orgId, {
-          title: title.trim(), description, date, location: location.trim(), assignedUserIds: assignedIds,
+          title: title.trim(), description, date,
+          location: location.trim(), assignedUserIds: assignedIds,
         });
+        // Upload any media that was queued before the job existed
+        for (const item of queuedMedia) {
+          try {
+            await orgApi.uploadJobMedia(newJob.id, item.file, item.type, '', true);
+          } catch {
+            addToast('Some media failed to upload', 'error');
+          }
+        }
         addToast('Job created', 'success');
         onSaved(newJob);
       } else {
         await orgApi.updateJob(job.id, {
-          title: title.trim(), description, date, location: location.trim(), status, assignedUserIds: assignedIds,
+          title: title.trim(), description, date,
+          location: location.trim(), status, assignedUserIds: assignedIds,
         });
         addToast('Job saved', 'success');
         onSaved();
@@ -161,26 +178,36 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
     }
   };
 
-  const toggleAssign = (userId) => {
-    setAssignedIds(ids => ids.includes(userId) ? ids.filter(i => i !== userId) : [...ids, userId]);
-  };
+  const toggleAssign = (uid) =>
+    setAssignedIds(ids => ids.includes(uid) ? ids.filter(i => i !== uid) : [...ids, uid]);
 
+  // ── Photo upload ───────────────────────────────────────────────
   const handlePhotoChange = async (e) => {
     const files = Array.from(e.target.files || []);
-    if (!files.length || !job?.id) return;
-    setUploading(true);
-    for (const file of files) {
-      try {
-        await orgApi.uploadJobMedia(job.id, file, 'photo', '', isOwner);
-      } catch {
-        addToast('Failed to upload photo', 'error');
-      }
-    }
-    setUploading(false);
+    if (!files.length) return;
     e.target.value = '';
-    await loadMedia();
+
+    if (isNew) {
+      // Queue with a local preview — will upload after job creation
+      setQueuedMedia(prev => [
+        ...prev,
+        ...files.map(file => ({ file, type: 'photo', preview: URL.createObjectURL(file) })),
+      ]);
+    } else {
+      setUploading(true);
+      for (const file of files) {
+        try {
+          await orgApi.uploadJobMedia(job.id, file, 'photo', '', isOwner);
+        } catch {
+          addToast('Failed to upload photo', 'error');
+        }
+      }
+      setUploading(false);
+      await loadMedia();
+    }
   };
 
+  // ── Voice recording ────────────────────────────────────────────
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -190,14 +217,22 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
       recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
       recorder.onstop = async () => {
         stream.getTracks().forEach(t => t.stop());
-        const ext = mimeType.includes('webm') ? 'webm' : 'mp4';
-        const file = new File([new Blob(chunks, { type: mimeType })], `voice-${Date.now()}.${ext}`, { type: mimeType });
-        try {
-          await orgApi.uploadJobMedia(job.id, file, 'voice', '', isOwner);
-          await loadMedia();
-          addToast('Voice memo saved', 'success');
-        } catch {
-          addToast('Failed to upload voice memo', 'error');
+        const blob = new Blob(chunks, { type: mimeType });
+        const ext  = mimeType.includes('webm') ? 'webm' : 'mp4';
+        const file = new File([blob], `voice-${Date.now()}.${ext}`, { type: mimeType });
+
+        if (isNew) {
+          // Queue with a local audio preview
+          setQueuedMedia(prev => [...prev, { file, type: 'voice', preview: URL.createObjectURL(blob) }]);
+          addToast('Voice memo added', 'success');
+        } else {
+          try {
+            await orgApi.uploadJobMedia(job.id, file, 'voice', '', isOwner);
+            await loadMedia();
+            addToast('Voice memo saved', 'success');
+          } catch {
+            addToast('Failed to upload voice memo', 'error');
+          }
         }
       };
       recorder.start();
@@ -227,13 +262,25 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
     }
   };
 
+  const removeQueued = (idx) =>
+    setQueuedMedia(prev => {
+      try { URL.revokeObjectURL(prev[idx].preview); } catch {}
+      return prev.filter((_, i) => i !== idx);
+    });
+
   const ownerMedia  = media.filter(m => m.is_owner_post);
   const workerMedia = media.filter(m => !m.is_owner_post);
   const fmtSecs = s => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
   const mapQuery = (canEdit ? locationInput : location)?.trim();
-  const mapUrl = mapQuery
+  const mapUrl   = mapQuery
     ? `https://maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&output=embed&z=16`
     : null;
+
+  const saveBtnLabel = saving
+    ? (isNew && queuedMedia.length > 0 ? 'Creating & uploading…' : 'Saving…')
+    : isNew
+    ? `Create Job${queuedMedia.length > 0 ? ` + ${queuedMedia.length} file${queuedMedia.length > 1 ? 's' : ''}` : ''}`
+    : 'Save Changes';
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col justify-end">
@@ -254,22 +301,27 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
           </h2>
           <div className="flex items-center gap-2">
             {!isNew && canEdit && (
-              <button
-                onClick={handleDelete}
-                disabled={deleting}
-                className="text-red-400 hover:bg-red-400/10 rounded-lg px-2 py-1 text-xs font-semibold"
-              >
+              <button onClick={handleDelete} disabled={deleting}
+                className="text-red-400 hover:bg-red-400/10 rounded-lg px-2 py-1 text-xs font-semibold">
                 {deleting ? '…' : 'Delete'}
               </button>
             )}
-            <button
-              onClick={onClose}
-              className="w-9 h-9 flex items-center justify-center rounded-full text-zinc-400 hover:bg-zinc-800"
-            >
+            <button onClick={onClose}
+              className="w-9 h-9 flex items-center justify-center rounded-full text-zinc-400 hover:bg-zinc-800">
               <X size={18} />
             </button>
           </div>
         </div>
+
+        {/* Single shared file input */}
+        <input
+          ref={photoInputRef}
+          type="file"
+          accept="image/*"
+          multiple
+          className="hidden"
+          onChange={handlePhotoChange}
+        />
 
         {/* Scrollable body */}
         <div className="flex-1 scroll-area overflow-y-auto px-5 py-4 space-y-5">
@@ -278,12 +330,9 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
           <div>
             <label className="block text-xs text-zinc-500 uppercase tracking-widest mb-1.5">Job Title *</label>
             {canEdit ? (
-              <input
-                value={title}
-                onChange={e => setTitle(e.target.value)}
+              <input value={title} onChange={e => setTitle(e.target.value)}
                 placeholder="e.g. Roof repair at 42 Oak St"
-                className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-amber-400/50"
-              />
+                className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-amber-400/50" />
             ) : (
               <p className="text-zinc-100 font-semibold">{title}</p>
             )}
@@ -294,12 +343,8 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
             <div>
               <label className="block text-xs text-zinc-500 uppercase tracking-widest mb-1.5">Date *</label>
               {canEdit ? (
-                <input
-                  type="date"
-                  value={date}
-                  onChange={e => setDate(e.target.value)}
-                  className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-3 text-sm text-zinc-100 focus:outline-none focus:border-amber-400/50"
-                />
+                <input type="date" value={date} onChange={e => setDate(e.target.value)}
+                  className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-3 text-sm text-zinc-100 focus:outline-none focus:border-amber-400/50" />
               ) : (
                 <p className="text-zinc-100">{date ? format(parseISO(date), 'd MMM yyyy') : '—'}</p>
               )}
@@ -307,11 +352,8 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
             <div>
               <label className="block text-xs text-zinc-500 uppercase tracking-widest mb-1.5">Status</label>
               {canEdit ? (
-                <select
-                  value={status}
-                  onChange={e => setStatus(e.target.value)}
-                  className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-3 text-sm text-zinc-100 focus:outline-none focus:border-amber-400/50"
-                >
+                <select value={status} onChange={e => setStatus(e.target.value)}
+                  className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-3 text-sm text-zinc-100 focus:outline-none focus:border-amber-400/50">
                   {STATUS_OPTIONS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
                 </select>
               ) : (
@@ -322,7 +364,7 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
             </div>
           </div>
 
-          {/* Location with autocomplete + map */}
+          {/* Location + map */}
           <div>
             <label className="block text-xs text-zinc-500 uppercase tracking-widest mb-1.5">
               <MapPin size={11} className="inline mr-1" />Location
@@ -340,12 +382,8 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
                 {showSuggestions && (
                   <div className="absolute top-full left-0 right-0 mt-1 bg-zinc-800 border border-zinc-600 rounded-xl overflow-hidden z-20 shadow-2xl">
                     {suggestions.map((s, i) => (
-                      <button
-                        key={i}
-                        type="button"
-                        onMouseDown={() => selectSuggestion(s)}
-                        className="w-full text-left px-3 py-2.5 text-xs text-zinc-200 hover:bg-zinc-700 border-b border-zinc-700/50 last:border-0 flex items-start gap-2"
-                      >
+                      <button key={i} type="button" onMouseDown={() => selectSuggestion(s)}
+                        className="w-full text-left px-3 py-2.5 text-xs text-zinc-200 hover:bg-zinc-700 border-b border-zinc-700/50 last:border-0 flex items-start gap-2">
                         <MapPin size={11} className="text-zinc-500 shrink-0 mt-0.5" />
                         <span className="leading-relaxed">{s.display_name}</span>
                       </button>
@@ -356,36 +394,23 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
             ) : (
               <p className="text-zinc-300">{location || '—'}</p>
             )}
-
-            {/* Map embed */}
             {mapUrl && (
               <div className="mt-2 rounded-xl overflow-hidden border border-zinc-700" style={{ height: 220 }}>
-                <iframe
-                  title="Job location"
-                  src={mapUrl}
-                  width="100%"
-                  height="220"
-                  style={{ border: 0, display: 'block' }}
-                  loading="lazy"
-                  referrerPolicy="no-referrer"
-                />
+                <iframe title="Job location" src={mapUrl} width="100%" height="220"
+                  style={{ border: 0, display: 'block' }} loading="lazy" referrerPolicy="no-referrer" />
               </div>
             )}
           </div>
 
-          {/* Description */}
+          {/* Notes */}
           <div>
             <label className="block text-xs text-zinc-500 uppercase tracking-widest mb-1.5">
               <FileText size={11} className="inline mr-1" />Notes / Instructions
             </label>
             {canEdit ? (
-              <textarea
-                value={description}
-                onChange={e => setDescription(e.target.value)}
-                placeholder="Describe the job, tools to bring, safety notes…"
-                rows={3}
-                className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-amber-400/50 resize-none"
-              />
+              <textarea value={description} onChange={e => setDescription(e.target.value)}
+                placeholder="Describe the job, tools to bring, safety notes…" rows={3}
+                className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-amber-400/50 resize-none" />
             ) : (
               <p className="text-zinc-300 text-sm whitespace-pre-wrap">{description || '—'}</p>
             )}
@@ -402,17 +427,11 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
                   const name = m.profiles?.display_name || m.display_name || m.profiles?.email || 'Unknown';
                   const assigned = assignedIds.includes(m.user_id);
                   return (
-                    <button
-                      key={m.id}
-                      onClick={() => canEdit && toggleAssign(m.user_id)}
+                    <button key={m.id} onClick={() => canEdit && toggleAssign(m.user_id)}
                       className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition-colors ${
-                        assigned
-                          ? 'bg-amber-400/10 border-amber-400/30 text-amber-400'
-                          : canEdit
-                          ? 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-zinc-600'
-                          : 'bg-zinc-800 border-zinc-700 text-zinc-400'
-                      } ${!canEdit ? 'cursor-default' : ''}`}
-                    >
+                        assigned ? 'bg-amber-400/10 border-amber-400/30 text-amber-400'
+                        : canEdit ? 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-zinc-600'
+                        : 'bg-zinc-800 border-zinc-700 text-zinc-400'} ${!canEdit ? 'cursor-default' : ''}`}>
                       <div className="w-7 h-7 rounded-full bg-zinc-700 flex items-center justify-center shrink-0">
                         <span className="text-xs font-bold">{name[0]?.toUpperCase()}</span>
                       </div>
@@ -422,8 +441,7 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
                       </div>
                       {canEdit && (
                         <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                          assigned ? 'border-amber-400 bg-amber-400' : 'border-zinc-600'
-                        }`}>
+                          assigned ? 'border-amber-400 bg-amber-400' : 'border-zinc-600'}`}>
                           {assigned && <span className="text-[10px] text-zinc-950 font-bold">✓</span>}
                         </div>
                       )}
@@ -434,87 +452,98 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
             </div>
           )}
 
-          {/* Media — only on saved jobs */}
-          {!isNew && (
-            <>
-              {/* Hidden file input — shared by owner + worker photo buttons */}
-              <input
-                ref={photoInputRef}
-                type="file"
-                accept="image/*"
-                multiple
-                className="hidden"
-                onChange={handlePhotoChange}
-              />
+          {/* ── Media: Boss posts (owner upload buttons + content) ── */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-xs text-zinc-500 uppercase tracking-widest">
+                {isNew ? 'Attach Media' : 'Boss Posts'}
+              </label>
+              {isOwner && (
+                <div className="flex gap-2">
+                  <button onClick={() => photoInputRef.current?.click()} disabled={uploading}
+                    className="flex items-center gap-1.5 text-xs text-amber-400 hover:text-amber-300 bg-amber-400/10 hover:bg-amber-400/15 px-2.5 py-1.5 rounded-lg disabled:opacity-50">
+                    <Camera size={13} />
+                    {uploading ? 'Uploading…' : 'Photo'}
+                  </button>
+                  <button
+                    onClick={recording ? stopRecording : startRecording}
+                    disabled={uploading}
+                    className={`flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg disabled:opacity-50 ${
+                      recording ? 'text-red-400 bg-red-400/15 animate-pulse' : 'text-zinc-400 bg-zinc-800 hover:bg-zinc-700'}`}>
+                    {recording ? <StopCircle size={13} /> : <Mic size={13} />}
+                    {recording ? `Stop ${fmtSecs(recSecs)}` : 'Voice'}
+                  </button>
+                </div>
+              )}
+            </div>
 
-              {/* Boss posts */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="text-xs text-zinc-500 uppercase tracking-widest">Boss Posts</label>
-                  {isOwner && (
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => photoInputRef.current?.click()}
-                        disabled={uploading}
-                        className="flex items-center gap-1.5 text-xs text-amber-400 hover:text-amber-300 bg-amber-400/10 hover:bg-amber-400/15 px-2.5 py-1.5 rounded-lg disabled:opacity-50"
-                      >
-                        <Camera size={13} />
-                        {uploading ? 'Uploading…' : 'Photo'}
-                      </button>
-                      <button
-                        onClick={recording ? stopRecording : startRecording}
-                        disabled={uploading}
-                        className={`flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg disabled:opacity-50 ${
-                          recording
-                            ? 'text-red-400 bg-red-400/15 animate-pulse'
-                            : 'text-zinc-400 bg-zinc-800 hover:bg-zinc-700'
-                        }`}
-                      >
-                        {recording ? <StopCircle size={13} /> : <Mic size={13} />}
-                        {recording ? `Stop ${fmtSecs(recSecs)}` : 'Voice'}
-                      </button>
+            {/* New job: queued previews */}
+            {isNew && (
+              queuedMedia.length > 0 ? (
+                <div className="space-y-2">
+                  {queuedMedia.map((item, idx) => (
+                    <div key={idx} className="bg-zinc-800 border border-zinc-700 rounded-xl overflow-hidden">
+                      {item.type === 'photo' && (
+                        <img src={item.preview} alt="preview" className="w-full max-h-48 object-cover" />
+                      )}
+                      {item.type === 'voice' && (
+                        <div className="px-3 py-3 flex items-center gap-3">
+                          <Mic size={16} className="text-amber-400 shrink-0" />
+                          <audio controls src={item.preview} className="flex-1 h-8" style={{ minWidth: 0 }} />
+                        </div>
+                      )}
+                      <div className="flex items-center justify-between px-3 py-2">
+                        <p className="text-[10px] text-zinc-500">
+                          {item.type === 'photo' ? 'Photo' : 'Voice memo'} — uploads on save
+                        </p>
+                        <button onClick={() => removeQueued(idx)}
+                          className="w-7 h-7 flex items-center justify-center text-zinc-600 hover:text-red-400 hover:bg-red-400/10 rounded-lg">
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
                     </div>
-                  )}
+                  ))}
                 </div>
-                {mediaLoading ? (
-                  <p className="text-xs text-zinc-600 py-2">Loading…</p>
-                ) : ownerMedia.length === 0 ? (
-                  <p className="text-xs text-zinc-600 py-2 italic">No posts yet</p>
-                ) : (
-                  <MediaGrid items={ownerMedia} onDelete={isOwner ? handleDeleteMedia : null} userId={user?.id} />
+              ) : (
+                <p className="text-xs text-zinc-600 italic py-1">No media attached — optional</p>
+              )
+            )}
+
+            {/* Existing job: uploaded boss media */}
+            {!isNew && (
+              mediaLoading ? (
+                <p className="text-xs text-zinc-600 py-2">Loading…</p>
+              ) : ownerMedia.length === 0 ? (
+                <p className="text-xs text-zinc-600 py-2 italic">No posts yet</p>
+              ) : (
+                <MediaGrid items={ownerMedia} onDelete={isOwner ? handleDeleteMedia : null} userId={user?.id} />
+              )
+            )}
+          </div>
+
+          {/* ── Media: Worker responses (existing jobs only) ── */}
+          {!isNew && (
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-xs text-zinc-500 uppercase tracking-widest">Worker Responses</label>
+                {!isOwner && (
+                  <button onClick={() => photoInputRef.current?.click()} disabled={uploading}
+                    className="flex items-center gap-1.5 text-xs text-zinc-400 bg-zinc-800 hover:bg-zinc-700 px-2.5 py-1.5 rounded-lg disabled:opacity-50">
+                    <Camera size={13} />
+                    {uploading ? 'Uploading…' : 'Add Photo'}
+                  </button>
                 )}
               </div>
-
-              {/* Worker responses */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="text-xs text-zinc-500 uppercase tracking-widest">Worker Responses</label>
-                  {!isOwner && (
-                    <button
-                      onClick={() => photoInputRef.current?.click()}
-                      disabled={uploading}
-                      className="flex items-center gap-1.5 text-xs text-zinc-400 bg-zinc-800 hover:bg-zinc-700 px-2.5 py-1.5 rounded-lg disabled:opacity-50"
-                    >
-                      <Camera size={13} />
-                      {uploading ? 'Uploading…' : 'Add Photo'}
-                    </button>
-                  )}
-                </div>
-                {workerMedia.length === 0 ? (
-                  <p className="text-xs text-zinc-600 py-2 italic">No responses yet</p>
-                ) : (
-                  <MediaGrid
-                    items={workerMedia}
-                    onDelete={item => (item.uploaded_by === user?.id || isOwner) ? handleDeleteMedia(item) : null}
-                    userId={user?.id}
-                  />
-                )}
-              </div>
-            </>
-          )}
-
-          {isNew && (
-            <p className="text-xs text-zinc-600 italic">Save the job first to add photos and voice memos.</p>
+              {workerMedia.length === 0 ? (
+                <p className="text-xs text-zinc-600 py-2 italic">No responses yet</p>
+              ) : (
+                <MediaGrid
+                  items={workerMedia}
+                  onDelete={item => (item.uploaded_by === user?.id || isOwner) ? handleDeleteMedia(item) : null}
+                  userId={user?.id}
+                />
+              )}
+            </div>
           )}
 
           <div className="h-2" />
@@ -523,12 +552,9 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
         {/* Footer */}
         {canEdit && (
           <div className="px-5 py-4 border-t border-zinc-800 shrink-0">
-            <button
-              onClick={handleSave}
-              disabled={saving}
-              className="w-full bg-amber-400 hover:bg-amber-300 disabled:opacity-50 text-zinc-950 font-bold rounded-2xl py-4"
-            >
-              {saving ? 'Saving…' : isNew ? 'Create Job' : 'Save Changes'}
+            <button onClick={handleSave} disabled={saving}
+              className="w-full bg-amber-400 hover:bg-amber-300 disabled:opacity-50 text-zinc-950 font-bold rounded-2xl py-4">
+              {saveBtnLabel}
             </button>
           </div>
         )}
@@ -543,11 +569,7 @@ function MediaGrid({ items, onDelete, userId }) {
       {items.map(item => (
         <div key={item.id} className="bg-zinc-800 border border-zinc-700 rounded-xl overflow-hidden">
           {item.type === 'photo' && item.url && (
-            <img
-              src={item.url}
-              alt={item.caption || 'Job photo'}
-              className="w-full max-h-64 object-cover"
-            />
+            <img src={item.url} alt={item.caption || 'Job photo'} className="w-full max-h-64 object-cover" />
           )}
           {item.type === 'voice' && item.url && (
             <div className="px-3 py-3 flex items-center gap-3">
@@ -556,17 +578,12 @@ function MediaGrid({ items, onDelete, userId }) {
             </div>
           )}
           <div className="flex items-center justify-between px-3 py-2">
-            <div className="min-w-0">
-              {item.caption && <p className="text-xs text-zinc-300 truncate">{item.caption}</p>}
-              <p className="text-[10px] text-zinc-600">
-                {item.profiles?.display_name || 'Unknown'} · {item.created_at ? new Date(item.created_at).toLocaleDateString() : ''}
-              </p>
-            </div>
+            <p className="text-[10px] text-zinc-600">
+              {item.profiles?.display_name || 'Unknown'} · {item.created_at ? new Date(item.created_at).toLocaleDateString() : ''}
+            </p>
             {onDelete && (
-              <button
-                onClick={() => onDelete(item)}
-                className="w-7 h-7 flex items-center justify-center text-zinc-600 hover:text-red-400 hover:bg-red-400/10 rounded-lg ml-2 shrink-0"
-              >
+              <button onClick={() => onDelete(item)}
+                className="w-7 h-7 flex items-center justify-center text-zinc-600 hover:text-red-400 hover:bg-red-400/10 rounded-lg ml-2 shrink-0">
                 <Trash2 size={13} />
               </button>
             )}
