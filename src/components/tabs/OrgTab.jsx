@@ -124,6 +124,7 @@ export default function OrgTab() {
     closeJobModal();
     setCalRefreshKey(k => k + 1);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  // key={`cal-${calRefreshKey}`} on OrgCalendarView forces a clean remount after save
 
   // ── Loading ────────────────────────────────────────────────
   if (authLoading || loading) {
@@ -267,11 +268,11 @@ export default function OrgTab() {
       <div className="flex-1 overflow-hidden">
         {activeView === 'calendar' && (
           <OrgCalendarView
+            key={`cal-${calRefreshKey}`}
             orgId={orgData.org.id}
             isOwner={isOwner}
             members={orgData.members}
             onOpenJob={openJob}
-            refreshTrigger={calRefreshKey}
           />
         )}
         {activeView === 'members' && isOwner && (
@@ -357,7 +358,7 @@ function OrgHeader({ org, role, memberCount, addToast }) {
 }
 
 // ── Org calendar view ─────────────────────────────────────────
-function OrgCalendarView({ orgId, isOwner, members, onOpenJob, refreshTrigger }) {
+function OrgCalendarView({ orgId, isOwner, members, onOpenJob }) {
   const [viewDate, setViewDate]   = useState(new Date());
   const [jobMap, setJobMap]       = useState({});
   const [selectedDate, setSelectedDate] = useState(null);
@@ -384,7 +385,7 @@ function OrgCalendarView({ orgId, isOwner, members, onOpenJob, refreshTrigger })
     } finally {
       setCalLoading(false);
     }
-  }, [orgId, year, month, refreshTrigger]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [orgId, year, month]);
 
   useEffect(() => { loadJobs(); }, [loadJobs]);
 
