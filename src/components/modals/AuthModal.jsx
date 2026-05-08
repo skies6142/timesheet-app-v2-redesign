@@ -1,9 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Eye, EyeOff } from 'lucide-react';
 import * as orgApi from '../../lib/orgApi';
 
 export default function AuthModal({ isOpen, initialMode = 'login', onClose, onSuccess }) {
   const [mode, setMode]           = useState(initialMode);
+
+  // Sync to initialMode each time the modal opens
+  useEffect(() => {
+    if (isOpen) setMode(initialMode);
+  }, [isOpen]); // eslint-disable-line react-hooks/exhaustive-deps
   const [email, setEmail]         = useState('');
   const [password, setPassword]   = useState('');
   const [name, setName]           = useState('');
