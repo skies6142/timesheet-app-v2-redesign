@@ -52,14 +52,15 @@ export default function OrgTab() {
     setLoading(true);
     try {
       const result = await orgApi.getMyOrg();
-      if (result) {
+      if (result?.org) {
         const members = await orgApi.getOrgMembers(result.org.id);
         setOrgData({ ...result, members });
       } else {
         setOrgData(null);
       }
     } catch (e) {
-      console.error(e);
+      console.error('[OrgTab] loadOrg error:', e);
+      setOrgData(null);
     } finally {
       setLoading(false);
     }

@@ -57,16 +57,26 @@ export async function getMyOrg() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const { data, error } = await supabase
+  // Two separate queries — embedded joins can silently return null when
+  // the joined table's RLS policy isn't satisfied yet.
+  const { data: member, error: memberErr } = await supabase
     .from('org_members')
-    .select('role, organisations(*)')
+    .select('role, org_id')
     .eq('user_id', user.id)
     .order('joined_at', { ascending: true })
     .limit(1)
     .maybeSingle();
 
-  if (error || !data) return null;
-  return { org: data.organisations, role: data.role };
+  if (memberErr || !member) return null;
+
+  const { data: org, error: orgErr } = await supabase
+    .from('organisations')
+    .select('*')
+    .eq('id', member.org_id)
+    .single();
+
+  if (orgErr || !org) return null;
+  return { org, role: member.role };
 }
 
 export async function getOrgByInviteCode(code) {
