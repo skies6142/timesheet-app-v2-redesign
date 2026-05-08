@@ -108,8 +108,8 @@ export async function getOrgMembers(orgId) {
     .select('*, profiles(display_name, email)')
     .eq('org_id', orgId)
     .order('joined_at');
-  if (error) throw error;
-  return data;
+  if (error) { console.error('[getOrgMembers]', error); return []; }
+  return data || [];
 }
 
 export async function removeMember(orgId, userId) {
