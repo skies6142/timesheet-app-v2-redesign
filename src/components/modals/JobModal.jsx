@@ -28,7 +28,6 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
   const [locationInput, setLocationInput]       = useState('');
   const [suggestions, setSuggestions]           = useState([]);
   const [showSuggestions, setShowSuggestions]   = useState(false);
-  const [mapCoords, setMapCoords]               = useState(null);
   const suggestTimer = useRef(null);
 
   // Media
@@ -69,28 +68,10 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
       setStatus('scheduled');
       setAssignedIds([]);
     }
-    setMapCoords(null);
     setSuggestions([]);
     setMedia([]);
   }, [job, defaultDate]);
 
-  // Geocode existing job location to show map on open
-  useEffect(() => {
-    if (!isOpen || !job?.location) { setMapCoords(null); return; }
-    let cancelled = false;
-    fetch(
-      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(job.location)}&limit=1`,
-      { headers: { 'Accept-Language': 'en' } }
-    )
-      .then(r => r.json())
-      .then(data => {
-        if (!cancelled && data.length > 0) {
-          setMapCoords({ lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) });
-        }
-      })
-      .catch(() => {});
-    return () => { cancelled = true; };
-  }, [isOpen, job?.location]);
 
   const loadMedia = useCallback(async () => {
     if (!job?.id) return;
@@ -113,7 +94,6 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
   const handleLocationChange = (val) => {
     setLocationInput(val);
     setLocation(val);
-    setMapCoords(null);
     clearTimeout(suggestTimer.current);
     if (val.length < 3) { setSuggestions([]); setShowSuggestions(false); return; }
     suggestTimer.current = setTimeout(async () => {
@@ -130,10 +110,8 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
   };
 
   const selectSuggestion = (s) => {
-    const name = s.display_name;
-    setLocation(name);
-    setLocationInput(name);
-    setMapCoords({ lat: parseFloat(s.lat), lon: parseFloat(s.lon) });
+    setLocation(s.display_name);
+    setLocationInput(s.display_name);
     setSuggestions([]);
     setShowSuggestions(false);
   };
@@ -246,8 +224,9 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
   const ownerMedia  = media.filter(m => m.is_owner_post);
   const workerMedia = media.filter(m => !m.is_owner_post);
   const fmtSecs = s => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
-  const mapUrl = mapCoords
-    ? `https://www.openstreetmap.org/export/embed.html?mlat=${mapCoords.lat}&mlon=${mapCoords.lon}&zoom=16&layers=M`
+  const mapQuery = (canEdit ? locationInput : location)?.trim();
+  const mapUrl = mapQuery
+    ? `https://maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&output=embed&z=16`
     : null;
 
   return (
