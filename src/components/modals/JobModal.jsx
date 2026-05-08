@@ -99,7 +99,7 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
     suggestTimer.current = setTimeout(async () => {
       try {
         const res = await fetch(
-          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(val)}&limit=5`,
+          `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&q=${encodeURIComponent(val)}&limit=5`,
           { headers: { 'Accept-Language': 'en' } }
         );
         const data = await res.json();
@@ -110,8 +110,14 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
   };
 
   const selectSuggestion = (s) => {
-    setLocation(s.display_name);
-    setLocationInput(s.display_name);
+    // If user typed a house number but OSM didn't return one, prepend it
+    const numMatch = locationInput.trim().match(/^(\d+[a-zA-Z]?)\s/);
+    const hasHouseNum = s.address?.house_number;
+    const name = (numMatch && !hasHouseNum)
+      ? `${numMatch[1]} ${s.display_name}`
+      : s.display_name;
+    setLocation(name);
+    setLocationInput(name);
     setSuggestions([]);
     setShowSuggestions(false);
   };
@@ -353,12 +359,12 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
 
             {/* Map embed */}
             {mapUrl && (
-              <div className="mt-2 rounded-xl overflow-hidden border border-zinc-700" style={{ height: 160 }}>
+              <div className="mt-2 rounded-xl overflow-hidden border border-zinc-700" style={{ height: 220 }}>
                 <iframe
                   title="Job location"
                   src={mapUrl}
                   width="100%"
-                  height="160"
+                  height="220"
                   style={{ border: 0, display: 'block' }}
                   loading="lazy"
                   referrerPolicy="no-referrer"

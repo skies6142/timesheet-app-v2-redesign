@@ -129,13 +129,13 @@ export async function getJobsForMonth(orgId, year, month) {
 
   const { data, error } = await supabase
     .from('jobs')
-    .select(`*, job_assignments(user_id, profiles(display_name, email))`)
+    .select('*')
     .eq('org_id', orgId)
     .gte('date', start)
     .lte('date', end)
     .order('date');
   if (error) throw error;
-  return data;
+  return data ?? [];
 }
 
 export async function getJob(jobId) {

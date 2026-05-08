@@ -359,6 +359,7 @@ function OrgHeader({ org, role, memberCount, addToast }) {
 
 // ── Org calendar view ─────────────────────────────────────────
 function OrgCalendarView({ orgId, isOwner, members, onOpenJob }) {
+  const { addToast } = useApp();
   const [viewDate, setViewDate]   = useState(new Date());
   const [jobMap, setJobMap]       = useState({});
   const [selectedDate, setSelectedDate] = useState(null);
@@ -381,11 +382,12 @@ function OrgCalendarView({ orgId, isOwner, members, onOpenJob }) {
       }
       setJobMap(map);
     } catch (e) {
-      console.error(e);
+      console.error('[loadJobs]', e);
+      addToast(`Calendar error: ${e.message}`, 'error');
     } finally {
       setCalLoading(false);
     }
-  }, [orgId, year, month]);
+  }, [orgId, year, month, addToast]);
 
   useEffect(() => { loadJobs(); }, [loadJobs]);
 
@@ -483,9 +485,6 @@ function OrgCalendarView({ orgId, isOwner, members, onOpenJob }) {
           ) : (
             selectedDayJobs.map(job => {
               const sc = STATUS_COLORS[job.status] || STATUS_COLORS.scheduled;
-              const workerNames = job.job_assignments
-                ?.map(a => a.profiles?.display_name || 'Unknown')
-                .join(', ');
               return (
                 <button
                   key={job.id}
@@ -498,9 +497,6 @@ function OrgCalendarView({ orgId, isOwner, members, onOpenJob }) {
                       <p className="text-sm font-semibold text-zinc-100">{job.title}</p>
                       {job.location && (
                         <p className="text-xs text-zinc-500 mt-0.5">📍 {job.location}</p>
-                      )}
-                      {workerNames && (
-                        <p className="text-xs text-zinc-600 mt-0.5">👷 {workerNames}</p>
                       )}
                     </div>
                     <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${sc.badge} capitalize`}>
