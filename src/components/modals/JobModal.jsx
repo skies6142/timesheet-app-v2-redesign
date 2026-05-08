@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { X, MapPin, FileText, Users, Camera, Mic, StopCircle, Play, Pause, Trash2, ChevronDown, Plus, Upload } from 'lucide-react';
+import { X, MapPin, FileText, Users, Camera, Mic, StopCircle, Trash2 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import * as orgApi from '../../lib/orgApi';
 import { useApp } from '../../context/AppContext';
@@ -17,49 +17,81 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
   const { user } = useAuth();
 
   // Form fields
-  const [title, setTitle]           = useState('');
-  const [description, setDescription] = useState('');
-  const [date, setDate]             = useState(defaultDate || '');
-  const [location, setLocation]     = useState('');
-  const [status, setStatus]         = useState('scheduled');
-  const [assignedIds, setAssignedIds] = useState([]);
+  const [title, setTitle]               = useState('');
+  const [description, setDescription]   = useState('');
+  const [date, setDate]                 = useState(defaultDate || '');
+  const [location, setLocation]         = useState('');
+  const [status, setStatus]             = useState('scheduled');
+  const [assignedIds, setAssignedIds]   = useState([]);
+
+  // Location autocomplete
+  const [locationInput, setLocationInput]       = useState('');
+  const [suggestions, setSuggestions]           = useState([]);
+  const [showSuggestions, setShowSuggestions]   = useState(false);
+  const [mapCoords, setMapCoords]               = useState(null);
+  const suggestTimer = useRef(null);
 
   // Media
-  const [media, setMedia]       = useState([]);
+  const [media, setMedia]               = useState([]);
   const [mediaLoading, setMediaLoading] = useState(false);
 
   // Recording
-  const [recording, setRecording]   = useState(false);
-  const [recSecs, setRecSecs]       = useState(0);
+  const [recording, setRecording]       = useState(false);
+  const [recSecs, setRecSecs]           = useState(0);
   const recorderRef = useRef(null);
   const recTimerRef = useRef(null);
 
-  // UI state
-  const [saving, setSaving]   = useState(false);
-  const [deleting, setDeleting] = useState(false);
-  const [uploadingIdx, setUploadingIdx] = useState(null);
+  // UI
+  const [saving, setSaving]             = useState(false);
+  const [deleting, setDeleting]         = useState(false);
+  const [uploading, setUploading]       = useState(false);
   const photoInputRef = useRef(null);
 
   const isNew = !job?.id;
+  const canEdit = isOwner;
 
-  // Populate form when editing
+  // Populate form when job/defaultDate changes
   useEffect(() => {
     if (job) {
       setTitle(job.title || '');
       setDescription(job.description || '');
       setDate(job.date || defaultDate || '');
       setLocation(job.location || '');
+      setLocationInput(job.location || '');
       setStatus(job.status || 'scheduled');
       setAssignedIds(job.job_assignments?.map(a => a.user_id) || []);
     } else {
-      setTitle(''); setDescription('');
+      setTitle('');
+      setDescription('');
       setDate(defaultDate || '');
-      setLocation(''); setStatus('scheduled'); setAssignedIds([]);
+      setLocation('');
+      setLocationInput('');
+      setStatus('scheduled');
+      setAssignedIds([]);
     }
+    setMapCoords(null);
+    setSuggestions([]);
     setMedia([]);
   }, [job, defaultDate]);
 
-  // Load media for existing jobs
+  // Geocode existing job location to show map on open
+  useEffect(() => {
+    if (!isOpen || !job?.location) { setMapCoords(null); return; }
+    let cancelled = false;
+    fetch(
+      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(job.location)}&limit=1`,
+      { headers: { 'Accept-Language': 'en' } }
+    )
+      .then(r => r.json())
+      .then(data => {
+        if (!cancelled && data.length > 0) {
+          setMapCoords({ lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) });
+        }
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [isOpen, job?.location]);
+
   const loadMedia = useCallback(async () => {
     if (!job?.id) return;
     setMediaLoading(true);
@@ -77,8 +109,34 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
 
   if (!isOpen) return null;
 
-  // Non-owner workers can only see, not edit
-  const canEdit = isOwner;
+  // Location autocomplete handlers
+  const handleLocationChange = (val) => {
+    setLocationInput(val);
+    setLocation(val);
+    setMapCoords(null);
+    clearTimeout(suggestTimer.current);
+    if (val.length < 3) { setSuggestions([]); setShowSuggestions(false); return; }
+    suggestTimer.current = setTimeout(async () => {
+      try {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(val)}&limit=5`,
+          { headers: { 'Accept-Language': 'en' } }
+        );
+        const data = await res.json();
+        setSuggestions(data);
+        setShowSuggestions(data.length > 0);
+      } catch {}
+    }, 500);
+  };
+
+  const selectSuggestion = (s) => {
+    const name = s.display_name;
+    setLocation(name);
+    setLocationInput(name);
+    setMapCoords({ lat: parseFloat(s.lat), lon: parseFloat(s.lon) });
+    setSuggestions([]);
+    setShowSuggestions(false);
+  };
 
   const handleSave = async () => {
     if (!title.trim()) { addToast('Title is required', 'error'); return; }
@@ -106,8 +164,7 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
   };
 
   const handleDelete = async () => {
-    if (!job?.id) return;
-    if (!confirm('Delete this job?')) return;
+    if (!job?.id || !confirm('Delete this job?')) return;
     setDeleting(true);
     try {
       await orgApi.deleteJob(job.id);
@@ -124,24 +181,22 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
     setAssignedIds(ids => ids.includes(userId) ? ids.filter(i => i !== userId) : [...ids, userId]);
   };
 
-  // Photo upload
   const handlePhotoChange = async (e) => {
     const files = Array.from(e.target.files || []);
     if (!files.length || !job?.id) return;
-    for (let i = 0; i < files.length; i++) {
-      setUploadingIdx(i);
+    setUploading(true);
+    for (const file of files) {
       try {
-        await orgApi.uploadJobMedia(job.id, files[i], 'photo', '', isOwner);
-      } catch (err) {
+        await orgApi.uploadJobMedia(job.id, file, 'photo', '', isOwner);
+      } catch {
         addToast('Failed to upload photo', 'error');
       }
     }
-    setUploadingIdx(null);
+    setUploading(false);
     e.target.value = '';
     await loadMedia();
   };
 
-  // Voice recording
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -151,14 +206,13 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
       recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
       recorder.onstop = async () => {
         stream.getTracks().forEach(t => t.stop());
-        const blob = new Blob(chunks, { type: mimeType });
         const ext = mimeType.includes('webm') ? 'webm' : 'mp4';
-        const file = new File([blob], `voice-${Date.now()}.${ext}`, { type: mimeType });
+        const file = new File([new Blob(chunks, { type: mimeType })], `voice-${Date.now()}.${ext}`, { type: mimeType });
         try {
           await orgApi.uploadJobMedia(job.id, file, 'voice', '', isOwner);
           await loadMedia();
-          addToast('Voice memo uploaded', 'success');
-        } catch (e) {
+          addToast('Voice memo saved', 'success');
+        } catch {
           addToast('Failed to upload voice memo', 'error');
         }
       };
@@ -167,7 +221,7 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
       setRecording(true);
       setRecSecs(0);
       recTimerRef.current = setInterval(() => setRecSecs(s => s + 1), 1000);
-    } catch (e) {
+    } catch {
       addToast('Microphone access denied', 'error');
     }
   };
@@ -184,36 +238,49 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
     try {
       await orgApi.deleteJobMedia(item.id, item.storage_path);
       await loadMedia();
-    } catch (e) {
+    } catch {
       addToast('Failed to delete', 'error');
     }
   };
 
   const ownerMedia  = media.filter(m => m.is_owner_post);
   const workerMedia = media.filter(m => !m.is_owner_post);
-
   const fmtSecs = s => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+  const mapUrl = mapCoords
+    ? `https://www.openstreetmap.org/export/embed.html?mlat=${mapCoords.lat}&mlon=${mapCoords.lon}&zoom=16&layers=M`
+    : null;
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col justify-end">
       <div className="absolute inset-0 bg-black/65 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 bg-zinc-900 rounded-t-2xl flex flex-col"
-        style={{ maxHeight: '95vh', paddingBottom: 'env(safe-area-inset-bottom, 16px)' }}>
+      <div
+        className="relative z-10 bg-zinc-900 rounded-t-2xl flex flex-col"
+        style={{ maxHeight: '95vh', paddingBottom: 'env(safe-area-inset-bottom, 16px)' }}
+      >
         {/* Handle */}
         <div className="flex justify-center pt-3 pb-1 shrink-0">
           <div className="w-10 h-1 rounded-full bg-zinc-700" />
         </div>
+
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-3 border-b border-zinc-800 shrink-0">
-          <h2 className="text-base font-semibold text-zinc-50">{isNew ? 'New Job' : (canEdit ? 'Edit Job' : 'Job Details')}</h2>
+          <h2 className="text-base font-semibold text-zinc-50">
+            {isNew ? 'New Job' : canEdit ? 'Edit Job' : 'Job Details'}
+          </h2>
           <div className="flex items-center gap-2">
             {!isNew && canEdit && (
-              <button onClick={handleDelete} disabled={deleting}
-                className="text-red-400 hover:bg-red-400/10 rounded-lg px-2 py-1 text-xs font-semibold">
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="text-red-400 hover:bg-red-400/10 rounded-lg px-2 py-1 text-xs font-semibold"
+              >
                 {deleting ? '…' : 'Delete'}
               </button>
             )}
-            <button onClick={onClose} className="w-9 h-9 flex items-center justify-center rounded-full text-zinc-400 hover:bg-zinc-800">
+            <button
+              onClick={onClose}
+              className="w-9 h-9 flex items-center justify-center rounded-full text-zinc-400 hover:bg-zinc-800"
+            >
               <X size={18} />
             </button>
           </div>
@@ -221,6 +288,7 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
 
         {/* Scrollable body */}
         <div className="flex-1 scroll-area overflow-y-auto px-5 py-4 space-y-5">
+
           {/* Title */}
           <div>
             <label className="block text-xs text-zinc-500 uppercase tracking-widest mb-1.5">Job Title *</label>
@@ -236,7 +304,7 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
             )}
           </div>
 
-          {/* Date + Status row */}
+          {/* Date + Status */}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs text-zinc-500 uppercase tracking-widest mb-1.5">Date *</label>
@@ -269,20 +337,54 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
             </div>
           </div>
 
-          {/* Location */}
+          {/* Location with autocomplete + map */}
           <div>
             <label className="block text-xs text-zinc-500 uppercase tracking-widest mb-1.5">
               <MapPin size={11} className="inline mr-1" />Location
             </label>
             {canEdit ? (
-              <input
-                value={location}
-                onChange={e => setLocation(e.target.value)}
-                placeholder="Address or site name"
-                className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-amber-400/50"
-              />
+              <div className="relative">
+                <input
+                  value={locationInput}
+                  onChange={e => handleLocationChange(e.target.value)}
+                  onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
+                  onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+                  placeholder="Start typing an address…"
+                  className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-amber-400/50"
+                />
+                {showSuggestions && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-zinc-800 border border-zinc-600 rounded-xl overflow-hidden z-20 shadow-2xl">
+                    {suggestions.map((s, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        onMouseDown={() => selectSuggestion(s)}
+                        className="w-full text-left px-3 py-2.5 text-xs text-zinc-200 hover:bg-zinc-700 border-b border-zinc-700/50 last:border-0 flex items-start gap-2"
+                      >
+                        <MapPin size={11} className="text-zinc-500 shrink-0 mt-0.5" />
+                        <span className="leading-relaxed">{s.display_name}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             ) : (
               <p className="text-zinc-300">{location || '—'}</p>
+            )}
+
+            {/* Map embed */}
+            {mapUrl && (
+              <div className="mt-2 rounded-xl overflow-hidden border border-zinc-700" style={{ height: 160 }}>
+                <iframe
+                  title="Job location"
+                  src={mapUrl}
+                  width="100%"
+                  height="160"
+                  style={{ border: 0, display: 'block' }}
+                  loading="lazy"
+                  referrerPolicy="no-referrer"
+                />
+              </div>
             )}
           </div>
 
@@ -295,7 +397,7 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
               <textarea
                 value={description}
                 onChange={e => setDescription(e.target.value)}
-                placeholder="Describe the job, what tools to bring, safety notes…"
+                placeholder="Describe the job, tools to bring, safety notes…"
                 rows={3}
                 className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-amber-400/50 resize-none"
               />
@@ -347,29 +449,37 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
             </div>
           )}
 
-          {/* Media section — only visible for existing jobs */}
+          {/* Media — only on saved jobs */}
           {!isNew && (
             <>
-              {/* Boss Posts */}
+              {/* Hidden file input — shared by owner + worker photo buttons */}
+              <input
+                ref={photoInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                className="hidden"
+                onChange={handlePhotoChange}
+              />
+
+              {/* Boss posts */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="text-xs text-zinc-500 uppercase tracking-widest">
-                    Boss Posts
-                  </label>
+                  <label className="text-xs text-zinc-500 uppercase tracking-widest">Boss Posts</label>
                   {isOwner && (
                     <div className="flex gap-2">
                       <button
                         onClick={() => photoInputRef.current?.click()}
-                        disabled={uploadingIdx !== null}
-                        className="flex items-center gap-1.5 text-xs text-amber-400 hover:text-amber-300 bg-amber-400/10 hover:bg-amber-400/15 px-2.5 py-1.5 rounded-lg"
+                        disabled={uploading}
+                        className="flex items-center gap-1.5 text-xs text-amber-400 hover:text-amber-300 bg-amber-400/10 hover:bg-amber-400/15 px-2.5 py-1.5 rounded-lg disabled:opacity-50"
                       >
                         <Camera size={13} />
-                        Photo
+                        {uploading ? 'Uploading…' : 'Photo'}
                       </button>
                       <button
                         onClick={recording ? stopRecording : startRecording}
-                        disabled={uploadingIdx !== null}
-                        className={`flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg ${
+                        disabled={uploading}
+                        className={`flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg disabled:opacity-50 ${
                           recording
                             ? 'text-red-400 bg-red-400/15 animate-pulse'
                             : 'text-zinc-400 bg-zinc-800 hover:bg-zinc-700'
@@ -381,18 +491,6 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
                     </div>
                   )}
                 </div>
-
-                {/* Hidden file input for photos */}
-                <input
-                  ref={photoInputRef}
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  capture="environment"
-                  className="hidden"
-                  onChange={handlePhotoChange}
-                />
-
                 {mediaLoading ? (
                   <p className="text-xs text-zinc-600 py-2">Loading…</p>
                 ) : ownerMedia.length === 0 ? (
@@ -402,26 +500,29 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
                 )}
               </div>
 
-              {/* Worker Responses */}
+              {/* Worker responses */}
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <label className="text-xs text-zinc-500 uppercase tracking-widest">Worker Responses</label>
                   {!isOwner && (
                     <button
                       onClick={() => photoInputRef.current?.click()}
-                      disabled={uploadingIdx !== null}
-                      className="flex items-center gap-1.5 text-xs text-zinc-400 bg-zinc-800 hover:bg-zinc-700 px-2.5 py-1.5 rounded-lg"
+                      disabled={uploading}
+                      className="flex items-center gap-1.5 text-xs text-zinc-400 bg-zinc-800 hover:bg-zinc-700 px-2.5 py-1.5 rounded-lg disabled:opacity-50"
                     >
                       <Camera size={13} />
-                      Add Photo
+                      {uploading ? 'Uploading…' : 'Add Photo'}
                     </button>
                   )}
                 </div>
-
                 {workerMedia.length === 0 ? (
                   <p className="text-xs text-zinc-600 py-2 italic">No responses yet</p>
                 ) : (
-                  <MediaGrid items={workerMedia} onDelete={(item) => item.uploaded_by === user?.id || isOwner ? handleDeleteMedia(item) : null} userId={user?.id} />
+                  <MediaGrid
+                    items={workerMedia}
+                    onDelete={item => (item.uploaded_by === user?.id || isOwner) ? handleDeleteMedia(item) : null}
+                    userId={user?.id}
+                  />
                 )}
               </div>
             </>
@@ -476,7 +577,7 @@ function MediaGrid({ items, onDelete, userId }) {
                 {item.profiles?.display_name || 'Unknown'} · {item.created_at ? new Date(item.created_at).toLocaleDateString() : ''}
               </p>
             </div>
-            {onDelete && (item.uploaded_by === userId || onDelete) && (
+            {onDelete && (
               <button
                 onClick={() => onDelete(item)}
                 className="w-7 h-7 flex items-center justify-center text-zinc-600 hover:text-red-400 hover:bg-red-400/10 rounded-lg ml-2 shrink-0"

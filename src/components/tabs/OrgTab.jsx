@@ -43,6 +43,7 @@ export default function OrgTab() {
   const [showJobModal, setShowJobModal]   = useState(false);
   const [selectedJob, setSelectedJob]     = useState(null);
   const [jobModalDate, setJobModalDate]   = useState(null);
+  const [calRefreshKey, setCalRefreshKey] = useState(0);
 
   // Invoice modal
   const [showSubmitInvoice, setShowSubmitInvoice] = useState(false);
@@ -118,6 +119,11 @@ export default function OrgTab() {
     setSelectedJob(null);
     setJobModalDate(null);
   };
+
+  const handleJobSaved = useCallback(() => {
+    closeJobModal();
+    setCalRefreshKey(k => k + 1);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Loading ────────────────────────────────────────────────
   if (authLoading || loading) {
@@ -265,6 +271,7 @@ export default function OrgTab() {
             isOwner={isOwner}
             members={orgData.members}
             onOpenJob={openJob}
+            refreshTrigger={calRefreshKey}
           />
         )}
         {activeView === 'members' && isOwner && (
@@ -289,7 +296,7 @@ export default function OrgTab() {
         members={orgData.members}
         isOwner={isOwner}
         onClose={closeJobModal}
-        onSaved={closeJobModal}
+        onSaved={handleJobSaved}
       />
 
       {/* Submit invoice modal */}
@@ -350,7 +357,7 @@ function OrgHeader({ org, role, memberCount, addToast }) {
 }
 
 // ── Org calendar view ─────────────────────────────────────────
-function OrgCalendarView({ orgId, isOwner, members, onOpenJob }) {
+function OrgCalendarView({ orgId, isOwner, members, onOpenJob, refreshTrigger }) {
   const [viewDate, setViewDate]   = useState(new Date());
   const [jobMap, setJobMap]       = useState({});
   const [selectedDate, setSelectedDate] = useState(null);
@@ -377,7 +384,7 @@ function OrgCalendarView({ orgId, isOwner, members, onOpenJob }) {
     } finally {
       setCalLoading(false);
     }
-  }, [orgId, year, month]);
+  }, [orgId, year, month, refreshTrigger]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { loadJobs(); }, [loadJobs]);
 
