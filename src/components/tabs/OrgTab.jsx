@@ -488,23 +488,23 @@ function OrgCalendarView({ orgId, isOwner, members, onOpenJob }) {
                       isToday
                         ? 'border border-amber-400'
                         : isAssigned
-                          ? 'border border-blue-400/60'
+                          ? 'border-2 border-amber-500/70'
                           : 'border border-transparent'
                     } ${
                       isAssigned
-                        ? 'bg-blue-400/10 hover:bg-blue-400/15'
+                        ? 'bg-amber-500/15 hover:bg-amber-500/22'
                         : dayJobs.length > 0
                           ? 'bg-zinc-900 hover:bg-zinc-800'
                           : 'hover:bg-zinc-900/40'
                     }`}
                   >
                     <span className={`text-xs font-medium ${
-                      isToday ? 'text-amber-400' : isAssigned ? 'text-blue-300' : 'text-zinc-300'
+                      isToday ? 'text-amber-400' : isAssigned ? 'text-amber-300 font-semibold' : 'text-zinc-300'
                     }`}>{dayNum}</span>
                     {dayJobs.length > 0 && (
                       <>
                         {isAssigned && (
-                          <span className="text-[8px] text-blue-400 font-bold leading-tight">YOU</span>
+                          <span className="text-[9px] text-amber-400 font-extrabold leading-tight tracking-wider">YOU</span>
                         )}
                         <div className="flex gap-0.5 mt-auto flex-wrap justify-center">
                           {dayJobs.slice(0, 3).map(j => (
@@ -522,7 +522,28 @@ function OrgCalendarView({ orgId, isOwner, members, onOpenJob }) {
             </div>
           ))
         )}
-        <div className="h-4" />
+        {/* Legend */}
+        <div className="flex items-center gap-4 px-2 pb-2 flex-wrap">
+          <div className="flex items-center gap-1.5">
+            <div className="w-3 h-3 rounded-sm bg-amber-500/15 border-2 border-amber-500/70" />
+            <span className="text-[10px] text-zinc-500">Assigned to you</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-3 h-3 rounded-sm bg-zinc-900 border border-zinc-700" />
+            <span className="text-[10px] text-zinc-500">Has jobs</span>
+          </div>
+          {!isOwner && (
+            <div className="flex items-center gap-3 ml-auto">
+              {Object.entries(STATUS_COLORS).map(([k, v]) => (
+                <div key={k} className="flex items-center gap-1">
+                  <span className={`w-2 h-2 rounded-full ${v.dot}`} />
+                  <span className="text-[10px] text-zinc-600 capitalize">{k.replace('_', ' ')}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        <div className="h-2" />
       </div>
 
       {/* Day jobs sheet */}
@@ -641,36 +662,45 @@ function MembersView({ org, members, onRefresh, addToast }) {
 
       {/* Members list */}
       <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
-        <div className="px-4 py-3 border-b border-zinc-800">
+        <div className="px-4 py-3 border-b border-zinc-800 flex items-center justify-between">
           <p className="text-xs font-semibold text-zinc-400 uppercase tracking-widest">
             {members.length} Member{members.length !== 1 ? 's' : ''}
           </p>
+          <p className="text-xs text-zinc-600">Tap × to remove</p>
         </div>
+        {members.length === 0 && (
+          <p className="text-sm text-zinc-500 text-center py-6">No members yet — share your invite code</p>
+        )}
         {members.map(m => {
-          const name = m.profiles?.display_name || m.display_name || m.profiles?.email || 'Unknown';
+          const name  = m.display_name || m.profiles?.display_name || 'Unknown';
           const email = m.profiles?.email || '';
+          const initials = name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() || '?';
+          const avatarBg = m.role === 'owner' ? 'bg-amber-400/20 border-amber-400/30 text-amber-400'
+            : m.role === 'subcontractor' ? 'bg-blue-400/15 border-blue-400/20 text-blue-400'
+            : 'bg-zinc-800 border-zinc-700 text-zinc-400';
           return (
             <div key={m.id} className="flex items-center gap-3 px-4 py-3 border-b border-zinc-800/50 last:border-0">
-              <div className="w-9 h-9 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center shrink-0">
-                <span className="text-sm font-bold text-zinc-400">{name[0]?.toUpperCase() || '?'}</span>
+              <div className={`w-10 h-10 rounded-2xl border flex items-center justify-center shrink-0 ${avatarBg}`}>
+                <span className="text-sm font-bold">{initials}</span>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-zinc-100 truncate">{name}</p>
-                {email && <p className="text-xs text-zinc-500 truncate">{email}</p>}
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-semibold text-zinc-100 truncate">{name}</p>
+                  <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-md capitalize shrink-0 ${ROLE_BADGE[m.role] || 'bg-zinc-800 text-zinc-400'}`}>
+                    {m.role}
+                  </span>
+                </div>
+                {email && <p className="text-xs text-zinc-500 truncate mt-0.5">{email}</p>}
+                <p className="text-[10px] text-zinc-600 mt-0.5">Joined {(() => { try { return format(new Date(m.joined_at), 'd MMM yyyy'); } catch { return ''; } })()}</p>
               </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full capitalize ${ROLE_BADGE[m.role] || 'bg-zinc-800 text-zinc-400'}`}>
-                  {m.role}
-                </span>
-                {m.role !== 'owner' && (
-                  <button
-                    onClick={() => handleRemove(m.user_id, name)}
-                    className="w-7 h-7 flex items-center justify-center rounded-lg text-zinc-600 hover:text-red-400 hover:bg-red-400/10 transition-colors"
-                  >
-                    <X size={14} />
-                  </button>
-                )}
-              </div>
+              {m.role !== 'owner' && (
+                <button
+                  onClick={() => handleRemove(m.user_id, name)}
+                  className="w-8 h-8 flex items-center justify-center rounded-xl text-zinc-600 hover:text-red-400 hover:bg-red-400/10 transition-colors shrink-0"
+                >
+                  <X size={15} />
+                </button>
+              )}
             </div>
           );
         })}
@@ -754,23 +784,27 @@ function InvoicesView({ orgId, isOwner, onSubmit, addToast }) {
               <button
                 key={s.id}
                 onClick={() => setDetailSub(s)}
-                className="w-full text-left bg-zinc-900 border border-zinc-800 rounded-2xl p-4 hover:border-zinc-600 transition-colors active:bg-zinc-800/50"
+                className="w-full text-left bg-zinc-900 border border-zinc-800 rounded-2xl p-4 hover:border-zinc-700 transition-colors active:bg-zinc-800/50"
               >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1 min-w-0 mr-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
                     {isOwner && (
-                      <p className="text-xs font-semibold text-amber-400 mb-0.5">{s.display_name}</p>
+                      <p className="text-xs font-semibold text-amber-400 mb-0.5 truncate">{s.display_name}</p>
                     )}
-                    <p className="font-semibold text-zinc-100 text-sm">
+                    <p className="font-semibold text-zinc-100 text-sm truncate">
                       {inv.invoiceNumber ? `${inv.invoiceNumber} · ` : ''}{inv.description || 'Invoice'}
                     </p>
                     <p className="text-xs text-zinc-500 mt-0.5">
-                      {format(parseISO(s.submitted_at), 'd MMM yyyy')}
-                      {inv.periodFrom && inv.periodTo && ` · ${format(parseISO(inv.periodFrom), 'd MMM')} – ${format(parseISO(inv.periodTo), 'd MMM')}`}
+                      {(() => { try { return format(new Date(s.submitted_at), 'd MMM yyyy'); } catch { return ''; } })()}
+                      {inv.periodFrom && inv.periodTo && (() => {
+                        try {
+                          return ` · ${format(new Date(inv.periodFrom), 'd MMM')} – ${format(new Date(inv.periodTo), 'd MMM')}`;
+                        } catch { return ''; }
+                      })()}
                     </p>
                     {inv.hours > 0 && (
-                      <p className="text-xs text-zinc-500 mt-0.5">
-                        {decimalToHHMM(inv.hours)} hrs · {inv.entries?.length || 0} {inv.entries?.length !== 1 ? 'entries' : 'entry'}
+                      <p className="text-xs text-zinc-600 mt-0.5">
+                        {decimalToHHMM(inv.hours)} · {inv.entries?.length || 0} {inv.entries?.length !== 1 ? 'entries' : 'entry'}
                       </p>
                     )}
                   </div>
@@ -781,9 +815,6 @@ function InvoicesView({ orgId, isOwner, onSubmit, addToast }) {
                     </span>
                   </div>
                 </div>
-                {isOwner && (
-                  <p className="text-[10px] text-zinc-600 mt-2">Tap to view full invoice</p>
-                )}
               </button>
             );
           })
@@ -851,6 +882,7 @@ function buildSubmissionPdfObjects(submission) {
 }
 
 function InvoiceDetailSheet({ submission, isOwner, updatingId, onStatus, onClose, statusStyle }) {
+  const [expandedEntry, setExpandedEntry] = useState(null);
   const inv     = submission?.invoice_data || {};
   const total    = Number(inv.total)    || 0;
   const subtotal = Number(inv.subtotal) || total;
@@ -966,27 +998,69 @@ function InvoiceDetailSheet({ submission, isOwner, updatingId, onStatus, onClose
             </div>
           </div>
 
-          {/* Line items */}
+          {/* Line items — tappable */}
           {inv.entries?.length > 0 && (
             <div className="bg-zinc-800 border border-zinc-700 rounded-2xl overflow-hidden">
-              <p className="text-xs text-zinc-500 uppercase tracking-widest px-4 pt-3 pb-1">Time Entries</p>
+              <div className="flex items-center justify-between px-4 pt-3 pb-1">
+                <p className="text-xs text-zinc-500 uppercase tracking-widest">Time Entries</p>
+                <p className="text-[10px] text-zinc-600">Tap to expand</p>
+              </div>
               <div className="divide-y divide-zinc-700/50">
                 {inv.entries.map((e, i) => (
-                  <div key={i} className="px-4 py-3 flex justify-between items-start gap-2">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-zinc-200 truncate">
-                        {e.description || e.clientName || 'Labour'}
-                      </p>
-                      <p className="text-xs text-zinc-500 mt-0.5 font-mono">
-                        {safeDate(e.date, 'EEE d MMM')}
-                        {e.timeIn && e.timeOut ? ` · ${e.timeIn}–${e.timeOut}` : ''}
-                        {e.hourlyRate ? ` · $${e.hourlyRate}/hr` : ''}
-                      </p>
-                    </div>
-                    <div className="text-right shrink-0">
-                      <p className="text-sm font-mono font-semibold text-zinc-100">{formatCurrency(Number(e.earnings) || 0)}</p>
-                      <p className="text-xs font-mono text-zinc-500">{decimalToHHMM(Number(e.workingHours))}h</p>
-                    </div>
+                  <div key={i}>
+                    <button
+                      onClick={() => setExpandedEntry(expandedEntry === i ? null : i)}
+                      className="w-full text-left px-4 py-3 flex justify-between items-start gap-2 hover:bg-zinc-700/30 active:bg-zinc-700/50 transition-colors"
+                    >
+                      <div className="flex items-start gap-2 flex-1 min-w-0">
+                        <ChevronRight size={13} className={`text-zinc-600 mt-0.5 shrink-0 transition-transform duration-150 ${expandedEntry === i ? 'rotate-90' : ''}`} />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-zinc-200 truncate">
+                            {e.description || e.clientName || 'Labour'}
+                          </p>
+                          <p className="text-xs text-zinc-500 mt-0.5 font-mono">
+                            {safeDate(e.date, 'EEE d MMM')}
+                            {e.timeIn && e.timeOut ? ` · ${e.timeIn}–${e.timeOut}` : ''}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <p className="text-sm font-mono font-semibold text-zinc-100">{formatCurrency(Number(e.earnings) || 0)}</p>
+                        <p className="text-xs font-mono text-zinc-500">{decimalToHHMM(Number(e.workingHours))}</p>
+                      </div>
+                    </button>
+                    {expandedEntry === i && (
+                      <div className="px-4 pb-3 pt-1 bg-zinc-700/20 border-t border-zinc-700/40 space-y-1.5">
+                        <div className="grid grid-cols-2 gap-x-4 gap-y-2 pt-1">
+                          {e.clientName && (
+                            <div>
+                              <p className="text-[10px] text-zinc-500 uppercase tracking-wider">Client</p>
+                              <p className="text-xs text-zinc-300 mt-0.5">{e.clientName}</p>
+                            </div>
+                          )}
+                          {e.timeIn && e.timeOut && (
+                            <div>
+                              <p className="text-[10px] text-zinc-500 uppercase tracking-wider">Clock</p>
+                              <p className="text-xs font-mono text-zinc-300 mt-0.5">{e.timeIn} – {e.timeOut}</p>
+                            </div>
+                          )}
+                          {Number(e.hourlyRate) > 0 && (
+                            <div>
+                              <p className="text-[10px] text-zinc-500 uppercase tracking-wider">Rate</p>
+                              <p className="text-xs font-mono text-zinc-300 mt-0.5">${e.hourlyRate}/hr</p>
+                            </div>
+                          )}
+                          <div>
+                            <p className="text-[10px] text-zinc-500 uppercase tracking-wider">Worked</p>
+                            <p className="text-xs font-mono text-zinc-300 mt-0.5">{decimalToHHMM(Number(e.workingHours))}</p>
+                          </div>
+                          <div>
+                            <p className="text-[10px] text-zinc-500 uppercase tracking-wider">Earned</p>
+                            <p className="text-xs font-mono font-semibold text-amber-400 mt-0.5">{formatCurrency(Number(e.earnings) || 0)}</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -1074,12 +1148,13 @@ function InvoiceDetailSheet({ submission, isOwner, updatingId, onStatus, onClose
 function HoursReportView({ orgId, addToast }) {
   const [submissions, setSubmissions] = useState([]);
   const [loading, setLoading]         = useState(true);
-  const [filterWorker, setFilterWorker] = useState('all');
-  const [searchJob, setSearchJob]     = useState('');
-  const [dateFrom, setDateFrom]       = useState('');
-  const [dateTo, setDateTo]           = useState('');
-  const [groupBy, setGroupBy]         = useState('job');
-  const [showFilters, setShowFilters] = useState(false);
+  const [filterWorker, setFilterWorker]     = useState('all');
+  const [filterStatus, setFilterStatus]     = useState('all');
+  const [searchJob, setSearchJob]           = useState('');
+  const [dateFrom, setDateFrom]             = useState('');
+  const [dateTo, setDateTo]                 = useState('');
+  const [groupBy, setGroupBy]               = useState('job');
+  const [showFilters, setShowFilters]       = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -1102,6 +1177,7 @@ function HoursReportView({ orgId, addToast }) {
         workerName: s.display_name || 'Unknown',
         submissionStatus: s.status,
         invoiceNumber: s.invoice_data?.invoiceNumber,
+        businessName: s.invoice_data?.businessName || '',
       }))
     ), [submissions]);
 
@@ -1112,6 +1188,7 @@ function HoursReportView({ orgId, addToast }) {
 
   const filtered = useMemo(() => allEntries.filter(e => {
     if (filterWorker !== 'all' && e.workerName !== filterWorker) return false;
+    if (filterStatus !== 'all' && e.submissionStatus !== filterStatus) return false;
     if (dateFrom && e.date < dateFrom) return false;
     if (dateTo && e.date > dateTo) return false;
     if (searchJob) {
@@ -1119,26 +1196,50 @@ function HoursReportView({ orgId, addToast }) {
       if (!hay.includes(searchJob.toLowerCase())) return false;
     }
     return true;
-  }), [allEntries, filterWorker, dateFrom, dateTo, searchJob]);
+  }), [allEntries, filterWorker, filterStatus, dateFrom, dateTo, searchJob]);
 
   const grouped = useMemo(() => {
     const map = new Map();
     for (const e of filtered) {
       const key = groupBy === 'job' ? (e.clientName || 'Unspecified') : e.workerName;
-      if (!map.has(key)) map.set(key, { entries: [], totalHours: 0, totalEarnings: 0 });
+      if (!map.has(key)) map.set(key, { entries: [], totalHours: 0, totalEarnings: 0, dates: [] });
       const g = map.get(key);
       g.entries.push(e);
-      g.totalHours += Number(e.workingHours) || 0;
+      g.totalHours    += Number(e.workingHours) || 0;
       g.totalEarnings += Number(e.earnings) || 0;
+      if (e.date) g.dates.push(e.date);
     }
     return [...map.entries()]
-      .map(([name, data]) => ({ name, ...data }))
+      .map(([name, data]) => ({
+        name,
+        ...data,
+        dateRange: data.dates.length > 0
+          ? (() => {
+              const sorted = [...new Set(data.dates)].sort();
+              const fmt = d => { try { return format(new Date(d), 'd MMM'); } catch { return d; } };
+              return sorted.length === 1 ? fmt(sorted[0]) : `${fmt(sorted[0])} – ${fmt(sorted[sorted.length - 1])}`;
+            })()
+          : '',
+        uniqueDays: new Set(data.dates).size,
+        avgRate: data.totalHours > 0
+          ? data.totalEarnings / data.totalHours
+          : 0,
+      }))
       .sort((a, b) => b.totalHours - a.totalHours);
   }, [filtered, groupBy]);
 
   const totalHours    = filtered.reduce((s, e) => s + (Number(e.workingHours) || 0), 0);
   const totalEarnings = filtered.reduce((s, e) => s + (Number(e.earnings) || 0), 0);
-  const hasFilters    = filterWorker !== 'all' || searchJob || dateFrom || dateTo;
+  const uniqueDays    = new Set(filtered.map(e => e.date).filter(Boolean)).size;
+  const hasFilters    = filterWorker !== 'all' || filterStatus !== 'all' || searchJob || dateFrom || dateTo;
+
+  const STATUS_OPTS = [
+    { value: 'all', label: 'All' },
+    { value: 'pending', label: 'Pending' },
+    { value: 'approved', label: 'Approved' },
+    { value: 'paid', label: 'Paid' },
+    { value: 'rejected', label: 'Rejected' },
+  ];
 
   return (
     <div className="h-full flex flex-col">
@@ -1161,6 +1262,7 @@ function HoursReportView({ orgId, addToast }) {
             <SlidersHorizontal size={18} />
           </button>
         </div>
+
         {showFilters && (
           <div className="space-y-2">
             <select
@@ -1171,6 +1273,15 @@ function HoursReportView({ orgId, addToast }) {
               <option value="all">All workers</option>
               {workers.map(w => <option key={w} value={w}>{w}</option>)}
             </select>
+
+            <div className="segmented">
+              {STATUS_OPTS.map(o => (
+                <button key={o.value} onClick={() => setFilterStatus(o.value)} className={filterStatus === o.value ? 'active' : ''}>
+                  {o.label}
+                </button>
+              ))}
+            </div>
+
             <div className="flex gap-2">
               <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
                 className="flex-1 bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2.5 text-sm text-zinc-50 focus:outline-none focus:border-amber-400/50 min-h-[44px]" />
@@ -1179,14 +1290,15 @@ function HoursReportView({ orgId, addToast }) {
             </div>
             {hasFilters && (
               <button
-                onClick={() => { setFilterWorker('all'); setSearchJob(''); setDateFrom(''); setDateTo(''); }}
-                className="text-xs text-amber-400 hover:text-amber-300"
+                onClick={() => { setFilterWorker('all'); setFilterStatus('all'); setSearchJob(''); setDateFrom(''); setDateTo(''); }}
+                className="text-xs text-amber-400 hover:text-amber-300 underline-offset-2"
               >
                 Clear all filters
               </button>
             )}
           </div>
         )}
+
         <div className="segmented">
           <button onClick={() => setGroupBy('job')} className={groupBy === 'job' ? 'active' : ''}>By Job / Client</button>
           <button onClick={() => setGroupBy('worker')} className={groupBy === 'worker' ? 'active' : ''}>By Worker</button>
@@ -1194,14 +1306,18 @@ function HoursReportView({ orgId, addToast }) {
       </div>
 
       {/* Summary bar */}
-      <div className="shrink-0 mx-4 my-2 bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-2.5 flex justify-between items-center">
+      <div className="shrink-0 mx-4 my-2 bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2.5 flex justify-between items-center">
         <div className="text-center">
           <p className="font-mono text-base font-semibold text-zinc-50">{decimalToHHMM(totalHours)}</p>
           <p className="text-[10px] text-zinc-500 uppercase tracking-widest">Hours</p>
         </div>
         <div className="text-center">
           <p className="font-mono text-base font-semibold text-amber-400">{formatCurrency(totalEarnings)}</p>
-          <p className="text-[10px] text-zinc-500 uppercase tracking-widest">Total Cost</p>
+          <p className="text-[10px] text-zinc-500 uppercase tracking-widest">Cost</p>
+        </div>
+        <div className="text-center">
+          <p className="font-mono text-base font-semibold text-zinc-50">{uniqueDays}</p>
+          <p className="text-[10px] text-zinc-500 uppercase tracking-widest">Days</p>
         </div>
         <div className="text-center">
           <p className="font-mono text-base font-semibold text-zinc-50">{filtered.length}</p>
@@ -1216,9 +1332,12 @@ function HoursReportView({ orgId, addToast }) {
             <div className="w-6 h-6 rounded-full border-2 border-amber-400 border-t-transparent animate-spin" />
           </div>
         ) : grouped.length === 0 ? (
-          <div className="text-center py-10">
-            <p className="text-zinc-500 text-sm">No data matches your filters</p>
-            {submissions.length === 0 && <p className="text-zinc-600 text-xs mt-1">No invoices have been submitted yet</p>}
+          <div className="text-center py-12 space-y-1">
+            <p className="text-zinc-400 font-medium text-sm">No data{hasFilters ? ' matching filters' : ''}</p>
+            {submissions.length === 0
+              ? <p className="text-zinc-600 text-xs">Workers need to submit invoices before data appears here</p>
+              : <p className="text-zinc-600 text-xs">Try adjusting or clearing your filters</p>
+            }
           </div>
         ) : (
           grouped.map(group => (
@@ -1232,7 +1351,7 @@ function HoursReportView({ orgId, addToast }) {
 }
 
 function ReportGroup({ group, groupBy }) {
-  const [expanded, setExpanded] = useState(false);
+  const [mode, setMode] = useState('summary'); // 'summary' | 'entries'
 
   const subGroups = useMemo(() => {
     const map = new Map();
@@ -1240,43 +1359,100 @@ function ReportGroup({ group, groupBy }) {
       const key = groupBy === 'job' ? e.workerName : (e.clientName || 'Unspecified');
       if (!map.has(key)) map.set(key, { name: key, hours: 0, earnings: 0, count: 0 });
       const g = map.get(key);
-      g.hours += Number(e.workingHours) || 0;
+      g.hours    += Number(e.workingHours) || 0;
       g.earnings += Number(e.earnings) || 0;
       g.count++;
     }
     return [...map.values()].sort((a, b) => b.hours - a.hours);
   }, [group.entries, groupBy]);
 
+  const sortedEntries = useMemo(() =>
+    [...group.entries].sort((a, b) => b.date?.localeCompare(a.date) || 0),
+  [group.entries]);
+
+  const safeDate = d => { try { return format(new Date(d), 'EEE d MMM'); } catch { return d; } };
+
+  const INV_STATUS_DOT = { pending: 'bg-amber-400', approved: 'bg-blue-400', paid: 'bg-emerald-400', rejected: 'bg-red-400' };
+
   return (
     <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
-      <button
-        onClick={() => setExpanded(e => !e)}
-        className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-zinc-800/50 active:bg-zinc-800 transition-colors"
-      >
-        <div className="flex-1 min-w-0 mr-3">
+      {/* Header row */}
+      <div className="px-4 py-3 flex items-start justify-between gap-2">
+        <div className="flex-1 min-w-0">
           <p className="font-semibold text-zinc-100 text-sm truncate">{group.name}</p>
-          <p className="text-xs text-zinc-500 mt-0.5">
-            {subGroups.length} {groupBy === 'job' ? 'worker' : 'site'}{subGroups.length !== 1 ? 's' : ''}
-            {' · '}{group.entries.length} {group.entries.length !== 1 ? 'entries' : 'entry'}
-          </p>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-0.5">
+            <span className="text-xs text-zinc-500">{group.uniqueDays} day{group.uniqueDays !== 1 ? 's' : ''}</span>
+            <span className="text-xs text-zinc-500">{group.entries.length} {group.entries.length !== 1 ? 'entries' : 'entry'}</span>
+            {group.dateRange && <span className="text-xs text-zinc-600">{group.dateRange}</span>}
+            {group.avgRate > 0 && <span className="text-xs text-zinc-600">avg ${group.avgRate.toFixed(0)}/hr</span>}
+          </div>
         </div>
         <div className="text-right shrink-0">
           <p className="font-mono text-sm font-bold text-zinc-100">{decimalToHHMM(group.totalHours)}</p>
           <p className="font-mono text-xs text-amber-400">{formatCurrency(group.totalEarnings)}</p>
         </div>
-      </button>
+      </div>
 
-      {expanded && (
+      {/* Expand toggle */}
+      <div className="flex border-t border-zinc-800">
+        <button
+          onClick={() => setMode(m => m === 'summary' ? null : 'summary')}
+          className={`flex-1 py-2 text-xs font-medium transition-colors ${mode === 'summary' ? 'text-amber-400 bg-zinc-800/60' : 'text-zinc-500 hover:text-zinc-300'}`}
+        >
+          {groupBy === 'job' ? 'By Worker' : 'By Job'} ({subGroups.length})
+        </button>
+        <div className="w-px bg-zinc-800" />
+        <button
+          onClick={() => setMode(m => m === 'entries' ? null : 'entries')}
+          className={`flex-1 py-2 text-xs font-medium transition-colors ${mode === 'entries' ? 'text-amber-400 bg-zinc-800/60' : 'text-zinc-500 hover:text-zinc-300'}`}
+        >
+          All Entries ({group.entries.length})
+        </button>
+      </div>
+
+      {/* Summary sub-groups */}
+      {mode === 'summary' && (
         <div className="border-t border-zinc-800 divide-y divide-zinc-800/50">
           {subGroups.map(sg => (
             <div key={sg.name} className="px-4 py-2.5 flex items-center justify-between">
-              <div>
-                <p className="text-sm text-zinc-300">{sg.name}</p>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm text-zinc-300 truncate">{sg.name}</p>
                 <p className="text-xs text-zinc-600">{sg.count} {sg.count !== 1 ? 'entries' : 'entry'}</p>
               </div>
-              <div className="text-right">
+              <div className="text-right ml-3 shrink-0">
                 <p className="font-mono text-sm font-medium text-zinc-200">{decimalToHHMM(sg.hours)}</p>
                 <p className="font-mono text-xs text-zinc-500">{formatCurrency(sg.earnings)}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Individual entries */}
+      {mode === 'entries' && (
+        <div className="border-t border-zinc-800 divide-y divide-zinc-800/50">
+          {sortedEntries.map((e, i) => (
+            <div key={i} className="px-4 py-2.5 flex items-start gap-2">
+              <div className={`w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 ${INV_STATUS_DOT[e.submissionStatus] || 'bg-zinc-600'}`} />
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold text-zinc-200 truncate">
+                  {groupBy === 'job' ? e.workerName : (e.clientName || 'Unspecified')}
+                </p>
+                <p className="text-xs text-zinc-500 mt-0.5">
+                  {safeDate(e.date)}
+                  {e.timeIn && e.timeOut ? ` · ${e.timeIn}–${e.timeOut}` : ''}
+                  {e.description ? ` · ${e.description}` : ''}
+                </p>
+                {e.invoiceNumber && (
+                  <p className="text-[10px] text-zinc-600 mt-0.5">{e.invoiceNumber} · {e.submissionStatus}</p>
+                )}
+              </div>
+              <div className="text-right shrink-0">
+                <p className="font-mono text-xs font-semibold text-zinc-200">{formatCurrency(Number(e.earnings) || 0)}</p>
+                <p className="font-mono text-[10px] text-zinc-500">{decimalToHHMM(Number(e.workingHours))}</p>
+                {Number(e.hourlyRate) > 0 && (
+                  <p className="text-[10px] text-zinc-600">${e.hourlyRate}/hr</p>
+                )}
               </div>
             </div>
           ))}
