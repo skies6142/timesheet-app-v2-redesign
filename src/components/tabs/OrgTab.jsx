@@ -1,9 +1,11 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Building2, Share2, Copy, Check, X, Plus, Users, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { Building2, Share2, Copy, Check, X, Plus, Users, ChevronLeft, ChevronRight, Download, SlidersHorizontal, Search } from 'lucide-react';
 import { format, parseISO, addMonths, subMonths } from 'date-fns';
 import { useAuth } from '../../context/AuthContext';
 import { useApp } from '../../context/AppContext';
 import * as orgApi from '../../lib/orgApi';
+import { supabase } from '../../lib/supabase';
+import { downloadInvoicePDF } from '../../lib/pdf';
 import { getDaysInMonth, formatCurrency } from '../../lib/utils';
 import AuthModal from '../modals/AuthModal';
 import JobModal from '../modals/JobModal';
@@ -73,6 +75,27 @@ export default function OrgTab() {
   }, [user, addToast]);
 
   useEffect(() => { loadOrg(); }, [loadOrg]);
+
+  // Realtime: notify admin on new invoices, notify workers on new assignments
+  useEffect(() => {
+    if (!orgData?.org?.id || !user) return;
+    const isOwner = orgData.role === 'owner';
+    let channel;
+    if (isOwner) {
+      channel = supabase
+        .channel(`org-invoices-${orgData.org.id}`)
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'invoice_submissions', filter: `org_id=eq.${orgData.org.id}` },
+          (payload) => { addToast(`New invoice from ${payload.new?.display_name || 'a worker'}`, 'info'); })
+        .subscribe();
+    } else {
+      channel = supabase
+        .channel(`user-assignments-${user.id}`)
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'job_assignments', filter: `user_id=eq.${user.id}` },
+          () => { addToast('You have been assigned to a new job!', 'success'); setCalRefreshKey(k => k + 1); })
+        .subscribe();
+    }
+    return () => { if (channel) supabase.removeChannel(channel); };
+  }, [orgData?.org?.id, orgData?.role, user?.id, addToast]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Handle ?join=CODE URL param
   useEffect(() => {
@@ -250,7 +273,7 @@ export default function OrgTab() {
   // ── In an organisation ─────────────────────────────────────
   const isOwner = orgData.role === 'owner';
   const views = isOwner
-    ? [{ id: 'calendar', label: 'Calendar' }, { id: 'members', label: 'Members' }, { id: 'invoices', label: 'Invoices' }]
+    ? [{ id: 'calendar', label: 'Calendar' }, { id: 'members', label: 'Team' }, { id: 'invoices', label: 'Invoices' }, { id: 'reports', label: 'Reports' }]
     : [{ id: 'calendar', label: 'Calendar' }, { id: 'invoices', label: 'My Invoices' }];
 
   return (
@@ -290,6 +313,9 @@ export default function OrgTab() {
             onSubmit={() => setShowSubmitInvoice(true)}
             addToast={addToast}
           />
+        )}
+        {activeView === 'reports' && isOwner && (
+          <HoursReportView orgId={orgData.org.id} addToast={addToast} />
         )}
       </div>
 
@@ -365,6 +391,7 @@ function OrgHeader({ org, role, memberCount, addToast }) {
 // ── Org calendar view ─────────────────────────────────────────
 function OrgCalendarView({ orgId, isOwner, members, onOpenJob }) {
   const { addToast } = useApp();
+  const { user } = useAuth();
   const [viewDate, setViewDate]   = useState(new Date());
   const [jobMap, setJobMap]       = useState({});
   const [selectedDate, setSelectedDate] = useState(null);
@@ -449,23 +476,43 @@ function OrgCalendarView({ orgId, isOwner, members, onOpenJob }) {
                 const dayJobs = jobMap[date] || [];
                 const isToday = date === today;
                 const dayNum  = parseInt(date.slice(8), 10);
+                const isAssigned = user && dayJobs.some(j =>
+                  j.job_assignments?.some(a => a.user_id === user.id)
+                );
 
                 return (
                   <button
                     key={date}
                     onClick={() => openDay(date)}
                     className={`aspect-square rounded-xl flex flex-col items-center justify-start p-1 transition-colors min-h-[44px] ${
-                      isToday ? 'border border-amber-400' : 'border border-transparent'
-                    } ${dayJobs.length > 0 ? 'bg-zinc-900 hover:bg-zinc-800' : 'hover:bg-zinc-900/40'}`}
+                      isToday
+                        ? 'border border-amber-400'
+                        : isAssigned
+                          ? 'border border-blue-400/60'
+                          : 'border border-transparent'
+                    } ${
+                      isAssigned
+                        ? 'bg-blue-400/10 hover:bg-blue-400/15'
+                        : dayJobs.length > 0
+                          ? 'bg-zinc-900 hover:bg-zinc-800'
+                          : 'hover:bg-zinc-900/40'
+                    }`}
                   >
-                    <span className={`text-xs font-medium ${isToday ? 'text-amber-400' : 'text-zinc-300'}`}>{dayNum}</span>
+                    <span className={`text-xs font-medium ${
+                      isToday ? 'text-amber-400' : isAssigned ? 'text-blue-300' : 'text-zinc-300'
+                    }`}>{dayNum}</span>
                     {dayJobs.length > 0 && (
                       <>
-                        <span className="text-[9px] text-zinc-500 leading-tight">{dayJobs.length}j</span>
+                        {isAssigned && (
+                          <span className="text-[8px] text-blue-400 font-bold leading-tight">YOU</span>
+                        )}
                         <div className="flex gap-0.5 mt-auto flex-wrap justify-center">
                           {dayJobs.slice(0, 3).map(j => (
                             <span key={j.id} className={`w-1.5 h-1.5 rounded-full ${STATUS_COLORS[j.status]?.dot || 'bg-zinc-600'}`} />
                           ))}
+                          {dayJobs.length > 3 && (
+                            <span className="text-[8px] text-zinc-600 leading-tight">+{dayJobs.length - 3}</span>
+                          )}
                         </div>
                       </>
                     )}
@@ -767,6 +814,42 @@ function decimalToHHMM(decimal) {
   return `${h}:${String(m).padStart(2, '0')}`;
 }
 
+function buildSubmissionPdfObjects(submission) {
+  const inv = submission.invoice_data || {};
+  const pdfSettings = {
+    businessName: inv.businessName || submission.display_name || '',
+    abn: inv.abn || '',
+    address: '',
+    suburb: '',
+    state: '',
+    postcode: '',
+    bankName: inv.bankName || '',
+    bsb: inv.bsb || '',
+    accountNumber: inv.accountNumber || '',
+    paymentTermsDays: 14,
+    gstRegistered: inv.gstRegistered || false,
+    paymentNotes: inv.notes || '',
+  };
+  const submittedDate = submission.submitted_at
+    ? new Date(submission.submitted_at).toISOString().slice(0, 10)
+    : new Date().toISOString().slice(0, 10);
+  const pdfInvoice = {
+    invoiceNumber: inv.invoiceNumber || 'INV',
+    date: inv.periodTo || submittedDate,
+    subtotal: Number(inv.subtotal) || Number(inv.total) || 0,
+    gstAmount: Number(inv.gst) || 0,
+    total: Number(inv.total) || 0,
+    entries: (inv.entries || []).map(e => ({
+      date: e.date,
+      description: e.description || 'Labour',
+      workingHours: Number(e.workingHours) || 0,
+      hourlyRate: Number(e.hourlyRate) || 0,
+      earnings: Number(e.earnings) || 0,
+    })),
+  };
+  return { invoice: pdfInvoice, settings: pdfSettings };
+}
+
 function InvoiceDetailSheet({ submission, isOwner, updatingId, onStatus, onClose, statusStyle }) {
   const inv     = submission?.invoice_data || {};
   const total    = Number(inv.total)    || 0;
@@ -809,6 +892,16 @@ function InvoiceDetailSheet({ submission, isOwner, updatingId, onStatus, onClose
             <span className={`text-xs font-semibold px-3 py-1 rounded-full capitalize ${statusStyle[submission.status] || 'bg-zinc-800 text-zinc-400'}`}>
               {submission.status}
             </span>
+            <button
+              onClick={() => {
+                const { invoice, settings: ps } = buildSubmissionPdfObjects(submission);
+                downloadInvoicePDF(invoice, ps);
+              }}
+              title="Download PDF"
+              className="w-9 h-9 flex items-center justify-center rounded-full text-zinc-400 hover:bg-zinc-800 hover:text-amber-400 transition-colors"
+            >
+              <Download size={18} />
+            </button>
             <button onClick={onClose}
               className="w-9 h-9 flex items-center justify-center rounded-full text-zinc-400 hover:bg-zinc-800">
               <X size={18} />
@@ -973,6 +1066,222 @@ function InvoiceDetailSheet({ submission, isOwner, updatingId, onStatus, onClose
           <div className="h-2" />
         </div>
       </div>
+    </div>
+  );
+}
+
+// ── Hours report (owner only) ─────────────────────────────────
+function HoursReportView({ orgId, addToast }) {
+  const [submissions, setSubmissions] = useState([]);
+  const [loading, setLoading]         = useState(true);
+  const [filterWorker, setFilterWorker] = useState('all');
+  const [searchJob, setSearchJob]     = useState('');
+  const [dateFrom, setDateFrom]       = useState('');
+  const [dateTo, setDateTo]           = useState('');
+  const [groupBy, setGroupBy]         = useState('job');
+  const [showFilters, setShowFilters] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await orgApi.getOrgSubmissions(orgId);
+      setSubmissions(data);
+    } catch (e) {
+      addToast(`Failed to load: ${e.message}`, 'error');
+    } finally {
+      setLoading(false);
+    }
+  }, [orgId, addToast]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const allEntries = useMemo(() =>
+    submissions.flatMap(s =>
+      (s.invoice_data?.entries || []).map(e => ({
+        ...e,
+        workerName: s.display_name || 'Unknown',
+        submissionStatus: s.status,
+        invoiceNumber: s.invoice_data?.invoiceNumber,
+      }))
+    ), [submissions]);
+
+  const workers = useMemo(() => {
+    const names = [...new Set(submissions.map(s => s.display_name).filter(Boolean))];
+    return names.sort();
+  }, [submissions]);
+
+  const filtered = useMemo(() => allEntries.filter(e => {
+    if (filterWorker !== 'all' && e.workerName !== filterWorker) return false;
+    if (dateFrom && e.date < dateFrom) return false;
+    if (dateTo && e.date > dateTo) return false;
+    if (searchJob) {
+      const hay = `${e.clientName || ''} ${e.description || ''}`.toLowerCase();
+      if (!hay.includes(searchJob.toLowerCase())) return false;
+    }
+    return true;
+  }), [allEntries, filterWorker, dateFrom, dateTo, searchJob]);
+
+  const grouped = useMemo(() => {
+    const map = new Map();
+    for (const e of filtered) {
+      const key = groupBy === 'job' ? (e.clientName || 'Unspecified') : e.workerName;
+      if (!map.has(key)) map.set(key, { entries: [], totalHours: 0, totalEarnings: 0 });
+      const g = map.get(key);
+      g.entries.push(e);
+      g.totalHours += Number(e.workingHours) || 0;
+      g.totalEarnings += Number(e.earnings) || 0;
+    }
+    return [...map.entries()]
+      .map(([name, data]) => ({ name, ...data }))
+      .sort((a, b) => b.totalHours - a.totalHours);
+  }, [filtered, groupBy]);
+
+  const totalHours    = filtered.reduce((s, e) => s + (Number(e.workingHours) || 0), 0);
+  const totalEarnings = filtered.reduce((s, e) => s + (Number(e.earnings) || 0), 0);
+  const hasFilters    = filterWorker !== 'all' || searchJob || dateFrom || dateTo;
+
+  return (
+    <div className="h-full flex flex-col">
+      {/* Filter controls */}
+      <div className="shrink-0 px-4 pt-3 pb-2 border-b border-zinc-800 space-y-2">
+        <div className="flex gap-2">
+          <div className="flex-1 relative">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none" />
+            <input
+              value={searchJob}
+              onChange={e => setSearchJob(e.target.value)}
+              placeholder="Search job, client, description…"
+              className="w-full bg-zinc-800 border border-zinc-700 rounded-xl pl-9 pr-4 py-2.5 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-amber-400/50 min-h-[44px]"
+            />
+          </div>
+          <button
+            onClick={() => setShowFilters(f => !f)}
+            className={`w-11 h-11 flex items-center justify-center rounded-xl border transition-colors ${hasFilters ? 'border-amber-400 text-amber-400' : 'border-zinc-700 text-zinc-400'}`}
+          >
+            <SlidersHorizontal size={18} />
+          </button>
+        </div>
+        {showFilters && (
+          <div className="space-y-2">
+            <select
+              value={filterWorker}
+              onChange={e => setFilterWorker(e.target.value)}
+              className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-2.5 text-sm text-zinc-100 focus:outline-none focus:border-amber-400/50 min-h-[44px]"
+            >
+              <option value="all">All workers</option>
+              {workers.map(w => <option key={w} value={w}>{w}</option>)}
+            </select>
+            <div className="flex gap-2">
+              <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
+                className="flex-1 bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2.5 text-sm text-zinc-50 focus:outline-none focus:border-amber-400/50 min-h-[44px]" />
+              <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
+                className="flex-1 bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2.5 text-sm text-zinc-50 focus:outline-none focus:border-amber-400/50 min-h-[44px]" />
+            </div>
+            {hasFilters && (
+              <button
+                onClick={() => { setFilterWorker('all'); setSearchJob(''); setDateFrom(''); setDateTo(''); }}
+                className="text-xs text-amber-400 hover:text-amber-300"
+              >
+                Clear all filters
+              </button>
+            )}
+          </div>
+        )}
+        <div className="segmented">
+          <button onClick={() => setGroupBy('job')} className={groupBy === 'job' ? 'active' : ''}>By Job / Client</button>
+          <button onClick={() => setGroupBy('worker')} className={groupBy === 'worker' ? 'active' : ''}>By Worker</button>
+        </div>
+      </div>
+
+      {/* Summary bar */}
+      <div className="shrink-0 mx-4 my-2 bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-2.5 flex justify-between items-center">
+        <div className="text-center">
+          <p className="font-mono text-base font-semibold text-zinc-50">{decimalToHHMM(totalHours)}</p>
+          <p className="text-[10px] text-zinc-500 uppercase tracking-widest">Hours</p>
+        </div>
+        <div className="text-center">
+          <p className="font-mono text-base font-semibold text-amber-400">{formatCurrency(totalEarnings)}</p>
+          <p className="text-[10px] text-zinc-500 uppercase tracking-widest">Total Cost</p>
+        </div>
+        <div className="text-center">
+          <p className="font-mono text-base font-semibold text-zinc-50">{filtered.length}</p>
+          <p className="text-[10px] text-zinc-500 uppercase tracking-widest">Entries</p>
+        </div>
+      </div>
+
+      {/* Grouped results */}
+      <div className="flex-1 scroll-area px-4 pb-4 space-y-2">
+        {loading ? (
+          <div className="flex justify-center py-10">
+            <div className="w-6 h-6 rounded-full border-2 border-amber-400 border-t-transparent animate-spin" />
+          </div>
+        ) : grouped.length === 0 ? (
+          <div className="text-center py-10">
+            <p className="text-zinc-500 text-sm">No data matches your filters</p>
+            {submissions.length === 0 && <p className="text-zinc-600 text-xs mt-1">No invoices have been submitted yet</p>}
+          </div>
+        ) : (
+          grouped.map(group => (
+            <ReportGroup key={group.name} group={group} groupBy={groupBy} />
+          ))
+        )}
+        <div className="h-4" />
+      </div>
+    </div>
+  );
+}
+
+function ReportGroup({ group, groupBy }) {
+  const [expanded, setExpanded] = useState(false);
+
+  const subGroups = useMemo(() => {
+    const map = new Map();
+    for (const e of group.entries) {
+      const key = groupBy === 'job' ? e.workerName : (e.clientName || 'Unspecified');
+      if (!map.has(key)) map.set(key, { name: key, hours: 0, earnings: 0, count: 0 });
+      const g = map.get(key);
+      g.hours += Number(e.workingHours) || 0;
+      g.earnings += Number(e.earnings) || 0;
+      g.count++;
+    }
+    return [...map.values()].sort((a, b) => b.hours - a.hours);
+  }, [group.entries, groupBy]);
+
+  return (
+    <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
+      <button
+        onClick={() => setExpanded(e => !e)}
+        className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-zinc-800/50 active:bg-zinc-800 transition-colors"
+      >
+        <div className="flex-1 min-w-0 mr-3">
+          <p className="font-semibold text-zinc-100 text-sm truncate">{group.name}</p>
+          <p className="text-xs text-zinc-500 mt-0.5">
+            {subGroups.length} {groupBy === 'job' ? 'worker' : 'site'}{subGroups.length !== 1 ? 's' : ''}
+            {' · '}{group.entries.length} {group.entries.length !== 1 ? 'entries' : 'entry'}
+          </p>
+        </div>
+        <div className="text-right shrink-0">
+          <p className="font-mono text-sm font-bold text-zinc-100">{decimalToHHMM(group.totalHours)}</p>
+          <p className="font-mono text-xs text-amber-400">{formatCurrency(group.totalEarnings)}</p>
+        </div>
+      </button>
+
+      {expanded && (
+        <div className="border-t border-zinc-800 divide-y divide-zinc-800/50">
+          {subGroups.map(sg => (
+            <div key={sg.name} className="px-4 py-2.5 flex items-center justify-between">
+              <div>
+                <p className="text-sm text-zinc-300">{sg.name}</p>
+                <p className="text-xs text-zinc-600">{sg.count} {sg.count !== 1 ? 'entries' : 'entry'}</p>
+              </div>
+              <div className="text-right">
+                <p className="font-mono text-sm font-medium text-zinc-200">{decimalToHHMM(sg.hours)}</p>
+                <p className="font-mono text-xs text-zinc-500">{formatCurrency(sg.earnings)}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

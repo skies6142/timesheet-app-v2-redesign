@@ -28,10 +28,11 @@ export default function LogTab() {
   const [showFilter, setShowFilter] = useState(false);
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterProject, setFilterProject] = useState('');
-  const [editEntry, setEditEntry] = useState(null);
-  const [showAdd, setShowAdd] = useState(false);
+  const [viewEntry, setViewEntry]   = useState(null);
+  const [editEntry, setEditEntry]   = useState(null);
+  const [showAdd, setShowAdd]       = useState(false);
   const [confirmDeleteEntry, setConfirmDeleteEntry] = useState(null);
-  const [deleting, setDeleting] = useState(false);
+  const [deleting, setDeleting]     = useState(false);
 
   const getRange = useCallback(() => {
     if (period === 'custom') {
@@ -188,7 +189,7 @@ export default function LogTab() {
                       key={entry.key}
                       entry={entry}
                       last={idx === dayEntries.length - 1}
-                      onEdit={() => setEditEntry(entry)}
+                      onView={() => setViewEntry(entry)}
                       onDelete={() => setConfirmDeleteEntry(entry)}
                     />
                   ))}
@@ -247,6 +248,15 @@ export default function LogTab() {
         </div>
       </BottomSheet>
 
+      {/* Entry detail sheet */}
+      <EntryDetailSheet
+        entry={viewEntry}
+        isOpen={!!viewEntry}
+        onClose={() => setViewEntry(null)}
+        onEdit={() => { const e = viewEntry; setViewEntry(null); setEditEntry(e); }}
+        onDelete={() => { const e = viewEntry; setViewEntry(null); setConfirmDeleteEntry(e); }}
+      />
+
       <EntryModal isOpen={!!editEntry} onClose={() => setEditEntry(null)} entry={editEntry} />
       <EntryModal isOpen={showAdd} onClose={() => setShowAdd(false)} />
       <ConfirmModal
@@ -266,7 +276,7 @@ export default function LogTab() {
 
 const SWIPE_REVEAL = 80;
 
-function EntryRow({ entry, last, onEdit, onDelete }) {
+function EntryRow({ entry, last, onView, onDelete }) {
   const dotColor = { unpaid: 'bg-amber-400', invoiced: 'bg-blue-400', paid_cash: 'bg-emerald-400', paid_invoice: 'bg-emerald-400' };
   const sColor = { unpaid: 'text-zinc-500', invoiced: 'text-blue-400', paid_cash: 'text-emerald-400', paid_invoice: 'text-emerald-400' };
 
@@ -299,7 +309,7 @@ function EntryRow({ entry, last, onEdit, onDelete }) {
 
   const handleRowClick = () => {
     if (offset !== 0) { setOffset(0); return; }
-    onEdit();
+    onView();
   };
 
   return (
@@ -354,5 +364,108 @@ function EntryRow({ entry, last, onEdit, onDelete }) {
         </button>
       </div>
     </div>
+  );
+}
+
+function EntryDetailSheet({ entry, isOpen, onClose, onEdit, onDelete }) {
+  if (!entry) return null;
+  const dotBg = { unpaid: 'bg-amber-400', invoiced: 'bg-blue-400', paid_cash: 'bg-emerald-400', paid_invoice: 'bg-emerald-400' };
+
+  return (
+    <BottomSheet isOpen={isOpen} onClose={onClose} title="Entry Details">
+      <div className="px-5 py-4 space-y-3">
+        {/* Time */}
+        <div className="bg-zinc-800 border border-zinc-700 rounded-2xl divide-y divide-zinc-700/60">
+          <div className="flex justify-between px-4 py-3">
+            <span className="text-xs text-zinc-500">Date</span>
+            <span className="text-sm font-medium text-zinc-200">{format(parseISO(entry.date), 'EEEE d MMMM yyyy')}</span>
+          </div>
+          <div className="flex justify-between px-4 py-3">
+            <span className="text-xs text-zinc-500">Time</span>
+            <span className="text-sm font-mono text-zinc-200">{entry.timeIn} – {entry.timeOut}</span>
+          </div>
+          {entry.breakMinutes > 0 && (
+            <div className="flex justify-between px-4 py-3">
+              <span className="text-xs text-zinc-500">Break</span>
+              <span className="text-sm font-mono text-zinc-200">{entry.breakMinutes} min</span>
+            </div>
+          )}
+          <div className="flex justify-between px-4 py-3">
+            <span className="text-xs text-zinc-500">Working hours</span>
+            <span className="text-sm font-mono font-semibold text-zinc-100">{decimalToHHMM(entry.workingHours)}</span>
+          </div>
+        </div>
+
+        {/* Work details */}
+        {(entry.clientName || entry.projectName || entry.description) && (
+          <div className="bg-zinc-800 border border-zinc-700 rounded-2xl divide-y divide-zinc-700/60">
+            {entry.clientName && (
+              <div className="flex justify-between px-4 py-3">
+                <span className="text-xs text-zinc-500">Client</span>
+                <span className="text-sm font-medium text-zinc-200 text-right max-w-[60%]">{entry.clientName}</span>
+              </div>
+            )}
+            {entry.projectName && (
+              <div className="flex justify-between px-4 py-3">
+                <span className="text-xs text-zinc-500">Project</span>
+                <span className="text-sm font-medium text-zinc-200 text-right max-w-[60%]">{entry.projectName}</span>
+              </div>
+            )}
+            {entry.description && (
+              <div className="flex justify-between px-4 py-3">
+                <span className="text-xs text-zinc-500">Description</span>
+                <span className="text-sm font-medium text-zinc-200 text-right max-w-[60%]">{entry.description}</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Financials */}
+        <div className="bg-zinc-800 border border-zinc-700 rounded-2xl divide-y divide-zinc-700/60">
+          {entry.hourlyRate > 0 && (
+            <div className="flex justify-between px-4 py-3">
+              <span className="text-xs text-zinc-500">Rate</span>
+              <span className="text-sm font-mono text-zinc-200">${entry.hourlyRate}/hr</span>
+            </div>
+          )}
+          <div className="flex justify-between px-4 py-3">
+            <span className="text-sm font-bold text-zinc-100">Earnings</span>
+            <span className="text-lg font-mono font-bold text-amber-400">{formatCurrency(entry.earnings)}</span>
+          </div>
+        </div>
+
+        {/* Status */}
+        <div className="bg-zinc-800 border border-zinc-700 rounded-2xl px-4 py-3 flex items-center gap-3">
+          <div className={`w-2 h-2 rounded-full shrink-0 ${dotBg[entry.status] || 'bg-zinc-500'}`} />
+          <div>
+            <p className="text-sm font-medium text-zinc-200">{statusLabel(entry.status)}</p>
+            {(entry.status === 'invoiced' || entry.status === 'paid_invoice') && entry.invoiceNumber && (
+              <p className="text-xs text-zinc-500">{entry.invoiceNumber}</p>
+            )}
+          </div>
+        </div>
+
+        {/* Notes */}
+        {entry.notes && (
+          <div className="bg-zinc-800 border border-zinc-700 rounded-2xl p-4">
+            <p className="text-xs text-zinc-500 uppercase tracking-widest mb-2">Notes</p>
+            <p className="text-sm text-zinc-300 whitespace-pre-wrap leading-relaxed">{entry.notes}</p>
+          </div>
+        )}
+
+        {/* Actions */}
+        <div className="flex gap-3 pt-1">
+          <button onClick={onDelete}
+            className="flex-1 border border-red-400/30 text-red-400 hover:bg-red-400/10 rounded-xl py-3 min-h-[48px] text-sm font-medium transition-colors">
+            Delete
+          </button>
+          <button onClick={onEdit}
+            className="flex-1 bg-amber-400 hover:bg-amber-300 text-zinc-950 font-bold rounded-xl py-3 min-h-[48px] text-sm transition-colors">
+            Edit Entry
+          </button>
+        </div>
+        <div className="h-2" />
+      </div>
+    </BottomSheet>
   );
 }
