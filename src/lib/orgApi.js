@@ -189,6 +189,14 @@ export async function deleteJob(jobId) {
   if (error) throw error;
 }
 
+export async function updateJobStatus(jobId, status) {
+  const { error } = await supabase
+    .from('jobs')
+    .update({ status })
+    .eq('id', jobId);
+  if (error) throw error;
+}
+
 // ── Job media ─────────────────────────────────────────────────
 
 export async function getJobMedia(jobId) {

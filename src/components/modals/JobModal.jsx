@@ -44,13 +44,15 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
   const recTimerRef = useRef(null);
 
   // UI
-  const [saving, setSaving]     = useState(false);
-  const [deleting, setDeleting] = useState(false);
-  const [uploading, setUploading] = useState(false);
+  const [saving, setSaving]             = useState(false);
+  const [deleting, setDeleting]         = useState(false);
+  const [uploading, setUploading]       = useState(false);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
   const photoInputRef = useRef(null);
 
-  const isNew    = !job?.id;
-  const canEdit  = isOwner;
+  const isNew       = !job?.id;
+  const canEdit     = isOwner;
+  const isAssigned  = !isNew && !!user && (job?.job_assignments?.some(a => a.user_id === user.id) ?? false);
 
   // Reset form when opening with a different job / defaultDate
   useEffect(() => {
@@ -175,6 +177,20 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
       addToast(e.message || 'Failed to delete', 'error');
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const handleWorkerStatus = async (newStatus) => {
+    setUpdatingStatus(true);
+    try {
+      await orgApi.updateJobStatus(job.id, newStatus);
+      setStatus(newStatus);
+      addToast(`Job ${newStatus.replace('_', ' ')}`, 'success');
+      onSaved();
+    } catch (e) {
+      addToast(e.message || 'Failed to update status', 'error');
+    } finally {
+      setUpdatingStatus(false);
     }
   };
 
@@ -557,6 +573,22 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
               className="w-full bg-amber-400 hover:bg-amber-300 disabled:opacity-50 text-zinc-950 font-bold rounded-2xl py-4">
               {saveBtnLabel}
             </button>
+          </div>
+        )}
+        {!canEdit && !isNew && isAssigned && (status === 'scheduled' || status === 'in_progress') && (
+          <div className="px-5 py-4 border-t border-zinc-800 shrink-0">
+            {status === 'scheduled' && (
+              <button onClick={() => handleWorkerStatus('in_progress')} disabled={updatingStatus}
+                className="w-full bg-blue-500 hover:bg-blue-400 disabled:opacity-50 text-white font-bold rounded-2xl py-4 transition-colors">
+                {updatingStatus ? 'Updating…' : 'Start Job'}
+              </button>
+            )}
+            {status === 'in_progress' && (
+              <button onClick={() => handleWorkerStatus('completed')} disabled={updatingStatus}
+                className="w-full bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-white font-bold rounded-2xl py-4 transition-colors">
+                {updatingStatus ? 'Updating…' : 'Mark Complete'}
+              </button>
+            )}
           </div>
         )}
       </div>

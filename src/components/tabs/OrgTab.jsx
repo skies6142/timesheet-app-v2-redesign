@@ -392,11 +392,12 @@ function OrgHeader({ org, role, memberCount, addToast }) {
 function OrgCalendarView({ orgId, isOwner, members, onOpenJob }) {
   const { addToast } = useApp();
   const { user } = useAuth();
-  const [viewDate, setViewDate]   = useState(new Date());
-  const [jobMap, setJobMap]       = useState({});
+  const [viewDate, setViewDate]         = useState(new Date());
+  const [jobMap, setJobMap]             = useState({});
   const [selectedDate, setSelectedDate] = useState(null);
   const [showDaySheet, setShowDaySheet] = useState(false);
-  const [calLoading, setCalLoading] = useState(false);
+  const [calLoading, setCalLoading]     = useState(false);
+  const [updatingJobId, setUpdatingJobId] = useState(null);
 
   const year  = viewDate.getFullYear();
   const month = viewDate.getMonth() + 1;
@@ -426,6 +427,19 @@ function OrgCalendarView({ orgId, isOwner, members, onOpenJob }) {
   const openDay = (date) => {
     setSelectedDate(date);
     setShowDaySheet(true);
+  };
+
+  const handleQuickStatus = async (jobId, newStatus) => {
+    setUpdatingJobId(jobId);
+    try {
+      await orgApi.updateJobStatus(jobId, newStatus);
+      await loadJobs();
+      addToast(`Job ${newStatus.replace('_', ' ')}`, 'success');
+    } catch (e) {
+      addToast(e.message || 'Failed to update', 'error');
+    } finally {
+      setUpdatingJobId(null);
+    }
   };
 
   const selectedDayJobs = selectedDate ? (jobMap[selectedDate] || []) : [];
@@ -558,25 +572,67 @@ function OrgCalendarView({ orgId, isOwner, members, onOpenJob }) {
           ) : (
             selectedDayJobs.map(job => {
               const sc = STATUS_COLORS[job.status] || STATUS_COLORS.scheduled;
+              const isUpdating = updatingJobId === job.id;
               return (
-                <button
-                  key={job.id}
-                  onClick={() => { setShowDaySheet(false); onOpenJob(job, selectedDate); }}
-                  className="w-full text-left bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 hover:border-zinc-600 active:bg-zinc-700/50 transition-colors"
-                >
-                  <div className="flex items-start gap-3">
-                    <span className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${sc.dot}`} />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-zinc-100">{job.title}</p>
-                      {job.location && (
-                        <p className="text-xs text-zinc-500 mt-0.5">📍 {job.location}</p>
+                <div key={job.id} className="bg-zinc-800 border border-zinc-700 rounded-xl overflow-hidden">
+                  <button
+                    onClick={() => { setShowDaySheet(false); onOpenJob(job, selectedDate); }}
+                    className="w-full text-left px-4 py-3 hover:bg-zinc-700/30 active:bg-zinc-700/50 transition-colors"
+                  >
+                    <div className="flex items-start gap-3">
+                      <span className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${sc.dot}`} />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-zinc-100">{job.title}</p>
+                        {job.location && (
+                          <p className="text-xs text-zinc-500 mt-0.5">📍 {job.location}</p>
+                        )}
+                      </div>
+                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${sc.badge} capitalize`}>
+                        {job.status.replace('_', ' ')}
+                      </span>
+                    </div>
+                  </button>
+                  {isOwner && (
+                    <div className="flex gap-1.5 px-4 pb-3 border-t border-zinc-700/40 pt-2">
+                      {job.status === 'scheduled' && (
+                        <button
+                          onClick={() => handleQuickStatus(job.id, 'in_progress')}
+                          disabled={isUpdating}
+                          className="flex-1 text-xs text-blue-400 bg-blue-400/10 border border-blue-400/20 rounded-lg py-2 font-semibold hover:bg-blue-400/15 disabled:opacity-50 transition-colors"
+                        >
+                          {isUpdating ? '…' : 'Start'}
+                        </button>
+                      )}
+                      {(job.status === 'scheduled' || job.status === 'in_progress') && (
+                        <button
+                          onClick={() => handleQuickStatus(job.id, 'completed')}
+                          disabled={isUpdating}
+                          className="flex-1 text-xs text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 rounded-lg py-2 font-semibold hover:bg-emerald-400/15 disabled:opacity-50 transition-colors"
+                        >
+                          {isUpdating ? '…' : 'Complete'}
+                        </button>
+                      )}
+                      {job.status !== 'cancelled' && job.status !== 'completed' && (
+                        <button
+                          onClick={() => handleQuickStatus(job.id, 'cancelled')}
+                          disabled={isUpdating}
+                          className="flex-1 text-xs text-zinc-500 bg-zinc-700/50 border border-zinc-600 rounded-lg py-2 font-semibold hover:bg-zinc-700 disabled:opacity-50 transition-colors"
+                        >
+                          {isUpdating ? '…' : 'Cancel'}
+                        </button>
+                      )}
+                      {(job.status === 'cancelled' || job.status === 'completed') && (
+                        <button
+                          onClick={() => handleQuickStatus(job.id, 'scheduled')}
+                          disabled={isUpdating}
+                          className="flex-1 text-xs text-amber-400 bg-amber-400/10 border border-amber-400/20 rounded-lg py-2 font-semibold hover:bg-amber-400/15 disabled:opacity-50 transition-colors"
+                        >
+                          {isUpdating ? '…' : 'Reopen'}
+                        </button>
                       )}
                     </div>
-                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${sc.badge} capitalize`}>
-                      {job.status.replace('_', ' ')}
-                    </span>
-                  </div>
-                </button>
+                  )}
+                </div>
               );
             })
           )}

@@ -5,9 +5,8 @@ import BottomNav from './components/BottomNav';
 import ToastStack from './components/Toast';
 import SetupModal from './components/modals/SetupModal';
 import TimerTab from './components/tabs/Timer';
-import LogTab from './components/tabs/Log';
+import WorkTab from './components/tabs/Work';
 import CalendarTab from './components/tabs/Calendar';
-import InvoicesTab from './components/tabs/Invoices';
 import StatisticsTab from './components/tabs/Statistics';
 import SettingsTab from './components/tabs/Settings';
 import OrgTab from './components/tabs/OrgTab';
@@ -60,9 +59,8 @@ export default function App() {
       >
         <div className="h-full">
           {activeTab === 'timer' && <TimerTab />}
-          {activeTab === 'log' && <LogTab />}
+          {activeTab === 'work' && <WorkTab />}
           {activeTab === 'calendar' && <CalendarTab />}
-          {activeTab === 'invoices' && <InvoicesTab />}
           {activeTab === 'stats' && <StatisticsTab />}
           {activeTab === 'team' && <OrgTab />}
           {activeTab === 'settings' && <SettingsTab />}
