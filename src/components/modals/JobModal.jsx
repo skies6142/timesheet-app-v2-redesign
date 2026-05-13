@@ -516,7 +516,7 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
               ) : ownerMedia.length === 0 ? (
                 <p className="text-xs text-zinc-600 py-2 italic">No posts yet</p>
               ) : (
-                <MediaGrid items={ownerMedia} onDelete={isOwner ? handleDeleteMedia : null} userId={user?.id} />
+                <MediaGrid items={ownerMedia} onDelete={isOwner ? handleDeleteMedia : null} userId={user?.id} members={members} />
               )
             )}
           </div>
@@ -541,6 +541,7 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
                   items={workerMedia}
                   onDelete={item => (item.uploaded_by === user?.id || isOwner) ? handleDeleteMedia(item) : null}
                   userId={user?.id}
+                  members={members}
                 />
               )}
             </div>
@@ -563,7 +564,12 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
   );
 }
 
-function MediaGrid({ items, onDelete, userId }) {
+function MediaGrid({ items, onDelete, userId, members = [] }) {
+  const nameFor = (uploadedBy) => {
+    const m = members.find(m => m.user_id === uploadedBy);
+    return m?.profiles?.display_name || m?.display_name || 'Unknown';
+  };
+
   return (
     <div className="space-y-2">
       {items.map(item => (
@@ -579,7 +585,7 @@ function MediaGrid({ items, onDelete, userId }) {
           )}
           <div className="flex items-center justify-between px-3 py-2">
             <p className="text-[10px] text-zinc-600">
-              {item.profiles?.display_name || 'Unknown'} · {item.created_at ? new Date(item.created_at).toLocaleDateString() : ''}
+              {nameFor(item.uploaded_by)} · {item.created_at ? new Date(item.created_at).toLocaleDateString() : ''}
             </p>
             {onDelete && (
               <button onClick={() => onDelete(item)}

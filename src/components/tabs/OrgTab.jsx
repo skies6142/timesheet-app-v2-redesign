@@ -54,7 +54,12 @@ export default function OrgTab() {
     try {
       const result = await orgApi.getMyOrg();
       if (result?.org) {
-        const members = await orgApi.getOrgMembers(result.org.id);
+        let members = [];
+        try {
+          members = await orgApi.getOrgMembers(result.org.id);
+        } catch (membersErr) {
+          addToast(`Members DB error: ${membersErr.message}`, 'error');
+        }
         setOrgData({ ...result, members });
       } else {
         setOrgData(null);
@@ -65,7 +70,7 @@ export default function OrgTab() {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, addToast]);
 
   useEffect(() => { loadOrg(); }, [loadOrg]);
 
@@ -633,6 +638,7 @@ function InvoicesView({ orgId, isOwner, onSubmit, addToast }) {
   const [submissions, setSubmissions] = useState([]);
   const [loading, setLoading]         = useState(true);
   const [updatingId, setUpdatingId]   = useState(null);
+  const [detailSub, setDetailSub]     = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -655,6 +661,7 @@ function InvoicesView({ orgId, isOwner, onSubmit, addToast }) {
     try {
       await orgApi.updateSubmissionStatus(id, status);
       await load();
+      if (detailSub?.id === id) setDetailSub(s => ({ ...s, status }));
       addToast(`Marked as ${status}`, 'success');
     } catch (e) {
       addToast('Failed to update', 'error');
@@ -671,101 +678,301 @@ function InvoicesView({ orgId, isOwner, onSubmit, addToast }) {
   };
 
   return (
-    <div className="scroll-area h-full px-4 py-4 space-y-3">
-      {!isOwner && (
-        <button
-          onClick={onSubmit}
-          className="w-full flex items-center justify-center gap-2 bg-amber-400 hover:bg-amber-300 text-zinc-950 font-bold rounded-2xl py-4"
-        >
-          <Plus size={18} />
-          Submit Invoice to Organisation
-        </button>
+    <>
+      <div className="scroll-area h-full px-4 py-4 space-y-3">
+        {!isOwner && (
+          <button
+            onClick={onSubmit}
+            className="w-full flex items-center justify-center gap-2 bg-amber-400 hover:bg-amber-300 text-zinc-950 font-bold rounded-2xl py-4"
+          >
+            <Plus size={18} />
+            Submit Invoice to Organisation
+          </button>
+        )}
+
+        {loading ? (
+          <div className="flex justify-center py-8">
+            <div className="w-6 h-6 rounded-full border-2 border-amber-400 border-t-transparent animate-spin" />
+          </div>
+        ) : submissions.length === 0 ? (
+          <div className="text-center py-10">
+            <p className="text-zinc-500 text-sm">No invoices yet</p>
+            {!isOwner && <p className="text-zinc-600 text-xs mt-1">Submit your time to get paid</p>}
+          </div>
+        ) : (
+          submissions.map(s => {
+            const inv = s.invoice_data || {};
+            const total = inv.total || 0;
+            return (
+              <button
+                key={s.id}
+                onClick={() => setDetailSub(s)}
+                className="w-full text-left bg-zinc-900 border border-zinc-800 rounded-2xl p-4 hover:border-zinc-600 transition-colors active:bg-zinc-800/50"
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex-1 min-w-0 mr-3">
+                    {isOwner && (
+                      <p className="text-xs font-semibold text-amber-400 mb-0.5">{s.display_name}</p>
+                    )}
+                    <p className="font-semibold text-zinc-100 text-sm">
+                      {inv.invoiceNumber ? `${inv.invoiceNumber} · ` : ''}{inv.description || 'Invoice'}
+                    </p>
+                    <p className="text-xs text-zinc-500 mt-0.5">
+                      {format(parseISO(s.submitted_at), 'd MMM yyyy')}
+                      {inv.periodFrom && inv.periodTo && ` · ${format(parseISO(inv.periodFrom), 'd MMM')} – ${format(parseISO(inv.periodTo), 'd MMM')}`}
+                    </p>
+                    {inv.hours > 0 && (
+                      <p className="text-xs text-zinc-500 mt-0.5">
+                        {decimalToHHMM(inv.hours)} hrs · {inv.entries?.length || 0} {inv.entries?.length !== 1 ? 'entries' : 'entry'}
+                      </p>
+                    )}
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="font-mono text-xl font-bold text-amber-400">{formatCurrency(total)}</p>
+                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${STATUS_STYLE[s.status] || 'bg-zinc-800 text-zinc-400'} capitalize`}>
+                      {s.status}
+                    </span>
+                  </div>
+                </div>
+                {isOwner && (
+                  <p className="text-[10px] text-zinc-600 mt-2">Tap to view full invoice</p>
+                )}
+              </button>
+            );
+          })
+        )}
+        <div className="h-4" />
+      </div>
+
+      {/* Full invoice detail sheet */}
+      {detailSub && (
+        <InvoiceDetailSheet
+          submission={detailSub}
+          isOwner={isOwner}
+          updatingId={updatingId}
+          onStatus={handleStatus}
+          onClose={() => setDetailSub(null)}
+          statusStyle={STATUS_STYLE}
+        />
       )}
+    </>
+  );
+}
 
-      {loading ? (
-        <div className="flex justify-center py-8">
-          <div className="w-6 h-6 rounded-full border-2 border-amber-400 border-t-transparent animate-spin" />
+function decimalToHHMM(decimal) {
+  if (!decimal || isNaN(decimal)) return '0:00';
+  const totalMins = Math.round(decimal * 60);
+  const h = Math.floor(totalMins / 60);
+  const m = totalMins % 60;
+  return `${h}:${String(m).padStart(2, '0')}`;
+}
+
+function InvoiceDetailSheet({ submission, isOwner, updatingId, onStatus, onClose, statusStyle }) {
+  const inv     = submission?.invoice_data || {};
+  const total    = Number(inv.total)    || 0;
+  const subtotal = Number(inv.subtotal) || total;
+  const gst      = Number(inv.gst)      || 0;
+
+  const safeDate = (str, fmt) => {
+    if (!str) return '';
+    try { return format(new Date(str), fmt); } catch { return str; }
+  };
+
+  const abn = inv.abn || '';
+  const fmtAbn = abn.replace(/\D/g, '');
+  const displayAbn = fmtAbn.length === 11
+    ? `${fmtAbn.slice(0,2)} ${fmtAbn.slice(2,5)} ${fmtAbn.slice(5,8)} ${fmtAbn.slice(8,11)}`
+    : abn;
+
+  return (
+    <div className="fixed inset-0 z-[55] flex flex-col justify-end">
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative z-10 bg-zinc-900 rounded-t-2xl flex flex-col"
+        style={{ maxHeight: '95vh', paddingBottom: 'env(safe-area-inset-bottom, 16px)' }}>
+        {/* Handle */}
+        <div className="flex justify-center pt-3 pb-1 shrink-0">
+          <div className="w-10 h-1 rounded-full bg-zinc-700" />
         </div>
-      ) : submissions.length === 0 ? (
-        <div className="text-center py-10">
-          <p className="text-zinc-500 text-sm">No invoices yet</p>
-          {!isOwner && <p className="text-zinc-600 text-xs mt-1">Submit your time to get paid</p>}
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-3 border-b border-zinc-800 shrink-0">
+          <div>
+            <p className="text-base font-bold text-zinc-50">
+              {inv.invoiceNumber || 'Invoice'}
+            </p>
+            <p className="text-xs text-zinc-500">
+              {safeDate(submission.submitted_at, 'd MMM yyyy')}
+              {submission.display_name && ` · ${submission.display_name}`}
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className={`text-xs font-semibold px-3 py-1 rounded-full capitalize ${statusStyle[submission.status] || 'bg-zinc-800 text-zinc-400'}`}>
+              {submission.status}
+            </span>
+            <button onClick={onClose}
+              className="w-9 h-9 flex items-center justify-center rounded-full text-zinc-400 hover:bg-zinc-800">
+              <X size={18} />
+            </button>
+          </div>
         </div>
-      ) : (
-        submissions.map(s => {
-          const inv   = s.invoice_data || {};
-          const total = inv.total || 0;
-          return (
-            <div key={s.id} className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4">
-              <div className="flex items-start justify-between mb-1">
-                <div className="flex-1 min-w-0 mr-3">
-                  {isOwner && (
-                    <p className="text-xs font-semibold text-zinc-400 mb-0.5">{s.display_name}</p>
-                  )}
-                  <p className="font-semibold text-zinc-100 text-sm truncate">
-                    {inv.description || 'Invoice'}
-                  </p>
-                  <p className="text-xs text-zinc-500 mt-0.5">
-                    {format(parseISO(s.submitted_at), 'd MMM yyyy')}
-                    {inv.periodFrom && inv.periodTo && ` · ${format(parseISO(inv.periodFrom), 'd MMM')} – ${format(parseISO(inv.periodTo), 'd MMM')}`}
-                  </p>
-                </div>
-                <div className="text-right shrink-0">
-                  <p className="font-mono text-xl font-bold text-amber-400">{formatCurrency(total)}</p>
-                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${STATUS_STYLE[s.status] || 'bg-zinc-800 text-zinc-400'} capitalize`}>
-                    {s.status}
-                  </span>
-                </div>
+
+        <div className="flex-1 scroll-area overflow-y-auto px-5 py-4 space-y-4">
+
+          {/* Business info */}
+          {(inv.businessName || abn) && (
+            <div className="bg-zinc-800 border border-zinc-700 rounded-2xl p-4">
+              <p className="text-xs text-zinc-500 uppercase tracking-widest mb-2">From</p>
+              {inv.businessName && <p className="text-sm font-bold text-zinc-50">{inv.businessName}</p>}
+              {displayAbn && <p className="text-xs text-zinc-400 mt-0.5">ABN: {displayAbn}</p>}
+            </div>
+          )}
+
+          {/* Invoice summary */}
+          <div className="bg-zinc-800 border border-zinc-700 rounded-2xl divide-y divide-zinc-700/60">
+            {inv.description && (
+              <div className="flex justify-between px-4 py-3">
+                <span className="text-xs text-zinc-500">Description</span>
+                <span className="text-sm font-medium text-zinc-200 max-w-[60%] text-right">{inv.description}</span>
               </div>
+            )}
+            {inv.periodFrom && inv.periodTo && (
+              <div className="flex justify-between px-4 py-3">
+                <span className="text-xs text-zinc-500">Period</span>
+                <span className="text-sm font-medium text-zinc-200">
+                  {safeDate(inv.periodFrom, 'd MMM')} – {safeDate(inv.periodTo, 'd MMM yyyy')}
+                </span>
+              </div>
+            )}
+            {Number(inv.hours) > 0 && (
+              <div className="flex justify-between px-4 py-3">
+                <span className="text-xs text-zinc-500">Total hours</span>
+                <span className="text-sm font-mono text-zinc-200">{decimalToHHMM(Number(inv.hours))}</span>
+              </div>
+            )}
+            {inv.entries?.length > 0 && (
+              <div className="flex justify-between px-4 py-3">
+                <span className="text-xs text-zinc-500">Entries</span>
+                <span className="text-sm font-medium text-zinc-200">{inv.entries.length}</span>
+              </div>
+            )}
+            {gst > 0 && (
+              <div className="flex justify-between px-4 py-3">
+                <span className="text-xs text-zinc-500">Subtotal</span>
+                <span className="text-sm font-mono text-zinc-200">{formatCurrency(subtotal)}</span>
+              </div>
+            )}
+            {gst > 0 && (
+              <div className="flex justify-between px-4 py-3">
+                <span className="text-xs text-zinc-500">GST (10%)</span>
+                <span className="text-sm font-mono text-zinc-200">{formatCurrency(gst)}</span>
+              </div>
+            )}
+            <div className="flex justify-between px-4 py-3">
+              <span className="text-sm font-bold text-zinc-100">Total</span>
+              <span className="text-xl font-mono font-bold text-amber-400">{formatCurrency(total)}</span>
+            </div>
+          </div>
 
-              {inv.hours > 0 && (
-                <p className="text-xs text-zinc-500 mt-1">
-                  {inv.hours.toFixed(2)} hrs · {inv.entries?.length || 0} entr{inv.entries?.length !== 1 ? 'ies' : 'y'}
-                </p>
-              )}
+          {/* Line items */}
+          {inv.entries?.length > 0 && (
+            <div className="bg-zinc-800 border border-zinc-700 rounded-2xl overflow-hidden">
+              <p className="text-xs text-zinc-500 uppercase tracking-widest px-4 pt-3 pb-1">Time Entries</p>
+              <div className="divide-y divide-zinc-700/50">
+                {inv.entries.map((e, i) => (
+                  <div key={i} className="px-4 py-3 flex justify-between items-start gap-2">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-zinc-200 truncate">
+                        {e.description || e.clientName || 'Labour'}
+                      </p>
+                      <p className="text-xs text-zinc-500 mt-0.5 font-mono">
+                        {safeDate(e.date, 'EEE d MMM')}
+                        {e.timeIn && e.timeOut ? ` · ${e.timeIn}–${e.timeOut}` : ''}
+                        {e.hourlyRate ? ` · $${e.hourlyRate}/hr` : ''}
+                      </p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className="text-sm font-mono font-semibold text-zinc-100">{formatCurrency(Number(e.earnings) || 0)}</p>
+                      <p className="text-xs font-mono text-zinc-500">{decimalToHHMM(Number(e.workingHours))}h</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
-              {/* Owner action buttons */}
-              {isOwner && s.status === 'pending' && (
-                <div className="flex gap-2 mt-3 pt-3 border-t border-zinc-800">
-                  <button
-                    onClick={() => handleStatus(s.id, 'approved')}
-                    disabled={updatingId === s.id}
-                    className="flex-1 bg-blue-500/15 text-blue-400 border border-blue-500/25 rounded-xl py-2 text-xs font-semibold hover:bg-blue-500/25 disabled:opacity-50"
-                  >
-                    Approve
-                  </button>
-                  <button
-                    onClick={() => handleStatus(s.id, 'paid')}
-                    disabled={updatingId === s.id}
-                    className="flex-1 bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 rounded-xl py-2 text-xs font-semibold hover:bg-emerald-500/25 disabled:opacity-50"
-                  >
-                    Mark Paid
-                  </button>
-                  <button
-                    onClick={() => handleStatus(s.id, 'rejected')}
-                    disabled={updatingId === s.id}
-                    className="flex-1 bg-red-500/10 text-red-400 border border-red-400/20 rounded-xl py-2 text-xs font-semibold hover:bg-red-500/15 disabled:opacity-50"
-                  >
-                    Reject
-                  </button>
+          {/* Bank details */}
+          {(inv.bankName || inv.bsb || inv.accountNumber) && (
+            <div className="bg-zinc-800 border border-zinc-700 rounded-2xl divide-y divide-zinc-700/60">
+              <p className="text-xs text-zinc-500 uppercase tracking-widest px-4 pt-3 pb-1">Payment Details</p>
+              {inv.bankName && (
+                <div className="flex justify-between px-4 py-3">
+                  <span className="text-xs text-zinc-500">Bank</span>
+                  <span className="text-sm font-medium text-zinc-200">{inv.bankName}</span>
                 </div>
               )}
-              {isOwner && s.status === 'approved' && (
-                <div className="mt-3 pt-3 border-t border-zinc-800">
-                  <button
-                    onClick={() => handleStatus(s.id, 'paid')}
-                    disabled={updatingId === s.id}
-                    className="w-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 rounded-xl py-2 text-xs font-semibold hover:bg-emerald-500/25 disabled:opacity-50"
-                  >
-                    Mark Paid
-                  </button>
+              {inv.bsb && (
+                <div className="flex justify-between px-4 py-3">
+                  <span className="text-xs text-zinc-500">BSB</span>
+                  <span className="text-sm font-mono text-zinc-200">{inv.bsb}</span>
+                </div>
+              )}
+              {inv.accountNumber && (
+                <div className="flex justify-between px-4 py-3">
+                  <span className="text-xs text-zinc-500">Account</span>
+                  <span className="text-sm font-mono text-zinc-200">{inv.accountNumber}</span>
                 </div>
               )}
             </div>
-          );
-        })
-      )}
-      <div className="h-4" />
+          )}
+
+          {/* Notes */}
+          {inv.notes && (
+            <div className="bg-zinc-800 border border-zinc-700 rounded-2xl p-4">
+              <p className="text-xs text-zinc-500 uppercase tracking-widest mb-2">Notes</p>
+              <p className="text-sm text-zinc-300 whitespace-pre-wrap leading-relaxed">{inv.notes}</p>
+            </div>
+          )}
+
+          {/* Status controls */}
+          {isOwner && (
+            <div className="bg-zinc-800 border border-zinc-700 rounded-2xl p-4 space-y-3">
+              <p className="text-xs text-zinc-500 uppercase tracking-widest">Update Status</p>
+              <div className="grid grid-cols-2 gap-2">
+                {submission.status !== 'approved' && submission.status !== 'paid' && (
+                  <button onClick={() => onStatus(submission.id, 'approved')}
+                    disabled={updatingId === submission.id}
+                    className="bg-blue-500/15 text-blue-400 border border-blue-500/25 rounded-xl py-3 text-sm font-semibold hover:bg-blue-500/25 disabled:opacity-50">
+                    Approve
+                  </button>
+                )}
+                {submission.status !== 'paid' && (
+                  <button onClick={() => onStatus(submission.id, 'paid')}
+                    disabled={updatingId === submission.id}
+                    className="bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 rounded-xl py-3 text-sm font-semibold hover:bg-emerald-500/25 disabled:opacity-50">
+                    Mark Paid
+                  </button>
+                )}
+                {submission.status !== 'rejected' && (
+                  <button onClick={() => onStatus(submission.id, 'rejected')}
+                    disabled={updatingId === submission.id}
+                    className="bg-red-500/10 text-red-400 border border-red-400/20 rounded-xl py-3 text-sm font-semibold hover:bg-red-500/15 disabled:opacity-50">
+                    Reject
+                  </button>
+                )}
+                {submission.status !== 'pending' && (
+                  <button onClick={() => onStatus(submission.id, 'pending')}
+                    disabled={updatingId === submission.id}
+                    className="bg-zinc-700 text-zinc-400 border border-zinc-600 rounded-xl py-3 text-sm font-semibold hover:bg-zinc-600 disabled:opacity-50">
+                    Reset Pending
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          <div className="h-2" />
+        </div>
+      </div>
     </div>
   );
 }

@@ -82,10 +82,11 @@ export async function getMyOrg() {
 export async function getOrgByInviteCode(code) {
   const { data, error } = await supabase
     .from('organisations')
-    .select('*')
+    .select('id, name, invite_code, owner_id, created_at')
     .eq('invite_code', code.toUpperCase())
-    .single();
-  if (error) throw new Error('Organisation not found — check your invite code');
+    .maybeSingle();
+  if (error || !data)
+    throw new Error('Organisation not found — check your invite code');
   return data;
 }
 
@@ -105,10 +106,10 @@ export async function joinOrg(orgId, role = 'employee') {
 export async function getOrgMembers(orgId) {
   const { data, error } = await supabase
     .from('org_members')
-    .select('*, profiles(display_name, email)')
+    .select('*')
     .eq('org_id', orgId)
     .order('joined_at');
-  if (error) { console.error('[getOrgMembers]', error); return []; }
+  if (error) throw error;
   return data || [];
 }
 
@@ -193,7 +194,7 @@ export async function deleteJob(jobId) {
 export async function getJobMedia(jobId) {
   const { data, error } = await supabase
     .from('job_media')
-    .select('*, profiles(display_name)')
+    .select('*')
     .eq('job_id', jobId)
     .order('created_at');
   if (error) throw error;

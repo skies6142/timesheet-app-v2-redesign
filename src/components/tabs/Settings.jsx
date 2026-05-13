@@ -71,12 +71,12 @@ export default function SettingsTab() {
   };
 
   const openAddProfile = () => {
-    setEditingProfile({ id: null, name: '', clientName: '', clientAddress: '', projectName: '', hourlyRate: '' });
+    setEditingProfile({ id: null, name: '', clientName: '', clientAddress: '', projectName: '', hourlyRate: '', defaultDescription: '' });
     setShowProfileSheet(true);
   };
 
   const openEditProfile = (profile) => {
-    setEditingProfile({ ...profile, clientAddress: profile.clientAddress || '', hourlyRate: String(profile.hourlyRate || '') });
+    setEditingProfile({ ...profile, clientAddress: profile.clientAddress || '', hourlyRate: String(profile.hourlyRate || ''), defaultDescription: profile.defaultDescription || '' });
     setShowProfileSheet(true);
   };
 
@@ -90,6 +90,7 @@ export default function SettingsTab() {
       clientAddress: (profileData.clientAddress || '').trim(),
       projectName: profileData.projectName.trim(),
       hourlyRate: Number(profileData.hourlyRate) || 0,
+      defaultDescription: (profileData.defaultDescription || '').trim(),
     };
     const exists = profiles.find((p) => p.id === id);
     const newProfiles = exists
@@ -576,6 +577,15 @@ function ProfileForm({ profile, onSave, onClose }) {
           value={form.projectName}
           onChange={(e) => set('projectName', e.target.value)}
           placeholder="e.g. General Labour"
+          className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-zinc-50 placeholder-zinc-600 text-sm focus:outline-none focus:border-amber-400 min-h-[48px]"
+        />
+      </Field>
+      <Field label="Default Entry Description">
+        <input
+          type="text"
+          value={form.defaultDescription || ''}
+          onChange={(e) => set('defaultDescription', e.target.value)}
+          placeholder="e.g. General Labour, Painting, Landscaping…"
           className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-zinc-50 placeholder-zinc-600 text-sm focus:outline-none focus:border-amber-400 min-h-[48px]"
         />
       </Field>
