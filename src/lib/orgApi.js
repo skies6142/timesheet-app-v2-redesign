@@ -209,7 +209,7 @@ export async function getOrgNotes(orgId) {
   return data ?? [];
 }
 
-export async function createOrgNote(orgId, title, content) {
+export async function createOrgNote(orgId, title, content, noteType = 'text') {
   const { data: { user } } = await supabase.auth.getUser();
   const displayName = user.user_metadata?.display_name || user.email;
   const { data, error } = await supabase
@@ -218,6 +218,7 @@ export async function createOrgNote(orgId, title, content) {
       org_id: orgId,
       title: title || 'Untitled Note',
       content,
+      note_type: noteType,
       created_by: user.id,
       created_by_name: displayName,
       updated_by: user.id,

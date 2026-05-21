@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Building2, Share2, Copy, Check, X, Plus, Users, ChevronLeft, ChevronRight, Download, SlidersHorizontal, Search, StickyNote, Pencil } from 'lucide-react';
 import { format, parseISO, addMonths, subMonths } from 'date-fns';
 import { useAuth } from '../../context/AuthContext';
@@ -1523,13 +1523,16 @@ function ReportGroup({ group, groupBy }) {
 
 // ── Notes view (all members) ──────────────────────────────────
 function NotesView({ orgId, addToast }) {
-  const [notes, setNotes]     = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [editNote, setEditNote] = useState(null); // null | 'new' | note object
-  const [editTitle, setEditTitle]     = useState('');
+  const [notes, setNotes]         = useState([]);
+  const [loading, setLoading]     = useState(true);
+  const [editNote, setEditNote]   = useState(null);   // null | 'new' | note obj
+  const [editTitle, setEditTitle] = useState('');
+  const [editType, setEditType]   = useState('text'); // 'text' | 'checklist'
   const [editContent, setEditContent] = useState('');
-  const [saving, setSaving]   = useState(false);
-  const [deleting, setDeleting] = useState(false);
+  const [editItems, setEditItems] = useState([]);     // [{id,text,checked}]
+  const [saving, setSaving]       = useState(false);
+  const [deleting, setDeleting]   = useState(false);
+  const itemInputRefs             = useRef([]);
 
   const load = useCallback(async () => {
     try {
@@ -1544,7 +1547,6 @@ function NotesView({ orgId, addToast }) {
 
   useEffect(() => { load(); }, [load]);
 
-  // Realtime: refresh on any change to this org's notes
   useEffect(() => {
     const channel = supabase
       .channel(`org-notes-${orgId}`)
@@ -1554,31 +1556,98 @@ function NotesView({ orgId, addToast }) {
     return () => supabase.removeChannel(channel);
   }, [orgId, load]);
 
+  const parseItems = (content) => {
+    if (!content) return [];
+    try {
+      const p = JSON.parse(content);
+      return Array.isArray(p) ? p : [];
+    } catch { return []; }
+  };
+
   const openNew = () => {
     setEditTitle('');
+    setEditType('text');
     setEditContent('');
+    setEditItems([]);
     setEditNote('new');
   };
 
   const openEdit = (note) => {
+    const type = note.note_type || 'text';
     setEditTitle(note.title);
-    setEditContent(note.content || '');
+    setEditType(type);
+    if (type === 'checklist') {
+      setEditItems(parseItems(note.content));
+      setEditContent('');
+    } else {
+      setEditContent(note.content || '');
+      setEditItems([]);
+    }
     setEditNote(note);
+  };
+
+  // Toggle a checklist item and immediately auto-save (for existing notes)
+  const handleToggleItem = async (idx) => {
+    const newItems = editItems.map((item, i) =>
+      i === idx ? { ...item, checked: !item.checked } : item
+    );
+    setEditItems(newItems);
+    if (editNote !== 'new' && editNote?.id) {
+      try {
+        await orgApi.updateOrgNote(editNote.id, editTitle, JSON.stringify(newItems));
+      } catch {}
+    }
+  };
+
+  const handleAddItem = () => {
+    const newItem = { id: `${Date.now()}`, text: '', checked: false };
+    setEditItems(prev => {
+      const next = [...prev, newItem];
+      setTimeout(() => {
+        const ref = itemInputRefs.current[next.length - 1];
+        if (ref) ref.focus();
+      }, 30);
+      return next;
+    });
+  };
+
+  const handleItemText = (idx, val) => {
+    setEditItems(prev => prev.map((item, i) => i === idx ? { ...item, text: val } : item));
+  };
+
+  const handleItemKeyDown = (e, idx) => {
+    if (e.key === 'Enter') { e.preventDefault(); handleAddItem(); }
+    if (e.key === 'Backspace' && !editItems[idx].text) {
+      e.preventDefault();
+      setEditItems(prev => prev.filter((_, i) => i !== idx));
+      setTimeout(() => {
+        const ref = itemInputRefs.current[idx - 1];
+        if (ref) ref.focus();
+      }, 30);
+    }
+  };
+
+  const handleDeleteItem = (idx) => {
+    setEditItems(prev => prev.filter((_, i) => i !== idx));
   };
 
   const handleSave = async () => {
     setSaving(true);
     try {
+      const type = editNote === 'new' ? editType : (editNote?.note_type || 'text');
+      const contentToSave = type === 'checklist'
+        ? JSON.stringify(editItems.filter(i => i.text.trim()))
+        : editContent;
       if (editNote === 'new') {
-        await orgApi.createOrgNote(orgId, editTitle.trim() || 'Untitled Note', editContent);
+        await orgApi.createOrgNote(orgId, editTitle.trim() || 'Untitled Note', contentToSave, type);
       } else {
-        await orgApi.updateOrgNote(editNote.id, editTitle.trim() || 'Untitled Note', editContent);
+        await orgApi.updateOrgNote(editNote.id, editTitle.trim() || 'Untitled Note', contentToSave);
       }
       addToast('Note saved', 'success');
       setEditNote(null);
       await load();
     } catch (e) {
-      addToast(e.message || 'Failed to save note', 'error');
+      addToast(e.message || 'Failed to save', 'error');
     } finally {
       setSaving(false);
     }
@@ -1604,11 +1673,12 @@ function NotesView({ orgId, addToast }) {
     try { return format(new Date(str), 'd MMM · h:mm a'); } catch { return ''; }
   };
 
+  const currentType = editNote === 'new' ? editType : (editNote?.note_type || 'text');
+
   return (
     <>
       <div className="h-full flex flex-col">
         <div className="flex-1 scroll-area px-4 py-4 space-y-2">
-          {/* New note button */}
           <button
             onClick={openNew}
             className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-zinc-700 hover:border-amber-400/50 text-zinc-500 hover:text-amber-400 rounded-2xl py-4 min-h-[52px] transition-colors"
@@ -1627,31 +1697,62 @@ function NotesView({ orgId, addToast }) {
                 <StickyNote size={22} className="text-zinc-600" />
               </div>
               <p className="text-zinc-500 text-sm">No notes yet</p>
-              <p className="text-zinc-600 text-xs mt-1">Notes are shared with everyone in the organisation</p>
+              <p className="text-zinc-600 text-xs mt-1">Shared with everyone in the organisation</p>
             </div>
           ) : (
-            notes.map(note => (
-              <button
-                key={note.id}
-                onClick={() => openEdit(note)}
-                className="w-full text-left bg-zinc-900 border border-zinc-800 rounded-2xl p-4 hover:border-zinc-700 active:bg-zinc-800/50 transition-colors"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1 min-w-0">
+            notes.map(note => {
+              const isChecklist = (note.note_type || 'text') === 'checklist';
+              const items = isChecklist ? parseItems(note.content) : [];
+              const doneCount = items.filter(i => i.checked).length;
+              const previewItems = items.slice(0, 4);
+
+              return (
+                <button
+                  key={note.id}
+                  onClick={() => openEdit(note)}
+                  className="w-full text-left bg-zinc-900 border border-zinc-800 rounded-2xl p-4 hover:border-zinc-700 active:bg-zinc-800/50 transition-colors"
+                >
+                  <div className="flex items-start justify-between gap-3 mb-1.5">
                     <p className="font-semibold text-zinc-100 text-sm">{note.title}</p>
-                    {note.content ? (
-                      <p className="text-xs text-zinc-500 mt-1 leading-relaxed line-clamp-2">{note.content}</p>
-                    ) : (
-                      <p className="text-xs text-zinc-600 mt-1 italic">No content</p>
+                    {isChecklist && items.length > 0 && (
+                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${
+                        doneCount === items.length && items.length > 0
+                          ? 'bg-emerald-400/15 text-emerald-400'
+                          : 'bg-zinc-800 text-zinc-400'
+                      }`}>
+                        {doneCount}/{items.length}
+                      </span>
                     )}
                   </div>
-                  <Pencil size={13} className="text-zinc-700 shrink-0 mt-0.5" />
-                </div>
-                <p className="text-[10px] text-zinc-600 mt-2">
-                  {note.updated_by_name ? `Edited by ${note.updated_by_name} · ` : ''}{safeDate(note.updated_at)}
-                </p>
-              </button>
-            ))
+                  {isChecklist ? (
+                    <div className="space-y-1.5">
+                      {previewItems.map(item => (
+                        <div key={item.id} className="flex items-center gap-2.5">
+                          <div className={`w-3.5 h-3.5 rounded-full shrink-0 flex items-center justify-center ${
+                            item.checked ? 'bg-amber-400' : 'border border-zinc-600'
+                          }`}>
+                            {item.checked && <Check size={8} className="text-zinc-950" strokeWidth={3} />}
+                          </div>
+                          <p className={`text-xs truncate ${item.checked ? 'text-zinc-600 line-through' : 'text-zinc-400'}`}>
+                            {item.text}
+                          </p>
+                        </div>
+                      ))}
+                      {items.length > 4 && (
+                        <p className="text-[10px] text-zinc-600 pl-6">+{items.length - 4} more</p>
+                      )}
+                    </div>
+                  ) : (
+                    note.content
+                      ? <p className="text-xs text-zinc-500 leading-relaxed line-clamp-2">{note.content}</p>
+                      : <p className="text-xs text-zinc-600 italic">Empty note</p>
+                  )}
+                  <p className="text-[10px] text-zinc-600 mt-2">
+                    {note.updated_by_name ? `Edited by ${note.updated_by_name} · ` : ''}{safeDate(note.updated_at)}
+                  </p>
+                </button>
+              );
+            })
           )}
           <div className="h-4" />
         </div>
@@ -1663,14 +1764,14 @@ function NotesView({ orgId, addToast }) {
           <div className="absolute inset-0 bg-black/65 backdrop-blur-sm" onClick={() => setEditNote(null)} />
           <div
             className="relative z-10 bg-zinc-900 rounded-t-2xl flex flex-col"
-            style={{ maxHeight: '92vh', paddingBottom: 'env(safe-area-inset-bottom, 16px)' }}
+            style={{ maxHeight: '93vh', paddingBottom: 'env(safe-area-inset-bottom, 16px)' }}
           >
             {/* Handle */}
             <div className="flex justify-center pt-3 pb-1 shrink-0">
               <div className="w-10 h-1 rounded-full bg-zinc-700" />
             </div>
 
-            {/* Header */}
+            {/* Header — editable title */}
             <div className="flex items-center gap-3 px-5 py-3 border-b border-zinc-800 shrink-0">
               <input
                 value={editTitle}
@@ -1680,41 +1781,106 @@ function NotesView({ orgId, addToast }) {
               />
               <div className="flex items-center gap-1.5 shrink-0">
                 {editNote !== 'new' && (
-                  <button
-                    onClick={handleDelete}
-                    disabled={deleting}
-                    className="text-red-400 hover:bg-red-400/10 rounded-lg px-2 py-1 text-xs font-semibold transition-colors"
-                  >
+                  <button onClick={handleDelete} disabled={deleting}
+                    className="text-red-400 hover:bg-red-400/10 rounded-lg px-2 py-1 text-xs font-semibold transition-colors">
                     {deleting ? '…' : 'Delete'}
                   </button>
                 )}
-                <button
-                  onClick={() => setEditNote(null)}
-                  className="w-9 h-9 flex items-center justify-center rounded-full text-zinc-400 hover:bg-zinc-800"
-                >
+                <button onClick={() => setEditNote(null)}
+                  className="w-9 h-9 flex items-center justify-center rounded-full text-zinc-400 hover:bg-zinc-800">
                   <X size={18} />
                 </button>
               </div>
             </div>
 
+            {/* Type selector — new notes only */}
+            {editNote === 'new' && (
+              <div className="px-5 pt-2.5 pb-2 border-b border-zinc-800 shrink-0">
+                <div className="segmented">
+                  <button
+                    onClick={() => { setEditType('text'); setEditItems([]); }}
+                    className={editType === 'text' ? 'active' : ''}
+                  >
+                    Text
+                  </button>
+                  <button
+                    onClick={() => { setEditType('checklist'); setEditContent(''); }}
+                    className={editType === 'checklist' ? 'active' : ''}
+                  >
+                    Checklist
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Last-edited info */}
             {editNote !== 'new' && editNote.updated_by_name && (
-              <div className="px-5 py-2 border-b border-zinc-800/50 shrink-0">
+              <div className="px-5 py-1.5 border-b border-zinc-800/50 shrink-0">
                 <p className="text-[10px] text-zinc-600">
                   Last edited by {editNote.updated_by_name} · {safeDate(editNote.updated_at)}
                 </p>
               </div>
             )}
 
-            {/* Content */}
+            {/* Body */}
             <div className="flex-1 overflow-y-auto px-5 py-4">
-              <textarea
-                value={editContent}
-                onChange={e => setEditContent(e.target.value)}
-                placeholder="Write anything — site rules, contacts, reminders, job notes…"
-                className="w-full h-full min-h-[180px] bg-transparent text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none resize-none leading-relaxed"
-                autoFocus={editNote === 'new'}
-              />
+              {currentType === 'text' ? (
+                <textarea
+                  value={editContent}
+                  onChange={e => setEditContent(e.target.value)}
+                  placeholder="Write anything — site rules, contacts, reminders…"
+                  autoFocus={editNote === 'new'}
+                  className="w-full h-full min-h-[180px] bg-transparent text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none resize-none leading-relaxed"
+                />
+              ) : (
+                <div className="space-y-0.5">
+                  {editItems.map((item, idx) => (
+                    <div key={item.id} className="flex items-center gap-3 py-2 border-b border-zinc-800/40 last:border-0">
+                      {/* Circle toggle */}
+                      <button onClick={() => handleToggleItem(idx)} className="shrink-0">
+                        {item.checked ? (
+                          <div className="w-6 h-6 rounded-full bg-amber-400 flex items-center justify-center shadow-sm shadow-amber-400/30">
+                            <Check size={13} className="text-zinc-950" strokeWidth={3} />
+                          </div>
+                        ) : (
+                          <div className="w-6 h-6 rounded-full border-2 border-zinc-600 hover:border-zinc-400 active:border-amber-400 transition-colors" />
+                        )}
+                      </button>
+
+                      {/* Text input */}
+                      <input
+                        ref={el => { itemInputRefs.current[idx] = el; }}
+                        value={item.text}
+                        onChange={e => handleItemText(idx, e.target.value)}
+                        onKeyDown={e => handleItemKeyDown(e, idx)}
+                        placeholder="Item…"
+                        className={`flex-1 bg-transparent text-sm focus:outline-none placeholder-zinc-600 ${
+                          item.checked ? 'text-zinc-500 line-through' : 'text-zinc-100'
+                        }`}
+                      />
+
+                      {/* Delete item */}
+                      <button
+                        onClick={() => handleDeleteItem(idx)}
+                        className="w-7 h-7 flex items-center justify-center text-zinc-700 hover:text-red-400 active:text-red-400 rounded-lg transition-colors shrink-0"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  ))}
+
+                  {/* Add item row */}
+                  <button
+                    onClick={handleAddItem}
+                    className="flex items-center gap-3 py-2.5 text-zinc-600 hover:text-amber-400 active:text-amber-400 transition-colors w-full text-left"
+                  >
+                    <div className="w-6 h-6 rounded-full border-2 border-dashed border-zinc-700 flex items-center justify-center shrink-0">
+                      <Plus size={11} />
+                    </div>
+                    <span className="text-sm">Add item</span>
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Footer */}
