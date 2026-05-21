@@ -404,7 +404,13 @@ function OrgCalendarView({ orgId, isOwner, isAdmin, members, onOpenJob }) {
   const [showDaySheet, setShowDaySheet]   = useState(false);
   const [calLoading, setCalLoading]       = useState(false);
   const [updatingJobId, setUpdatingJobId] = useState(null);
-  const [calView, setCalView]             = useState('grid'); // 'grid' | 'list'
+  const [calView, setCalView] = useState(() => {
+    try { return localStorage.getItem('orgCalView') || 'grid'; } catch { return 'grid'; }
+  });
+  const persistCalView = (v) => {
+    setCalView(v);
+    try { localStorage.setItem('orgCalView', v); } catch {}
+  };
   const canSeeAll = isOwner || isAdmin;
 
   const year  = viewDate.getFullYear();
@@ -485,11 +491,11 @@ function OrgCalendarView({ orgId, isOwner, isAdmin, members, onOpenJob }) {
             </button>
             {/* Grid / List toggle */}
             <div className="flex rounded-xl overflow-hidden border border-zinc-700 ml-1">
-              <button onClick={() => setCalView('grid')}
+              <button onClick={() => persistCalView('grid')}
                 className={`w-9 h-9 flex items-center justify-center transition-colors ${calView === 'grid' ? 'bg-amber-400 text-zinc-950' : 'text-zinc-500 hover:text-zinc-300'}`}>
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="5" height="5" rx="1" fill="currentColor"/><rect x="8" y="1" width="5" height="5" rx="1" fill="currentColor"/><rect x="1" y="8" width="5" height="5" rx="1" fill="currentColor"/><rect x="8" y="8" width="5" height="5" rx="1" fill="currentColor"/></svg>
               </button>
-              <button onClick={() => setCalView('list')}
+              <button onClick={() => persistCalView('list')}
                 className={`w-9 h-9 flex items-center justify-center border-l border-zinc-700 transition-colors ${calView === 'list' ? 'bg-amber-400 text-zinc-950' : 'text-zinc-500 hover:text-zinc-300'}`}>
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="2" width="12" height="2" rx="1" fill="currentColor"/><rect x="1" y="6" width="12" height="2" rx="1" fill="currentColor"/><rect x="1" y="10" width="12" height="2" rx="1" fill="currentColor"/></svg>
               </button>

@@ -248,6 +248,19 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
     }
   };
 
+  const handleWorkerSave = async () => {
+    if (!job?.id) return;
+    setSaving(true);
+    try {
+      await orgApi.updateJobDescription(job.id, serializeDesc(descText, descItems));
+      addToast('Saved', 'success');
+    } catch (e) {
+      addToast(e.message || 'Failed to save', 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const toggleAssign = (uid) =>
     setAssignedIds(ids => ids.includes(uid) ? ids.filter(i => i !== uid) : [...ids, uid]);
 
@@ -773,8 +786,9 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
             </button>
           </div>
         )}
-        {!canEdit && !isNew && isAssigned && (status === 'scheduled' || status === 'in_progress') && (
-          <div className="px-5 py-4 border-t border-zinc-800 shrink-0">
+        {!canEdit && !isNew && isAssigned && (
+          <div className="px-5 py-4 border-t border-zinc-800 shrink-0 space-y-2">
+            {/* Status action buttons */}
             {status === 'scheduled' && (
               <button onClick={() => handleWorkerStatus('in_progress')} disabled={updatingStatus}
                 className="w-full bg-blue-500 hover:bg-blue-400 disabled:opacity-50 text-white font-bold rounded-2xl py-4 transition-colors">
@@ -787,6 +801,11 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
                 {updatingStatus ? 'Updating…' : 'Mark Complete'}
               </button>
             )}
+            {/* Save checklist / notes changes */}
+            <button onClick={handleWorkerSave} disabled={saving}
+              className="w-full bg-zinc-800 hover:bg-zinc-700 disabled:opacity-50 border border-zinc-700 text-zinc-200 font-semibold rounded-2xl py-3.5 transition-colors">
+              {saving ? 'Saving…' : 'Save Changes'}
+            </button>
           </div>
         )}
       </div>

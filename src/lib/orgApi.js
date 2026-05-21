@@ -134,8 +134,9 @@ export async function updateMemberRole(orgId, userId, role) {
 // ── Jobs ──────────────────────────────────────────────────────
 
 export async function getJobsForMonth(orgId, year, month) {
-  const start = `${year}-${String(month).padStart(2, '0')}-01`;
-  const end   = `${year}-${String(month).padStart(2, '0')}-31`;
+  const start   = `${year}-${String(month).padStart(2, '0')}-01`;
+  const lastDay = new Date(year, month, 0).getDate(); // month is 1-indexed; day 0 = last day of prev month
+  const end     = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
 
   const { data, error } = await supabase
     .from('jobs')
