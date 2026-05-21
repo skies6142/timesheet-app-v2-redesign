@@ -470,8 +470,35 @@ function OrgCalendarView({ orgId, isOwner, isAdmin, members, onOpenJob }) {
   const rows = [];
   for (let i = 0; i < days.length; i += 7) rows.push(days.slice(i, i + 7));
 
-  // Sorted dates that have visible jobs (for list view)
-  const listDates = Object.keys(jobMap).sort();
+  // Group jobs for list view: series → one card, singles → one card each
+  const listItems = useMemo(() => {
+    const seriesMap = {};
+    const result = [];
+    for (const job of allJobs) {
+      if (job.series_id) {
+        if (!seriesMap[job.series_id]) seriesMap[job.series_id] = [];
+        seriesMap[job.series_id].push(job);
+      } else {
+        result.push({ type: 'single', job, date: job.date });
+      }
+    }
+    for (const jobs of Object.values(seriesMap)) {
+      const sorted = [...jobs].sort((a, b) => a.date.localeCompare(b.date));
+      result.push({
+        type: 'series',
+        jobs: sorted,
+        series_id: sorted[0].series_id,
+        firstDate: sorted[0].date,
+        lastDate: sorted[sorted.length - 1].date,
+        representativeJob: sorted[0],
+      });
+    }
+    return result.sort((a, b) => {
+      const aDate = a.type === 'single' ? a.date : a.firstDate;
+      const bDate = b.type === 'single' ? b.date : b.firstDate;
+      return aDate.localeCompare(bDate);
+    });
+  }, [allJobs]);
 
   return (
     <div className="h-full flex flex-col">
@@ -515,78 +542,82 @@ function OrgCalendarView({ orgId, isOwner, isAdmin, members, onOpenJob }) {
           </div>
         ) : calView === 'list' ? (
           /* ── LIST VIEW ── */
-          <div className="px-2 pt-2 space-y-4">
-            {listDates.length === 0 ? (
+          <div className="px-2 pt-2 space-y-2">
+            {listItems.length === 0 ? (
               <div className="text-center py-10">
                 <p className="text-zinc-500 text-sm">No jobs this month</p>
               </div>
             ) : (
-              listDates.map(date => {
-                const dayJobs = jobMap[date] || [];
+              listItems.map(item => {
+                const isSeries = item.type === 'series';
+                const job = isSeries ? item.representativeJob : item.job;
+                const firstDate = isSeries ? item.firstDate : item.date;
+                const sc = STATUS_COLORS[job.status] || STATUS_COLORS.scheduled;
+                const isUpdating = updatingJobId === job.id;
+                const assignedToMe = isSeries
+                  ? item.jobs.some(j => j.job_assignments?.some(a => a.user_id === user?.id))
+                  : job.job_assignments?.some(a => a.user_id === user?.id);
+                const jobHex = jobColorHex(job.color);
+                const isToday = firstDate === today;
+                const containsToday = isSeries && item.firstDate <= today && item.lastDate >= today;
+                const dateLabel = isSeries
+                  ? `${format(parseISO(item.firstDate), 'd MMM')} → ${format(parseISO(item.lastDate), 'd MMM')} · ${item.jobs.length} day${item.jobs.length !== 1 ? 's' : ''}`
+                  : format(parseISO(firstDate), 'EEE d MMM');
                 return (
-                  <div key={date}>
-                    <p className="text-xs font-semibold text-zinc-500 uppercase tracking-widest mb-2 px-1">
-                      {format(parseISO(date), 'EEEE d MMMM')}
-                      {date === today && <span className="ml-2 text-amber-400">Today</span>}
-                    </p>
-                    <div className="space-y-2">
-                      {dayJobs.map(job => {
-                        const sc = STATUS_COLORS[job.status] || STATUS_COLORS.scheduled;
-                        const isUpdating = updatingJobId === job.id;
-                        const assignedToMe = job.job_assignments?.some(a => a.user_id === user?.id);
-                        const listJobHex = jobColorHex(job.color);
-                        return (
-                          <div key={job.id} className={`bg-zinc-900 border rounded-xl overflow-hidden flex ${assignedToMe ? 'border-amber-500/30' : 'border-zinc-800'}`}>
-                            {/* Color stripe */}
-                            <div className="w-1 shrink-0 rounded-l-xl" style={{ backgroundColor: listJobHex }} />
-                            <div className="flex-1 min-w-0">
-                            <button
-                              onClick={() => onOpenJob(job, date)}
-                              className="w-full text-left px-4 py-3 hover:bg-zinc-800/50 active:bg-zinc-800 transition-colors"
-                            >
-                              <div className="flex items-start gap-3">
-                                <span className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${sc.dot}`} />
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-sm font-semibold text-zinc-100 leading-snug">{job.title}</p>
-                                  {job.location && <p className="text-xs text-zinc-500 mt-0.5 truncate">📍 {job.location}</p>}
-                                </div>
-                                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${sc.badge} capitalize`}>
-                                  {job.status.replace('_', ' ')}
-                                </span>
-                              </div>
-                            </button>
-                            {(canSeeAll || assignedToMe) && (
-                              <div className="flex gap-1.5 px-4 pb-3 border-t border-zinc-800/50 pt-2">
-                                {job.status === 'scheduled' && (
-                                  <button onClick={() => handleQuickStatus(job.id, 'in_progress')} disabled={isUpdating}
-                                    className="flex-1 text-xs text-blue-400 bg-blue-400/10 border border-blue-400/20 rounded-lg py-2 font-semibold disabled:opacity-50">
-                                    {isUpdating ? '…' : 'Start'}
-                                  </button>
-                                )}
-                                {(job.status === 'scheduled' || job.status === 'in_progress') && (
-                                  <button onClick={() => handleQuickStatus(job.id, 'completed')} disabled={isUpdating}
-                                    className="flex-1 text-xs text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 rounded-lg py-2 font-semibold disabled:opacity-50">
-                                    {isUpdating ? '…' : 'Complete'}
-                                  </button>
-                                )}
-                                {canSeeAll && job.status !== 'cancelled' && job.status !== 'completed' && (
-                                  <button onClick={() => handleQuickStatus(job.id, 'cancelled')} disabled={isUpdating}
-                                    className="flex-1 text-xs text-zinc-500 bg-zinc-700/50 border border-zinc-600 rounded-lg py-2 font-semibold disabled:opacity-50">
-                                    {isUpdating ? '…' : 'Cancel'}
-                                  </button>
-                                )}
-                                {canSeeAll && (job.status === 'cancelled' || job.status === 'completed') && (
-                                  <button onClick={() => handleQuickStatus(job.id, 'scheduled')} disabled={isUpdating}
-                                    className="flex-1 text-xs text-amber-400 bg-amber-400/10 border border-amber-400/20 rounded-lg py-2 font-semibold disabled:opacity-50">
-                                    {isUpdating ? '…' : 'Reopen'}
-                                  </button>
-                                )}
-                              </div>
-                            )}
-                            </div>{/* end flex-1 */}
+                  <div key={isSeries ? item.series_id : job.id}
+                    className="bg-zinc-900 rounded-xl overflow-hidden flex border"
+                    style={{ borderColor: assignedToMe ? jobHex + '50' : '#27272a' }}
+                  >
+                    {/* Color stripe */}
+                    <div className="w-1 shrink-0 rounded-l-xl" style={{ backgroundColor: jobHex }} />
+                    <div className="flex-1 min-w-0">
+                      <button
+                        onClick={() => onOpenJob(job, firstDate)}
+                        className="w-full text-left px-4 py-3 hover:bg-zinc-800/50 active:bg-zinc-800 transition-colors"
+                      >
+                        <div className="flex items-start gap-3">
+                          <span className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${sc.dot}`} />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-zinc-100 leading-snug">{job.title}</p>
+                            <p className="text-xs text-zinc-500 mt-0.5">
+                              {dateLabel}
+                              {(isToday || containsToday) && <span className="ml-1.5 font-semibold" style={{ color: jobHex }}>Today</span>}
+                            </p>
+                            {job.location && <p className="text-xs text-zinc-500 mt-0.5 truncate">📍 {job.location}</p>}
                           </div>
-                        );
-                      })}
+                          <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${sc.badge} capitalize`}>
+                            {job.status.replace('_', ' ')}
+                          </span>
+                        </div>
+                      </button>
+                      {!isSeries && (canSeeAll || assignedToMe) && (
+                        <div className="flex gap-1.5 px-4 pb-3 border-t border-zinc-800/50 pt-2">
+                          {job.status === 'scheduled' && (
+                            <button onClick={() => handleQuickStatus(job.id, 'in_progress')} disabled={isUpdating}
+                              className="flex-1 text-xs text-blue-400 bg-blue-400/10 border border-blue-400/20 rounded-lg py-2 font-semibold disabled:opacity-50">
+                              {isUpdating ? '…' : 'Start'}
+                            </button>
+                          )}
+                          {(job.status === 'scheduled' || job.status === 'in_progress') && (
+                            <button onClick={() => handleQuickStatus(job.id, 'completed')} disabled={isUpdating}
+                              className="flex-1 text-xs text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 rounded-lg py-2 font-semibold disabled:opacity-50">
+                              {isUpdating ? '…' : 'Complete'}
+                            </button>
+                          )}
+                          {canSeeAll && job.status !== 'cancelled' && job.status !== 'completed' && (
+                            <button onClick={() => handleQuickStatus(job.id, 'cancelled')} disabled={isUpdating}
+                              className="flex-1 text-xs text-zinc-500 bg-zinc-700/50 border border-zinc-600 rounded-lg py-2 font-semibold disabled:opacity-50">
+                              {isUpdating ? '…' : 'Cancel'}
+                            </button>
+                          )}
+                          {canSeeAll && (job.status === 'cancelled' || job.status === 'completed') && (
+                            <button onClick={() => handleQuickStatus(job.id, 'scheduled')} disabled={isUpdating}
+                              className="flex-1 text-xs text-amber-400 bg-amber-400/10 border border-amber-400/20 rounded-lg py-2 font-semibold disabled:opacity-50">
+                              {isUpdating ? '…' : 'Reopen'}
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
@@ -595,7 +626,7 @@ function OrgCalendarView({ orgId, isOwner, isAdmin, members, onOpenJob }) {
             {canSeeAll && (
               <button
                 onClick={() => onOpenJob(null, today)}
-                className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-zinc-700 hover:border-amber-400/40 text-zinc-500 hover:text-amber-400 rounded-xl py-3 text-sm font-medium transition-colors"
+                className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-zinc-700 hover:border-amber-400/40 text-zinc-500 hover:text-amber-400 rounded-xl py-3 text-sm font-medium transition-colors mt-2"
               >
                 <Plus size={16} />
                 Add job
@@ -622,22 +653,28 @@ function OrgCalendarView({ orgId, isOwner, isAdmin, members, onOpenJob }) {
                   const isAssigned = user && dayJobs.some(j =>
                     j.job_assignments?.some(a => a.user_id === user.id)
                   );
+                  const myJob = isAssigned ? dayJobs.find(j => j.job_assignments?.some(a => a.user_id === user.id)) : null;
+                  const myJobHex = myJob ? jobColorHex(myJob.color) : '#f59e0b';
                   return (
                     <button key={date} onClick={() => openDay(date)}
                       className={`aspect-square rounded-xl flex flex-col items-center justify-start p-1 transition-colors min-h-[44px] ${
-                        isToday ? 'border border-amber-400'
-                        : isAssigned ? 'border-2 border-amber-500/70'
-                        : 'border border-transparent'
-                      } ${
-                        isAssigned ? 'bg-amber-500/15 hover:bg-amber-500/22'
+                        isAssigned ? 'hover:opacity-90'
                         : dayJobs.length > 0 ? 'bg-zinc-900 hover:bg-zinc-800'
                         : 'hover:bg-zinc-900/40'
                       }`}
+                      style={{
+                        border: isToday
+                          ? '1px solid #71717a'
+                          : isAssigned
+                          ? `2px solid ${myJobHex}b3`
+                          : '1px solid transparent',
+                        backgroundColor: isAssigned ? `${myJobHex}26` : undefined,
+                      }}
                     >
-                      <span className={`text-xs font-medium ${isToday ? 'text-amber-400' : isAssigned ? 'text-amber-300 font-semibold' : 'text-zinc-300'}`}>{dayNum}</span>
+                      <span className={`text-xs font-medium ${isToday ? 'text-zinc-200 font-bold' : isAssigned ? 'text-zinc-100 font-semibold' : 'text-zinc-300'}`}>{dayNum}</span>
                       {dayJobs.length > 0 && (
                         <>
-                          {isAssigned && <span className="text-[9px] text-amber-400 font-extrabold leading-tight tracking-wider">YOU</span>}
+                          {isAssigned && <span className="text-[9px] font-extrabold leading-tight tracking-wider" style={{ color: myJobHex }}>YOU</span>}
                           <div className="flex gap-0.5 mt-auto flex-wrap justify-center">
                             {dayJobs.slice(0, 3).map(j => (
                               <span key={j.id} className="w-1.5 h-1.5 rounded-full"
@@ -654,6 +691,10 @@ function OrgCalendarView({ orgId, isOwner, isAdmin, members, onOpenJob }) {
             ))}
             {/* Legend */}
             <div className="flex items-center gap-3 px-2 pb-2 flex-wrap">
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 rounded-sm border border-zinc-500" />
+                <span className="text-[10px] text-zinc-500">Today</span>
+              </div>
               {canSeeAll && (
                 <div className="flex items-center gap-1.5">
                   <div className="w-3 h-3 rounded-sm bg-zinc-900 border border-zinc-700" />
@@ -661,8 +702,8 @@ function OrgCalendarView({ orgId, isOwner, isAdmin, members, onOpenJob }) {
                 </div>
               )}
               <div className="flex items-center gap-1.5">
-                <div className="w-3 h-3 rounded-sm bg-amber-500/15 border-2 border-amber-500/70" />
-                <span className="text-[10px] text-zinc-500">{canSeeAll ? 'Assigned to someone' : 'Assigned to you'}</span>
+                <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#60a5fa26', border: '2px solid #60a5fab3' }} />
+                <span className="text-[10px] text-zinc-500">{canSeeAll ? 'Assigned' : 'Your jobs'}</span>
               </div>
               <div className="flex items-center gap-3 ml-auto flex-wrap">
                 {Object.entries(STATUS_COLORS).map(([k, v]) => (

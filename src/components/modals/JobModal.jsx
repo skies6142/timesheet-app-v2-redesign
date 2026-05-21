@@ -15,13 +15,21 @@ const STATUS_OPTIONS = [
 
 export const JOB_COLORS = [
   { id: 'amber',   hex: '#f59e0b' },
-  { id: 'blue',    hex: '#60a5fa' },
-  { id: 'emerald', hex: '#34d399' },
-  { id: 'red',     hex: '#f87171' },
-  { id: 'purple',  hex: '#c084fc' },
-  { id: 'pink',    hex: '#f472b6' },
   { id: 'orange',  hex: '#fb923c' },
+  { id: 'red',     hex: '#f87171' },
+  { id: 'rose',    hex: '#fb7185' },
+  { id: 'pink',    hex: '#f472b6' },
+  { id: 'fuchsia', hex: '#e879f9' },
+  { id: 'purple',  hex: '#c084fc' },
+  { id: 'violet',  hex: '#a78bfa' },
+  { id: 'indigo',  hex: '#818cf8' },
+  { id: 'blue',    hex: '#60a5fa' },
   { id: 'cyan',    hex: '#22d3ee' },
+  { id: 'teal',    hex: '#2dd4bf' },
+  { id: 'emerald', hex: '#34d399' },
+  { id: 'lime',    hex: '#a3e635' },
+  { id: 'yellow',  hex: '#facc15' },
+  { id: 'slate',   hex: '#94a3b8' },
 ];
 
 export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, orgId, members, isOwner }) {
@@ -553,7 +561,7 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
           {isNew ? (
             <div className="space-y-3">
               <label className="block text-xs text-zinc-500 uppercase tracking-widest">Date(s) *</label>
-              <input type="date" value={date} onChange={e => setDate(e.target.value)}
+              <input type="date" value={date} onChange={e => { setDate(e.target.value); setExtraDates([]); }}
                 className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-3 text-sm text-zinc-100 focus:outline-none focus:border-amber-400/50" />
               {/* Mini calendar for additional dates */}
               <MultiDatePicker primaryDate={date} extraDates={extraDates} onToggle={toggleExtraDate} />
@@ -902,10 +910,15 @@ function MultiDatePicker({ primaryDate, extraDates, onToggle }) {
 
   if (!primaryDate) return null;
 
+  const primaryYY = parseInt(primaryDate.slice(0, 4));
+  const primaryMM = parseInt(primaryDate.slice(5, 7)) - 1; // 0-indexed
+  const canGoBack = year > primaryYY || (year === primaryYY && month > primaryMM);
+
   return (
     <div className="bg-zinc-800 border border-zinc-700 rounded-xl p-3">
       <div className="flex items-center justify-between mb-2">
-        <button onClick={() => setViewMonth(m => subMonths(m, 1))} className="w-7 h-7 flex items-center justify-center text-zinc-400 hover:text-zinc-200 rounded-lg">
+        <button onClick={() => canGoBack && setViewMonth(m => subMonths(m, 1))} disabled={!canGoBack}
+          className={`w-7 h-7 flex items-center justify-center rounded-lg transition-colors ${canGoBack ? 'text-zinc-400 hover:text-zinc-200' : 'text-zinc-700 cursor-not-allowed'}`}>
           <ChevronLeft size={15} />
         </button>
         <p className="text-xs font-semibold text-zinc-300">
