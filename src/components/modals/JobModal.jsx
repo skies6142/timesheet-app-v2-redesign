@@ -133,7 +133,7 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
   // Reset series scope when opening a different job
   useEffect(() => { setEditScope('single'); setShowDeleteConfirm(false); }, [job?.id]);
 
-  // Realtime: sync checklist state while modal is open (other users ticking items)
+  // Realtime: sync notes + checklist while modal is open (other users ticking/editing)
   useEffect(() => {
     if (!job?.id) return;
     const channel = supabase
@@ -141,12 +141,21 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
       .on('postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'jobs', filter: `id=eq.${job.id}` },
         (payload) => {
-          const { items: newItems } = parseDesc(payload.new?.description || '');
+          const { text: newText, items: newItems } = parseDesc(payload.new?.description || '');
+          setDescText(newText);
           setDescItems(newItems);
         }
       )
       .subscribe();
     return () => supabase.removeChannel(channel);
+  }, [job?.id]);
+
+  // Auto-resize free-text notes area when a job is loaded
+  useEffect(() => {
+    const el = descTextareaRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = el.scrollHeight + 'px';
   }, [job?.id]);
 
   // Load media for existing jobs
@@ -349,6 +358,20 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
         ...prev,
         ...files.map(file => ({ file, type: 'photo', preview: URL.createObjectURL(file) })),
       ]);
+    } else if (editScope === 'series' && hasSeries && job.series_id) {
+      setUploading(true);
+      try {
+        const jobIds = await orgApi.getSeriesJobIds(job.series_id);
+        for (const file of files) {
+          for (const jid of jobIds) {
+            try { await orgApi.uploadJobMedia(jid, file, 'photo', '', isOwner); }
+            catch (uploadErr) { addToast(`Upload failed: ${uploadErr.message}`, 'error'); }
+          }
+        }
+      } finally {
+        setUploading(false);
+        await loadMedia();
+      }
     } else {
       setUploading(true);
       for (const file of files) {
@@ -381,6 +404,17 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
           // Queue with a local audio preview
           setQueuedMedia(prev => [...prev, { file, type: 'voice', preview: URL.createObjectURL(blob) }]);
           addToast('Voice memo added', 'success');
+        } else if (editScope === 'series' && hasSeries && job.series_id) {
+          try {
+            const jobIds = await orgApi.getSeriesJobIds(job.series_id);
+            for (const jid of jobIds) {
+              await orgApi.uploadJobMedia(jid, file, 'voice', '', isOwner);
+            }
+            await loadMedia();
+            addToast('Voice memo saved to all days', 'success');
+          } catch (uploadErr) {
+            addToast(`Voice upload failed: ${uploadErr.message}`, 'error');
+          }
         } else {
           try {
             await orgApi.uploadJobMedia(job.id, file, 'voice', '', isOwner);
@@ -651,7 +685,7 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
                       e.target.style.height = e.target.scrollHeight + 'px';
                     }}
                     placeholder="Describe the job, tools to bring, safety notes…"
-                    style={{ minHeight: '3.5rem', height: 'auto' }}
+                    style={{ minHeight: '3.5rem' }}
                     className="w-full bg-transparent text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none resize-none leading-relaxed overflow-hidden"
                   />
                 ) : (
@@ -696,7 +730,7 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
                         onKeyDown={e => handleDescItemKeyDown(e, idx)}
                         placeholder="Item…"
                         rows={1}
-                        style={{ minHeight: '1.5rem', height: 'auto' }}
+                        style={{ minHeight: '1.5rem' }}
                         className={`flex-1 bg-transparent text-sm focus:outline-none placeholder-zinc-600 resize-none overflow-hidden leading-normal ${item.checked ? 'text-zinc-500 line-through' : 'text-zinc-100'}`}
                       />
                     ) : (

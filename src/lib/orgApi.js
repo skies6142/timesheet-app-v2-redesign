@@ -234,6 +234,12 @@ export async function updateJob(jobId, { title, description, date, location, sta
   }
 }
 
+export async function getSeriesJobIds(seriesId) {
+  const { data, error } = await supabase.from('jobs').select('id').eq('series_id', seriesId);
+  if (error) throw error;
+  return (data || []).map(j => j.id);
+}
+
 export async function deleteJob(jobId) {
   const { error } = await supabase.from('jobs').delete().eq('id', jobId);
   if (error) throw error;
