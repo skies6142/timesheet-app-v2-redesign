@@ -122,6 +122,15 @@ export async function removeMember(orgId, userId) {
   if (error) throw error;
 }
 
+export async function updateMemberRole(orgId, userId, role) {
+  const { error } = await supabase
+    .from('org_members')
+    .update({ role })
+    .eq('org_id', orgId)
+    .eq('user_id', userId);
+  if (error) throw error;
+}
+
 // ── Jobs ──────────────────────────────────────────────────────
 
 export async function getJobsForMonth(orgId, year, month) {
@@ -209,7 +218,7 @@ export async function getOrgNotes(orgId) {
   return data ?? [];
 }
 
-export async function createOrgNote(orgId, title, content, noteType = 'text') {
+export async function createOrgNote(orgId, title, content, visibility = 'everyone', editableBy = 'everyone', visibilityUsers = [], editableUsers = []) {
   const { data: { user } } = await supabase.auth.getUser();
   const displayName = user.user_metadata?.display_name || user.email;
   const { data, error } = await supabase
@@ -218,7 +227,10 @@ export async function createOrgNote(orgId, title, content, noteType = 'text') {
       org_id: orgId,
       title: title || 'Untitled Note',
       content,
-      note_type: noteType,
+      visibility,
+      editable_by: editableBy,
+      visibility_users: visibilityUsers,
+      editable_users: editableUsers,
       created_by: user.id,
       created_by_name: displayName,
       updated_by: user.id,
@@ -230,19 +242,21 @@ export async function createOrgNote(orgId, title, content, noteType = 'text') {
   return data;
 }
 
-export async function updateOrgNote(noteId, title, content) {
+export async function updateOrgNote(noteId, title, content, visibility, editableBy, visibilityUsers, editableUsers) {
   const { data: { user } } = await supabase.auth.getUser();
   const displayName = user.user_metadata?.display_name || user.email;
-  const { error } = await supabase
-    .from('org_notes')
-    .update({
-      title,
-      content,
-      updated_by: user.id,
-      updated_by_name: displayName,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', noteId);
+  const update = {
+    title,
+    content,
+    updated_by: user.id,
+    updated_by_name: displayName,
+    updated_at: new Date().toISOString(),
+  };
+  if (visibility !== undefined)      update.visibility       = visibility;
+  if (editableBy !== undefined)      update.editable_by      = editableBy;
+  if (visibilityUsers !== undefined) update.visibility_users = visibilityUsers;
+  if (editableUsers !== undefined)   update.editable_users   = editableUsers;
+  const { error } = await supabase.from('org_notes').update(update).eq('id', noteId);
   if (error) throw error;
 }
 

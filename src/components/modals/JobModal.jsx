@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { X, MapPin, FileText, Users, Camera, Mic, StopCircle, Trash2 } from 'lucide-react';
+import { X, MapPin, FileText, Users, Camera, Mic, StopCircle, Trash2, Plus, Check, ChevronLeft, ChevronRight } from 'lucide-react';
+import { addMonths, subMonths, getDaysInMonth as dateFnsDays, startOfMonth } from 'date-fns';
 import { format, parseISO } from 'date-fns';
 import * as orgApi from '../../lib/orgApi';
 import { useApp } from '../../context/AppContext';
@@ -18,11 +19,15 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
 
   // Form
   const [title, setTitle]             = useState('');
-  const [description, setDescription] = useState('');
+  const [descText, setDescText]       = useState('');
+  const [descItems, setDescItems]     = useState([]);
   const [date, setDate]               = useState(defaultDate || '');
+  const [extraDates, setExtraDates]   = useState([]); // additional dates for new multi-day jobs
   const [location, setLocation]       = useState('');
   const [status, setStatus]           = useState('scheduled');
   const [assignedIds, setAssignedIds] = useState([]);
+  const descItemRefs                  = useRef([]);
+  const descTextareaRef               = useRef(null);
 
   // Location autocomplete
   const [locationInput, setLocationInput]     = useState('');
@@ -54,20 +59,37 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
   const canEdit     = isOwner;
   const isAssigned  = !isNew && !!user && (job?.job_assignments?.some(a => a.user_id === user.id) ?? false);
 
+  const parseDesc = (raw) => {
+    if (!raw) return { text: '', items: [] };
+    try {
+      const p = JSON.parse(raw);
+      if (Array.isArray(p)) return { text: '', items: p };
+      if (p && typeof p === 'object') return { text: p.text || '', items: Array.isArray(p.items) ? p.items : [] };
+    } catch {}
+    return { text: raw, items: [] };
+  };
+  const serializeDesc = (text, items) =>
+    JSON.stringify({ text, items: items.filter(i => i.text.trim()) });
+
   // Reset form when opening with a different job / defaultDate
   useEffect(() => {
     if (job) {
+      const { text, items } = parseDesc(job.description);
       setTitle(job.title || '');
-      setDescription(job.description || '');
+      setDescText(text);
+      setDescItems(items);
       setDate(job.date || defaultDate || '');
+      setExtraDates([]);
       setLocation(job.location || '');
       setLocationInput(job.location || '');
       setStatus(job.status || 'scheduled');
       setAssignedIds(job.job_assignments?.map(a => a.user_id) || []);
     } else {
       setTitle('');
-      setDescription('');
+      setDescText('');
+      setDescItems([]);
       setDate(defaultDate || '');
+      setExtraDates([]);
       setLocation('');
       setLocationInput('');
       setStatus('scheduled');
@@ -135,22 +157,26 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
     if (!title.trim()) { addToast('Title is required', 'error'); return; }
     if (!date)         { addToast('Date is required',  'error'); return; }
     setSaving(true);
+    const description = serializeDesc(descText, descItems);
     try {
       if (isNew) {
-        const newJob = await orgApi.createJob(orgId, {
-          title: title.trim(), description, date,
-          location: location.trim(), assignedUserIds: assignedIds,
-        });
-        // Upload any media that was queued before the job existed
+        const allDates = [date, ...extraDates].filter(Boolean);
+        const jobs = await Promise.all(allDates.map(d =>
+          orgApi.createJob(orgId, {
+            title: title.trim(), description, date: d,
+            location: location.trim(), assignedUserIds: assignedIds,
+          })
+        ));
+        // Upload queued media to the first job only
         for (const item of queuedMedia) {
           try {
-            await orgApi.uploadJobMedia(newJob.id, item.file, item.type, '', true);
+            await orgApi.uploadJobMedia(jobs[0].id, item.file, item.type, '', true);
           } catch (uploadErr) {
             addToast(`Media upload failed: ${uploadErr.message}`, 'error');
           }
         }
-        addToast('Job created', 'success');
-        onSaved(newJob);
+        addToast(jobs.length > 1 ? `${jobs.length} jobs created` : 'Job created', 'success');
+        onSaved(jobs[0]);
       } else {
         await orgApi.updateJob(job.id, {
           title: title.trim(), description, date,
@@ -196,6 +222,32 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
 
   const toggleAssign = (uid) =>
     setAssignedIds(ids => ids.includes(uid) ? ids.filter(i => i !== uid) : [...ids, uid]);
+
+  // ── Checklist helpers ──────────────────────────────────────────
+  const handleAddDescItem = () => {
+    setDescItems(prev => {
+      const next = [...prev, { id: `${Date.now()}`, text: '', checked: false }];
+      setTimeout(() => { descItemRefs.current[next.length - 1]?.focus(); }, 30);
+      return next;
+    });
+  };
+  const handleToggleDescItem = (idx) =>
+    setDescItems(prev => prev.map((item, i) => i === idx ? { ...item, checked: !item.checked } : item));
+  const handleDescItemText = (idx, val) =>
+    setDescItems(prev => prev.map((item, i) => i === idx ? { ...item, text: val } : item));
+  const handleDescItemKeyDown = (e, idx) => {
+    if (e.key === 'Enter') { e.preventDefault(); handleAddDescItem(); }
+    if (e.key === 'Backspace' && !descItems[idx].text) {
+      e.preventDefault();
+      setDescItems(prev => prev.filter((_, i) => i !== idx));
+      setTimeout(() => { descItemRefs.current[idx - 1]?.focus(); }, 30);
+    }
+  };
+  const handleDeleteDescItem = (idx) => setDescItems(prev => prev.filter((_, i) => i !== idx));
+
+  // ── Multi-date helpers ─────────────────────────────────────────
+  const toggleExtraDate = (d) =>
+    setExtraDates(prev => prev.includes(d) ? prev.filter(x => x !== d) : [...prev, d]);
 
   // ── Photo upload ───────────────────────────────────────────────
   const handlePhotoChange = async (e) => {
@@ -355,30 +407,40 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
           </div>
 
           {/* Date + Status */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs text-zinc-500 uppercase tracking-widest mb-1.5">Date *</label>
-              {canEdit ? (
-                <input type="date" value={date} onChange={e => setDate(e.target.value)}
-                  className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-3 text-sm text-zinc-100 focus:outline-none focus:border-amber-400/50" />
-              ) : (
-                <p className="text-zinc-100">{date ? format(parseISO(date), 'd MMM yyyy') : '—'}</p>
-              )}
+          {isNew ? (
+            <div className="space-y-3">
+              <label className="block text-xs text-zinc-500 uppercase tracking-widest">Date(s) *</label>
+              <input type="date" value={date} onChange={e => setDate(e.target.value)}
+                className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-3 text-sm text-zinc-100 focus:outline-none focus:border-amber-400/50" />
+              {/* Mini calendar for additional dates */}
+              <MultiDatePicker primaryDate={date} extraDates={extraDates} onToggle={toggleExtraDate} />
             </div>
-            <div>
-              <label className="block text-xs text-zinc-500 uppercase tracking-widest mb-1.5">Status</label>
-              {canEdit ? (
-                <select value={status} onChange={e => setStatus(e.target.value)}
-                  className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-3 text-sm text-zinc-100 focus:outline-none focus:border-amber-400/50">
-                  {STATUS_OPTIONS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-                </select>
-              ) : (
-                <p className={`font-semibold capitalize ${STATUS_OPTIONS.find(s => s.value === status)?.color}`}>
-                  {status.replace('_', ' ')}
-                </p>
-              )}
+          ) : (
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs text-zinc-500 uppercase tracking-widest mb-1.5">Date *</label>
+                {canEdit ? (
+                  <input type="date" value={date} onChange={e => setDate(e.target.value)}
+                    className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-3 text-sm text-zinc-100 focus:outline-none focus:border-amber-400/50" />
+                ) : (
+                  <p className="text-zinc-100">{date ? format(parseISO(date), 'd MMM yyyy') : '—'}</p>
+                )}
+              </div>
+              <div>
+                <label className="block text-xs text-zinc-500 uppercase tracking-widest mb-1.5">Status</label>
+                {canEdit ? (
+                  <select value={status} onChange={e => setStatus(e.target.value)}
+                    className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-3 text-sm text-zinc-100 focus:outline-none focus:border-amber-400/50">
+                    {STATUS_OPTIONS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                  </select>
+                ) : (
+                  <p className={`font-semibold capitalize ${STATUS_OPTIONS.find(s => s.value === status)?.color}`}>
+                    {status.replace('_', ' ')}
+                  </p>
+                )}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Location + map */}
           <div>
@@ -418,18 +480,84 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
             )}
           </div>
 
-          {/* Notes */}
+          {/* Notes / Instructions — combined text + checklist */}
           <div>
             <label className="block text-xs text-zinc-500 uppercase tracking-widest mb-1.5">
               <FileText size={11} className="inline mr-1" />Notes / Instructions
             </label>
-            {canEdit ? (
-              <textarea value={description} onChange={e => setDescription(e.target.value)}
-                placeholder="Describe the job, tools to bring, safety notes…" rows={3}
-                className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-amber-400/50 resize-none" />
-            ) : (
-              <p className="text-zinc-300 text-sm whitespace-pre-wrap">{description || '—'}</p>
-            )}
+            <div className="bg-zinc-800 border border-zinc-700 rounded-xl overflow-hidden">
+              {/* Free text */}
+              <div className="px-4 pt-3 pb-2">
+                {canEdit ? (
+                  <textarea
+                    ref={descTextareaRef}
+                    value={descText}
+                    onChange={e => {
+                      setDescText(e.target.value);
+                      e.target.style.height = 'auto';
+                      e.target.style.height = e.target.scrollHeight + 'px';
+                    }}
+                    placeholder="Describe the job, tools to bring, safety notes…"
+                    style={{ minHeight: '3.5rem', height: 'auto' }}
+                    className="w-full bg-transparent text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none resize-none leading-relaxed overflow-hidden"
+                  />
+                ) : (
+                  <p className="text-zinc-300 text-sm whitespace-pre-wrap leading-relaxed py-1">{descText || <span className="text-zinc-600 italic">No notes</span>}</p>
+                )}
+              </div>
+
+              {/* Divider */}
+              {(descItems.length > 0 || canEdit) && (
+                <div className="flex items-center gap-2 px-4 py-1">
+                  <div className="flex-1 h-px bg-zinc-700" />
+                  <span className="text-[10px] text-zinc-600 uppercase tracking-widest">Checklist</span>
+                  <div className="flex-1 h-px bg-zinc-700" />
+                </div>
+              )}
+
+              {/* Checklist items */}
+              <div className="px-4 pt-1 pb-2 space-y-0.5">
+                {descItems.map((item, idx) => (
+                  <div key={item.id} className="flex items-center gap-3 py-1.5">
+                    <button onClick={() => handleToggleDescItem(idx)} className="shrink-0">
+                      {item.checked ? (
+                        <div className="w-5 h-5 rounded-full bg-amber-400 flex items-center justify-center">
+                          <Check size={11} className="text-zinc-950" strokeWidth={3} />
+                        </div>
+                      ) : (
+                        <div className={`w-5 h-5 rounded-full border-2 border-zinc-600 transition-colors ${canEdit ? 'hover:border-zinc-400' : ''}`} />
+                      )}
+                    </button>
+                    {canEdit ? (
+                      <input
+                        ref={el => { descItemRefs.current[idx] = el; }}
+                        value={item.text}
+                        onChange={e => handleDescItemText(idx, e.target.value)}
+                        onKeyDown={e => handleDescItemKeyDown(e, idx)}
+                        placeholder="Item…"
+                        className={`flex-1 bg-transparent text-sm focus:outline-none placeholder-zinc-600 ${item.checked ? 'text-zinc-500 line-through' : 'text-zinc-100'}`}
+                      />
+                    ) : (
+                      <p className={`flex-1 text-sm ${item.checked ? 'text-zinc-500 line-through' : 'text-zinc-200'}`}>{item.text}</p>
+                    )}
+                    {canEdit && (
+                      <button onClick={() => handleDeleteDescItem(idx)} className="w-6 h-6 flex items-center justify-center text-zinc-700 hover:text-red-400 rounded-lg">
+                        <X size={13} />
+                      </button>
+                    )}
+                  </div>
+                ))}
+                {canEdit && (
+                  <button onClick={handleAddDescItem}
+                    className="flex items-center gap-2.5 py-2 text-zinc-600 hover:text-amber-400 transition-colors w-full text-left">
+                    <div className="w-5 h-5 rounded-full border-2 border-dashed border-zinc-600 hover:border-amber-400/50 flex items-center justify-center shrink-0">
+                      <Plus size={9} />
+                    </div>
+                    <span className="text-xs">Add checklist item</span>
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
 
           {/* Assign workers */}
@@ -592,6 +720,77 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+function MultiDatePicker({ primaryDate, extraDates, onToggle }) {
+  const today = new Date();
+  const [viewMonth, setViewMonth] = useState(() => {
+    if (primaryDate) { try { return new Date(primaryDate + 'T00:00:00'); } catch {} }
+    return today;
+  });
+
+  // Keep viewMonth in sync when primaryDate changes
+  useEffect(() => {
+    if (primaryDate) { try { setViewMonth(new Date(primaryDate + 'T00:00:00')); } catch {} }
+  }, [primaryDate]);
+
+  const year  = viewMonth.getFullYear();
+  const month = viewMonth.getMonth(); // 0-indexed
+  const firstDow = new Date(year, month, 1).getDay(); // 0=Sun
+  const daysCount = new Date(year, month + 1, 0).getDate();
+  const pad = Array(firstDow).fill(null);
+  const days = Array.from({ length: daysCount }, (_, i) => i + 1);
+
+  const toStr = (d) => `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+
+  if (!primaryDate) return null;
+
+  return (
+    <div className="bg-zinc-800 border border-zinc-700 rounded-xl p-3">
+      <div className="flex items-center justify-between mb-2">
+        <button onClick={() => setViewMonth(m => subMonths(m, 1))} className="w-7 h-7 flex items-center justify-center text-zinc-400 hover:text-zinc-200 rounded-lg">
+          <ChevronLeft size={15} />
+        </button>
+        <p className="text-xs font-semibold text-zinc-300">
+          {viewMonth.toLocaleDateString('en', { month: 'long', year: 'numeric' })}
+        </p>
+        <button onClick={() => setViewMonth(m => addMonths(m, 1))} className="w-7 h-7 flex items-center justify-center text-zinc-400 hover:text-zinc-200 rounded-lg">
+          <ChevronRight size={15} />
+        </button>
+      </div>
+      <div className="grid grid-cols-7 gap-0.5 mb-1">
+        {['S','M','T','W','T','F','S'].map((d, i) => (
+          <div key={i} className="text-center text-[10px] text-zinc-600 py-0.5">{d}</div>
+        ))}
+      </div>
+      <div className="grid grid-cols-7 gap-0.5">
+        {pad.map((_, i) => <div key={`p${i}`} />)}
+        {days.map(d => {
+          const str = toStr(d);
+          const isPrimary = str === primaryDate;
+          const isExtra   = extraDates.includes(str);
+          const isSelected = isPrimary || isExtra;
+          return (
+            <button key={d} onClick={() => !isPrimary && onToggle(str)}
+              disabled={isPrimary}
+              className={`aspect-square flex items-center justify-center rounded-lg text-xs font-medium transition-colors ${
+                isPrimary ? 'bg-amber-400 text-zinc-950 cursor-default'
+                : isExtra  ? 'bg-amber-400/20 text-amber-400 border border-amber-400/40'
+                : 'text-zinc-400 hover:bg-zinc-700 hover:text-zinc-200'
+              }`}>
+              {d}
+            </button>
+          );
+        })}
+      </div>
+      {extraDates.length > 0 && (
+        <p className="text-[10px] text-amber-400/70 text-center mt-2">
+          +{extraDates.length} extra day{extraDates.length !== 1 ? 's' : ''} — creates {extraDates.length + 1} jobs
+        </p>
+      )}
+      <p className="text-[10px] text-zinc-600 text-center mt-1">Tap dates to repeat this job on multiple days</p>
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { Building2, Share2, Copy, Check, X, Plus, Users, ChevronLeft, ChevronRight, Download, SlidersHorizontal, Search, StickyNote, Pencil } from 'lucide-react';
+import { Building2, Share2, Copy, Check, X, Plus, Users, ChevronLeft, ChevronRight, Download, SlidersHorizontal, Search, StickyNote, Pencil, Eye, Lock } from 'lucide-react';
 import { format, parseISO, addMonths, subMonths } from 'date-fns';
 import { useAuth } from '../../context/AuthContext';
 import { useApp } from '../../context/AppContext';
@@ -272,6 +272,7 @@ export default function OrgTab() {
 
   // ── In an organisation ─────────────────────────────────────
   const isOwner = orgData.role === 'owner';
+  const isAdmin = orgData.role === 'admin';
   const views = isOwner
     ? [{ id: 'calendar', label: 'Calendar' }, { id: 'members', label: 'Team' }, { id: 'notes', label: 'Notes' }, { id: 'invoices', label: 'Invoices' }, { id: 'reports', label: 'Reports' }]
     : [{ id: 'calendar', label: 'Calendar' }, { id: 'notes', label: 'Notes' }, { id: 'invoices', label: 'My Invoices' }];
@@ -315,7 +316,7 @@ export default function OrgTab() {
           />
         )}
         {activeView === 'notes' && (
-          <NotesView orgId={orgData.org.id} addToast={addToast} />
+          <NotesView orgId={orgData.org.id} isOwner={isOwner} isAdmin={isAdmin} members={orgData.members} addToast={addToast} />
         )}
         {activeView === 'reports' && isOwner && (
           <HoursReportView orgId={orgData.org.id} addToast={addToast} />
@@ -658,7 +659,8 @@ function OrgCalendarView({ orgId, isOwner, members, onOpenJob }) {
 
 // ── Members view ──────────────────────────────────────────────
 function MembersView({ org, members, onRefresh, addToast }) {
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied]       = useState(false);
+  const [togglingRole, setTogglingRole] = useState(null); // userId being toggled
   const inviteLink = `${window.location.origin}?join=${org.invite_code}`;
 
   const share = async () => {
@@ -690,10 +692,28 @@ function MembersView({ org, members, onRefresh, addToast }) {
     }
   };
 
+  const handleToggleAdmin = async (m) => {
+    const name    = m.display_name || m.profiles?.display_name || 'Member';
+    const newRole = m.role === 'admin' ? 'employee' : 'admin';
+    const label   = newRole === 'admin' ? `Make ${name} an admin?` : `Remove admin from ${name}?`;
+    if (!confirm(label)) return;
+    setTogglingRole(m.user_id);
+    try {
+      await orgApi.updateMemberRole(org.id, m.user_id, newRole);
+      addToast(`${name} is now ${newRole}`, 'success');
+      onRefresh();
+    } catch (e) {
+      addToast('Failed to update role', 'error');
+    } finally {
+      setTogglingRole(null);
+    }
+  };
+
   const ROLE_BADGE = {
-    owner:          'bg-amber-400/15 text-amber-400',
-    employee:       'bg-zinc-800 text-zinc-400',
-    subcontractor:  'bg-blue-400/15 text-blue-400',
+    owner:    'bg-amber-400/15 text-amber-400',
+    admin:    'bg-purple-400/15 text-purple-400',
+    employee: 'bg-zinc-800 text-zinc-400',
+    subcontractor: 'bg-blue-400/15 text-blue-400',
   };
 
   return (
@@ -721,29 +741,32 @@ function MembersView({ org, members, onRefresh, addToast }) {
 
       {/* Members list */}
       <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
-        <div className="px-4 py-3 border-b border-zinc-800 flex items-center justify-between">
+        <div className="px-4 py-3 border-b border-zinc-800">
           <p className="text-xs font-semibold text-zinc-400 uppercase tracking-widest">
             {members.length} Member{members.length !== 1 ? 's' : ''}
           </p>
-          <p className="text-xs text-zinc-600">Tap × to remove</p>
+          <p className="text-[10px] text-zinc-600 mt-0.5">Tap a member to toggle admin · × to remove</p>
         </div>
         {members.length === 0 && (
           <p className="text-sm text-zinc-500 text-center py-6">No members yet — share your invite code</p>
         )}
         {members.map(m => {
-          const name  = m.display_name || m.profiles?.display_name || 'Unknown';
-          const email = m.profiles?.email || '';
+          const name     = m.display_name || m.profiles?.display_name || 'Unknown';
+          const email    = m.profiles?.email || '';
           const initials = name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() || '?';
-          const avatarBg = m.role === 'owner' ? 'bg-amber-400/20 border-amber-400/30 text-amber-400'
-            : m.role === 'subcontractor' ? 'bg-blue-400/15 border-blue-400/20 text-blue-400'
+          const isAdmin  = m.role === 'admin';
+          const avatarBg = m.role === 'owner'  ? 'bg-amber-400/20 border-amber-400/30 text-amber-400'
+            : isAdmin                           ? 'bg-purple-400/15 border-purple-400/20 text-purple-400'
+            : m.role === 'subcontractor'        ? 'bg-blue-400/15 border-blue-400/20 text-blue-400'
             : 'bg-zinc-800 border-zinc-700 text-zinc-400';
+          const toggling = togglingRole === m.user_id;
           return (
             <div key={m.id} className="flex items-center gap-3 px-4 py-3 border-b border-zinc-800/50 last:border-0">
               <div className={`w-10 h-10 rounded-2xl border flex items-center justify-center shrink-0 ${avatarBg}`}>
                 <span className="text-sm font-bold">{initials}</span>
               </div>
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <p className="text-sm font-semibold text-zinc-100 truncate">{name}</p>
                   <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-md capitalize shrink-0 ${ROLE_BADGE[m.role] || 'bg-zinc-800 text-zinc-400'}`}>
                     {m.role}
@@ -753,12 +776,26 @@ function MembersView({ org, members, onRefresh, addToast }) {
                 <p className="text-[10px] text-zinc-600 mt-0.5">Joined {(() => { try { return format(new Date(m.joined_at), 'd MMM yyyy'); } catch { return ''; } })()}</p>
               </div>
               {m.role !== 'owner' && (
-                <button
-                  onClick={() => handleRemove(m.user_id, name)}
-                  className="w-8 h-8 flex items-center justify-center rounded-xl text-zinc-600 hover:text-red-400 hover:bg-red-400/10 transition-colors shrink-0"
-                >
-                  <X size={15} />
-                </button>
+                <div className="flex items-center gap-1 shrink-0">
+                  <button
+                    onClick={() => handleToggleAdmin(m)}
+                    disabled={toggling}
+                    title={isAdmin ? 'Remove admin' : 'Make admin'}
+                    className={`px-2.5 py-1 rounded-lg text-[10px] font-semibold transition-colors disabled:opacity-40 ${
+                      isAdmin
+                        ? 'bg-purple-400/15 text-purple-400 hover:bg-purple-400/25'
+                        : 'bg-zinc-800 text-zinc-500 hover:text-purple-400 hover:bg-purple-400/10'
+                    }`}
+                  >
+                    {toggling ? '…' : isAdmin ? 'Admin' : 'Admin?'}
+                  </button>
+                  <button
+                    onClick={() => handleRemove(m.user_id, name)}
+                    className="w-8 h-8 flex items-center justify-center rounded-xl text-zinc-600 hover:text-red-400 hover:bg-red-400/10 transition-colors"
+                  >
+                    <X size={15} />
+                  </button>
+                </div>
               )}
             </div>
           );
@@ -1521,19 +1558,53 @@ function ReportGroup({ group, groupBy }) {
   );
 }
 
+// ── Member picker (used by permissions UI) ────────────────────
+function MemberPicker({ members, selected, onChange }) {
+  const toggle = (uid) =>
+    onChange(selected.includes(uid) ? selected.filter(id => id !== uid) : [...selected, uid]);
+  return (
+    <div className="ml-5 space-y-1 pt-1">
+      {members.map(m => {
+        const name = m.display_name || m.profiles?.display_name || 'Unknown';
+        const on   = selected.includes(m.user_id);
+        return (
+          <button key={m.user_id} onClick={() => toggle(m.user_id)}
+            className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl border text-xs transition-colors ${
+              on ? 'bg-amber-400/10 border-amber-400/30 text-amber-300' : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-zinc-600'
+            }`}>
+            <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${on ? 'border-amber-400 bg-amber-400' : 'border-zinc-600'}`}>
+              {on && <Check size={9} className="text-zinc-950" strokeWidth={3} />}
+            </div>
+            <span className="truncate">{name}</span>
+            <span className="text-[10px] text-zinc-600 capitalize ml-auto shrink-0">{m.role}</span>
+          </button>
+        );
+      })}
+      {members.length === 0 && <p className="text-xs text-zinc-600 py-1">No other members yet</p>}
+    </div>
+  );
+}
+
 // ── Notes view (all members) ──────────────────────────────────
 // Content is always stored as JSON: { text: string, items: [{id,text,checked}] }
 // Backward-compat: plain text → {text, items:[]}; old array → {text:'', items:array}
-function NotesView({ orgId, addToast }) {
-  const [notes, setNotes]         = useState([]);
-  const [loading, setLoading]     = useState(true);
-  const [editNote, setEditNote]   = useState(null);   // null | 'new' | note obj
-  const [editTitle, setEditTitle] = useState('');
-  const [editText, setEditText]   = useState('');     // free-text section
-  const [editItems, setEditItems] = useState([]);     // checklist items
-  const [saving, setSaving]       = useState(false);
-  const [deleting, setDeleting]   = useState(false);
-  const itemInputRefs             = useRef([]);
+function NotesView({ orgId, isOwner, isAdmin, members = [], addToast }) {
+  const [notes, setNotes]               = useState([]);
+  const [loading, setLoading]           = useState(true);
+  const [editNote, setEditNote]         = useState(null);   // null | 'new' | note obj
+  const [editTitle, setEditTitle]       = useState('');
+  const [editText, setEditText]         = useState('');
+  const [editItems, setEditItems]       = useState([]);
+  // 'everyone' | 'admins_only' | 'selected'
+  const [editVisibility, setEditVisibility] = useState('everyone');
+  const [editEditable,   setEditEditable]   = useState('everyone');
+  // arrays of user_id strings for 'selected' mode
+  const [editVisUsers, setEditVisUsers] = useState([]);
+  const [editEditUsers, setEditEditUsers] = useState([]);
+  const [saving, setSaving]             = useState(false);
+  const [deleting, setDeleting]         = useState(false);
+  const itemInputRefs                   = useRef([]);
+  const textareaRef                     = useRef(null);
 
   const load = useCallback(async () => {
     try {
@@ -1575,6 +1646,10 @@ function NotesView({ orgId, addToast }) {
     setEditTitle('');
     setEditText('');
     setEditItems([]);
+    setEditVisibility('everyone');
+    setEditEditable('everyone');
+    setEditVisUsers([]);
+    setEditEditUsers([]);
     setEditNote('new');
   };
 
@@ -1583,11 +1658,16 @@ function NotesView({ orgId, addToast }) {
     setEditTitle(note.title);
     setEditText(text);
     setEditItems(items);
+    setEditVisibility(note.visibility || 'everyone');
+    setEditEditable(note.editable_by || 'everyone');
+    setEditVisUsers(note.visibility_users || []);
+    setEditEditUsers(note.editable_users || []);
     setEditNote(note);
   };
 
   // Toggle item → auto-save immediately so teammates see it live
   const handleToggleItem = async (idx) => {
+    if (!canEdit) return;
     const newItems = editItems.map((item, i) =>
       i === idx ? { ...item, checked: !item.checked } : item
     );
@@ -1625,9 +1705,9 @@ function NotesView({ orgId, addToast }) {
     try {
       const content = serialize(editText, editItems);
       if (editNote === 'new') {
-        await orgApi.createOrgNote(orgId, editTitle.trim() || 'Untitled Note', content);
+        await orgApi.createOrgNote(orgId, editTitle.trim() || 'Untitled Note', content, editVisibility, editEditable, editVisUsers, editEditUsers);
       } else {
-        await orgApi.updateOrgNote(editNote.id, editTitle.trim() || 'Untitled Note', content);
+        await orgApi.updateOrgNote(editNote.id, editTitle.trim() || 'Untitled Note', content, editVisibility, editEditable, editVisUsers, editEditUsers);
       }
       addToast('Note saved', 'success');
       setEditNote(null);
@@ -1658,6 +1738,12 @@ function NotesView({ orgId, addToast }) {
     if (!str) return '';
     try { return format(new Date(str), 'd MMM · h:mm a'); } catch { return ''; }
   };
+
+  const { user: currentUser } = useAuth();
+  const myUserId = currentUser?.id;
+  const canEdit = isOwner || isAdmin || editNote === 'new'
+    || editEditable === 'everyone'
+    || (editEditable === 'selected' && editEditUsers.includes(myUserId));
 
   return (
     <>
@@ -1697,15 +1783,23 @@ function NotesView({ orgId, addToast }) {
                 >
                   <div className="flex items-start justify-between gap-3 mb-1.5">
                     <p className="font-semibold text-zinc-100 text-sm">{note.title}</p>
-                    {items.length > 0 && (
-                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${
-                        doneCount === items.length
-                          ? 'bg-emerald-400/15 text-emerald-400'
-                          : 'bg-zinc-800 text-zinc-400'
-                      }`}>
-                        {doneCount}/{items.length}
-                      </span>
-                    )}
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      {items.length > 0 && (
+                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                          doneCount === items.length
+                            ? 'bg-emerald-400/15 text-emerald-400'
+                            : 'bg-zinc-800 text-zinc-400'
+                        }`}>
+                          {doneCount}/{items.length}
+                        </span>
+                      )}
+                      {isOwner && (note.visibility !== 'everyone' || note.editable_by !== 'everyone') && (
+                        <div className="flex items-center gap-0.5 text-amber-400/60">
+                          {note.visibility !== 'everyone' && <Eye size={11} />}
+                          {note.editable_by !== 'everyone' && <Lock size={11} />}
+                        </div>
+                      )}
+                    </div>
                   </div>
                   {noteText ? (
                     <p className="text-xs text-zinc-500 leading-relaxed line-clamp-2 mb-1.5">{noteText}</p>
@@ -1760,12 +1854,13 @@ function NotesView({ orgId, addToast }) {
             <div className="flex items-center gap-3 px-5 py-3 border-b border-zinc-800 shrink-0">
               <input
                 value={editTitle}
-                onChange={e => setEditTitle(e.target.value)}
+                onChange={e => canEdit && setEditTitle(e.target.value)}
+                readOnly={!canEdit}
                 placeholder="Note title…"
-                className="flex-1 bg-transparent text-base font-semibold text-zinc-50 placeholder-zinc-500 focus:outline-none"
+                className={`flex-1 bg-transparent text-base font-semibold placeholder-zinc-500 focus:outline-none ${canEdit ? 'text-zinc-50' : 'text-zinc-400'}`}
               />
               <div className="flex items-center gap-1.5 shrink-0">
-                {editNote !== 'new' && (
+                {editNote !== 'new' && isOwner && (
                   <button onClick={handleDelete} disabled={deleting}
                     className="text-red-400 hover:bg-red-400/10 rounded-lg px-2 py-1 text-xs font-semibold transition-colors">
                     {deleting ? '…' : 'Delete'}
@@ -1792,12 +1887,19 @@ function NotesView({ orgId, addToast }) {
               {/* Free text section */}
               <div className="px-5 pt-4 pb-3">
                 <textarea
+                  ref={textareaRef}
                   value={editText}
-                  onChange={e => setEditText(e.target.value)}
-                  placeholder="Add notes, context, instructions…"
-                  rows={3}
+                  onChange={e => {
+                    if (!canEdit) return;
+                    setEditText(e.target.value);
+                    e.target.style.height = 'auto';
+                    e.target.style.height = e.target.scrollHeight + 'px';
+                  }}
+                  readOnly={!canEdit}
+                  placeholder={canEdit ? 'Add notes, context, instructions…' : ''}
                   autoFocus={editNote === 'new'}
-                  className="w-full bg-transparent text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none resize-none leading-relaxed"
+                  style={{ minHeight: '4.5rem', height: 'auto' }}
+                  className={`w-full bg-transparent text-sm placeholder-zinc-600 focus:outline-none resize-none leading-relaxed overflow-hidden ${canEdit ? 'text-zinc-200' : 'text-zinc-400'}`}
                 />
               </div>
 
@@ -1812,13 +1914,13 @@ function NotesView({ orgId, addToast }) {
               <div className="px-5 pt-2 pb-4 space-y-0.5">
                 {editItems.map((item, idx) => (
                   <div key={item.id} className="flex items-center gap-3 py-2 border-b border-zinc-800/40 last:border-0">
-                    <button onClick={() => handleToggleItem(idx)} className="shrink-0">
+                    <button onClick={() => handleToggleItem(idx)} className="shrink-0" disabled={!canEdit}>
                       {item.checked ? (
                         <div className="w-6 h-6 rounded-full bg-amber-400 flex items-center justify-center shadow-sm shadow-amber-400/25">
                           <Check size={13} className="text-zinc-950" strokeWidth={3} />
                         </div>
                       ) : (
-                        <div className="w-6 h-6 rounded-full border-2 border-zinc-600 hover:border-zinc-400 active:border-amber-400/70 transition-colors" />
+                        <div className={`w-6 h-6 rounded-full border-2 border-zinc-600 transition-colors ${canEdit ? 'hover:border-zinc-400 active:border-amber-400/70' : 'opacity-50'}`} />
                       )}
                     </button>
                     <input
@@ -1826,42 +1928,111 @@ function NotesView({ orgId, addToast }) {
                       value={item.text}
                       onChange={e => handleItemText(idx, e.target.value)}
                       onKeyDown={e => handleItemKeyDown(e, idx)}
-                      placeholder="Item…"
+                      readOnly={!canEdit}
+                      placeholder={canEdit ? 'Item…' : ''}
                       className={`flex-1 bg-transparent text-sm focus:outline-none placeholder-zinc-600 ${
                         item.checked ? 'text-zinc-500 line-through' : 'text-zinc-100'
                       }`}
                     />
-                    <button
-                      onClick={() => handleDeleteItem(idx)}
-                      className="w-7 h-7 flex items-center justify-center text-zinc-700 hover:text-red-400 active:text-red-400 rounded-lg transition-colors shrink-0"
-                    >
-                      <X size={14} />
-                    </button>
+                    {canEdit && (
+                      <button
+                        onClick={() => handleDeleteItem(idx)}
+                        className="w-7 h-7 flex items-center justify-center text-zinc-700 hover:text-red-400 active:text-red-400 rounded-lg transition-colors shrink-0"
+                      >
+                        <X size={14} />
+                      </button>
+                    )}
                   </div>
                 ))}
 
                 {/* Add item */}
-                <button
-                  onClick={handleAddItem}
-                  className="flex items-center gap-3 py-2.5 text-zinc-600 hover:text-amber-400 active:text-amber-400 transition-colors w-full text-left"
-                >
-                  <div className="w-6 h-6 rounded-full border-2 border-dashed border-zinc-700 hover:border-amber-400/40 flex items-center justify-center shrink-0">
-                    <Plus size={11} />
-                  </div>
-                  <span className="text-sm">Add checklist item</span>
-                </button>
+                {canEdit && (
+                  <button
+                    onClick={handleAddItem}
+                    className="flex items-center gap-3 py-2.5 text-zinc-600 hover:text-amber-400 active:text-amber-400 transition-colors w-full text-left"
+                  >
+                    <div className="w-6 h-6 rounded-full border-2 border-dashed border-zinc-700 hover:border-amber-400/40 flex items-center justify-center shrink-0">
+                      <Plus size={11} />
+                    </div>
+                    <span className="text-sm">Add checklist item</span>
+                  </button>
+                )}
               </div>
             </div>
 
+            {/* Permissions (owner only) */}
+            {isOwner && (
+              <div className="px-5 pt-3 pb-2 border-t border-zinc-800 space-y-4 shrink-0">
+                <p className="text-[10px] text-zinc-600 uppercase tracking-widest font-medium">Permissions</p>
+
+                {/* Visible to */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-xs text-zinc-400">
+                      <Eye size={13} />
+                      <span>Visible to</span>
+                    </div>
+                    <div className="flex rounded-lg overflow-hidden border border-zinc-700">
+                      {['everyone', 'admins_only', 'selected'].map((v, i) => (
+                        <button key={v} onClick={() => setEditVisibility(v)}
+                          className={`px-2.5 py-1.5 text-xs font-medium transition-colors ${i > 0 ? 'border-l border-zinc-700' : ''} ${editVisibility === v ? 'bg-amber-400 text-zinc-950' : 'text-zinc-400 hover:text-zinc-200'}`}>
+                          {v === 'everyone' ? 'All' : v === 'admins_only' ? 'Admins' : 'Choose'}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  {editVisibility === 'selected' && (
+                    <MemberPicker
+                      members={members.filter(m => m.role !== 'owner')}
+                      selected={editVisUsers}
+                      onChange={setEditVisUsers}
+                    />
+                  )}
+                </div>
+
+                {/* Editable by */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-xs text-zinc-400">
+                      <Pencil size={13} />
+                      <span>Editable by</span>
+                    </div>
+                    <div className="flex rounded-lg overflow-hidden border border-zinc-700">
+                      {['everyone', 'admins_only', 'selected'].map((v, i) => (
+                        <button key={v} onClick={() => setEditEditable(v)}
+                          className={`px-2.5 py-1.5 text-xs font-medium transition-colors ${i > 0 ? 'border-l border-zinc-700' : ''} ${editEditable === v ? 'bg-amber-400 text-zinc-950' : 'text-zinc-400 hover:text-zinc-200'}`}>
+                          {v === 'everyone' ? 'All' : v === 'admins_only' ? 'Admins' : 'Choose'}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  {editEditable === 'selected' && (
+                    <MemberPicker
+                      members={members.filter(m => m.role !== 'owner')}
+                      selected={editEditUsers}
+                      onChange={setEditEditUsers}
+                    />
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Footer */}
             <div className="px-5 py-4 border-t border-zinc-800 shrink-0">
-              <button
-                onClick={handleSave}
-                disabled={saving}
-                className="w-full bg-amber-400 hover:bg-amber-300 disabled:opacity-50 text-zinc-950 font-bold rounded-2xl py-4 transition-colors"
-              >
-                {saving ? 'Saving…' : 'Save Note'}
-              </button>
+              {canEdit ? (
+                <button
+                  onClick={handleSave}
+                  disabled={saving}
+                  className="w-full bg-amber-400 hover:bg-amber-300 disabled:opacity-50 text-zinc-950 font-bold rounded-2xl py-4 transition-colors"
+                >
+                  {saving ? 'Saving…' : 'Save Note'}
+                </button>
+              ) : (
+                <div className="w-full flex items-center justify-center gap-2 py-3 text-zinc-600 text-sm">
+                  <Lock size={14} />
+                  <span>View only — owner can edit</span>
+                </div>
+              )}
             </div>
           </div>
         </div>
