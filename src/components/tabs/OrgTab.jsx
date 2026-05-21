@@ -1522,14 +1522,15 @@ function ReportGroup({ group, groupBy }) {
 }
 
 // ── Notes view (all members) ──────────────────────────────────
+// Content is always stored as JSON: { text: string, items: [{id,text,checked}] }
+// Backward-compat: plain text → {text, items:[]}; old array → {text:'', items:array}
 function NotesView({ orgId, addToast }) {
   const [notes, setNotes]         = useState([]);
   const [loading, setLoading]     = useState(true);
   const [editNote, setEditNote]   = useState(null);   // null | 'new' | note obj
   const [editTitle, setEditTitle] = useState('');
-  const [editType, setEditType]   = useState('text'); // 'text' | 'checklist'
-  const [editContent, setEditContent] = useState('');
-  const [editItems, setEditItems] = useState([]);     // [{id,text,checked}]
+  const [editText, setEditText]   = useState('');     // free-text section
+  const [editItems, setEditItems] = useState([]);     // checklist items
   const [saving, setSaving]       = useState(false);
   const [deleting, setDeleting]   = useState(false);
   const itemInputRefs             = useRef([]);
@@ -1556,92 +1557,77 @@ function NotesView({ orgId, addToast }) {
     return () => supabase.removeChannel(channel);
   }, [orgId, load]);
 
-  const parseItems = (content) => {
-    if (!content) return [];
+  // Parse content (handles new combined format, old array, and plain text)
+  const parseContent = (raw) => {
+    if (!raw) return { text: '', items: [] };
     try {
-      const p = JSON.parse(content);
-      return Array.isArray(p) ? p : [];
-    } catch { return []; }
+      const p = JSON.parse(raw);
+      if (Array.isArray(p)) return { text: '', items: p };                     // old checklist-only
+      if (p && typeof p === 'object') return { text: p.text || '', items: Array.isArray(p.items) ? p.items : [] };
+    } catch {}
+    return { text: raw, items: [] };                                            // plain text legacy
   };
+
+  const serialize = (text, items) =>
+    JSON.stringify({ text, items: items.filter(i => i.text.trim()) });
 
   const openNew = () => {
     setEditTitle('');
-    setEditType('text');
-    setEditContent('');
+    setEditText('');
     setEditItems([]);
     setEditNote('new');
   };
 
   const openEdit = (note) => {
-    const type = note.note_type || 'text';
+    const { text, items } = parseContent(note.content);
     setEditTitle(note.title);
-    setEditType(type);
-    if (type === 'checklist') {
-      setEditItems(parseItems(note.content));
-      setEditContent('');
-    } else {
-      setEditContent(note.content || '');
-      setEditItems([]);
-    }
+    setEditText(text);
+    setEditItems(items);
     setEditNote(note);
   };
 
-  // Toggle a checklist item and immediately auto-save (for existing notes)
+  // Toggle item → auto-save immediately so teammates see it live
   const handleToggleItem = async (idx) => {
     const newItems = editItems.map((item, i) =>
       i === idx ? { ...item, checked: !item.checked } : item
     );
     setEditItems(newItems);
     if (editNote !== 'new' && editNote?.id) {
-      try {
-        await orgApi.updateOrgNote(editNote.id, editTitle, JSON.stringify(newItems));
-      } catch {}
+      try { await orgApi.updateOrgNote(editNote.id, editTitle, serialize(editText, newItems)); } catch {}
     }
   };
 
   const handleAddItem = () => {
-    const newItem = { id: `${Date.now()}`, text: '', checked: false };
     setEditItems(prev => {
-      const next = [...prev, newItem];
-      setTimeout(() => {
-        const ref = itemInputRefs.current[next.length - 1];
-        if (ref) ref.focus();
-      }, 30);
+      const next = [...prev, { id: `${Date.now()}`, text: '', checked: false }];
+      setTimeout(() => { itemInputRefs.current[next.length - 1]?.focus(); }, 30);
       return next;
     });
   };
 
-  const handleItemText = (idx, val) => {
+  const handleItemText = (idx, val) =>
     setEditItems(prev => prev.map((item, i) => i === idx ? { ...item, text: val } : item));
-  };
 
   const handleItemKeyDown = (e, idx) => {
     if (e.key === 'Enter') { e.preventDefault(); handleAddItem(); }
     if (e.key === 'Backspace' && !editItems[idx].text) {
       e.preventDefault();
       setEditItems(prev => prev.filter((_, i) => i !== idx));
-      setTimeout(() => {
-        const ref = itemInputRefs.current[idx - 1];
-        if (ref) ref.focus();
-      }, 30);
+      setTimeout(() => { itemInputRefs.current[idx - 1]?.focus(); }, 30);
     }
   };
 
-  const handleDeleteItem = (idx) => {
+  const handleDeleteItem = (idx) =>
     setEditItems(prev => prev.filter((_, i) => i !== idx));
-  };
 
   const handleSave = async () => {
     setSaving(true);
     try {
-      const type = editNote === 'new' ? editType : (editNote?.note_type || 'text');
-      const contentToSave = type === 'checklist'
-        ? JSON.stringify(editItems.filter(i => i.text.trim()))
-        : editContent;
+      const content = serialize(editText, editItems);
       if (editNote === 'new') {
-        await orgApi.createOrgNote(orgId, editTitle.trim() || 'Untitled Note', contentToSave, type);
+        await orgApi.createOrgNote(orgId, editTitle.trim() || 'Untitled Note', content);
       } else {
-        await orgApi.updateOrgNote(editNote.id, editTitle.trim() || 'Untitled Note', contentToSave);
+        await orgApi.updateOrgNote(editNote.id, editTitle.trim() || 'Untitled Note', content);
       }
       addToast('Note saved', 'success');
       setEditNote(null);
@@ -1701,10 +1687,9 @@ function NotesView({ orgId, addToast }) {
             </div>
           ) : (
             notes.map(note => {
-              const isChecklist = (note.note_type || 'text') === 'checklist';
-              const items = isChecklist ? parseItems(note.content) : [];
-              const doneCount = items.filter(i => i.checked).length;
-              const previewItems = items.slice(0, 4);
+              const { text: noteText, items } = parseContent(note.content);
+              const doneCount    = items.filter(i => i.checked).length;
+              const previewItems = items.slice(0, 3);
 
               return (
                 <button
@@ -1714,9 +1699,9 @@ function NotesView({ orgId, addToast }) {
                 >
                   <div className="flex items-start justify-between gap-3 mb-1.5">
                     <p className="font-semibold text-zinc-100 text-sm">{note.title}</p>
-                    {isChecklist && items.length > 0 && (
+                    {items.length > 0 && (
                       <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${
-                        doneCount === items.length && items.length > 0
+                        doneCount === items.length
                           ? 'bg-emerald-400/15 text-emerald-400'
                           : 'bg-zinc-800 text-zinc-400'
                       }`}>
@@ -1724,28 +1709,30 @@ function NotesView({ orgId, addToast }) {
                       </span>
                     )}
                   </div>
-                  {isChecklist ? (
-                    <div className="space-y-1.5">
+                  {noteText ? (
+                    <p className="text-xs text-zinc-500 leading-relaxed line-clamp-2 mb-1.5">{noteText}</p>
+                  ) : null}
+                  {previewItems.length > 0 && (
+                    <div className="space-y-1">
                       {previewItems.map(item => (
-                        <div key={item.id} className="flex items-center gap-2.5">
-                          <div className={`w-3.5 h-3.5 rounded-full shrink-0 flex items-center justify-center ${
+                        <div key={item.id} className="flex items-center gap-2">
+                          <div className={`w-3 h-3 rounded-full shrink-0 flex items-center justify-center ${
                             item.checked ? 'bg-amber-400' : 'border border-zinc-600'
                           }`}>
-                            {item.checked && <Check size={8} className="text-zinc-950" strokeWidth={3} />}
+                            {item.checked && <Check size={7} className="text-zinc-950" strokeWidth={3} />}
                           </div>
                           <p className={`text-xs truncate ${item.checked ? 'text-zinc-600 line-through' : 'text-zinc-400'}`}>
                             {item.text}
                           </p>
                         </div>
                       ))}
-                      {items.length > 4 && (
-                        <p className="text-[10px] text-zinc-600 pl-6">+{items.length - 4} more</p>
+                      {items.length > 3 && (
+                        <p className="text-[10px] text-zinc-600 pl-5">+{items.length - 3} more</p>
                       )}
                     </div>
-                  ) : (
-                    note.content
-                      ? <p className="text-xs text-zinc-500 leading-relaxed line-clamp-2">{note.content}</p>
-                      : <p className="text-xs text-zinc-600 italic">Empty note</p>
+                  )}
+                  {!noteText && items.length === 0 && (
+                    <p className="text-xs text-zinc-600 italic">Empty note</p>
                   )}
                   <p className="text-[10px] text-zinc-600 mt-2">
                     {note.updated_by_name ? `Edited by ${note.updated_by_name} · ` : ''}{safeDate(note.updated_at)}
@@ -1771,7 +1758,7 @@ function NotesView({ orgId, addToast }) {
               <div className="w-10 h-1 rounded-full bg-zinc-700" />
             </div>
 
-            {/* Header — editable title */}
+            {/* Header */}
             <div className="flex items-center gap-3 px-5 py-3 border-b border-zinc-800 shrink-0">
               <input
                 value={editTitle}
@@ -1793,26 +1780,6 @@ function NotesView({ orgId, addToast }) {
               </div>
             </div>
 
-            {/* Type selector — new notes only */}
-            {editNote === 'new' && (
-              <div className="px-5 pt-2.5 pb-2 border-b border-zinc-800 shrink-0">
-                <div className="segmented">
-                  <button
-                    onClick={() => { setEditType('text'); setEditItems([]); }}
-                    className={editType === 'text' ? 'active' : ''}
-                  >
-                    Text
-                  </button>
-                  <button
-                    onClick={() => { setEditType('checklist'); setEditContent(''); }}
-                    className={editType === 'checklist' ? 'active' : ''}
-                  >
-                    Checklist
-                  </button>
-                </div>
-              </div>
-            )}
-
             {/* Last-edited info */}
             {editNote !== 'new' && editNote.updated_by_name && (
               <div className="px-5 py-1.5 border-b border-zinc-800/50 shrink-0">
@@ -1822,65 +1789,70 @@ function NotesView({ orgId, addToast }) {
               </div>
             )}
 
-            {/* Body */}
-            <div className="flex-1 overflow-y-auto px-5 py-4">
-              {currentType === 'text' ? (
+            {/* Body — notes + checklist combined */}
+            <div className="flex-1 overflow-y-auto">
+              {/* Free text section */}
+              <div className="px-5 pt-4 pb-3">
                 <textarea
-                  value={editContent}
-                  onChange={e => setEditContent(e.target.value)}
-                  placeholder="Write anything — site rules, contacts, reminders…"
+                  value={editText}
+                  onChange={e => setEditText(e.target.value)}
+                  placeholder="Add notes, context, instructions…"
+                  rows={3}
                   autoFocus={editNote === 'new'}
-                  className="w-full h-full min-h-[180px] bg-transparent text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none resize-none leading-relaxed"
+                  className="w-full bg-transparent text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none resize-none leading-relaxed"
                 />
-              ) : (
-                <div className="space-y-0.5">
-                  {editItems.map((item, idx) => (
-                    <div key={item.id} className="flex items-center gap-3 py-2 border-b border-zinc-800/40 last:border-0">
-                      {/* Circle toggle */}
-                      <button onClick={() => handleToggleItem(idx)} className="shrink-0">
-                        {item.checked ? (
-                          <div className="w-6 h-6 rounded-full bg-amber-400 flex items-center justify-center shadow-sm shadow-amber-400/30">
-                            <Check size={13} className="text-zinc-950" strokeWidth={3} />
-                          </div>
-                        ) : (
-                          <div className="w-6 h-6 rounded-full border-2 border-zinc-600 hover:border-zinc-400 active:border-amber-400 transition-colors" />
-                        )}
-                      </button>
+              </div>
 
-                      {/* Text input */}
-                      <input
-                        ref={el => { itemInputRefs.current[idx] = el; }}
-                        value={item.text}
-                        onChange={e => handleItemText(idx, e.target.value)}
-                        onKeyDown={e => handleItemKeyDown(e, idx)}
-                        placeholder="Item…"
-                        className={`flex-1 bg-transparent text-sm focus:outline-none placeholder-zinc-600 ${
-                          item.checked ? 'text-zinc-500 line-through' : 'text-zinc-100'
-                        }`}
-                      />
+              {/* Divider */}
+              <div className="flex items-center gap-3 px-5 py-1">
+                <div className="flex-1 h-px bg-zinc-800" />
+                <span className="text-[10px] text-zinc-600 uppercase tracking-widest">Checklist</span>
+                <div className="flex-1 h-px bg-zinc-800" />
+              </div>
 
-                      {/* Delete item */}
-                      <button
-                        onClick={() => handleDeleteItem(idx)}
-                        className="w-7 h-7 flex items-center justify-center text-zinc-700 hover:text-red-400 active:text-red-400 rounded-lg transition-colors shrink-0"
-                      >
-                        <X size={14} />
-                      </button>
-                    </div>
-                  ))}
+              {/* Checklist items */}
+              <div className="px-5 pt-2 pb-4 space-y-0.5">
+                {editItems.map((item, idx) => (
+                  <div key={item.id} className="flex items-center gap-3 py-2 border-b border-zinc-800/40 last:border-0">
+                    <button onClick={() => handleToggleItem(idx)} className="shrink-0">
+                      {item.checked ? (
+                        <div className="w-6 h-6 rounded-full bg-amber-400 flex items-center justify-center shadow-sm shadow-amber-400/25">
+                          <Check size={13} className="text-zinc-950" strokeWidth={3} />
+                        </div>
+                      ) : (
+                        <div className="w-6 h-6 rounded-full border-2 border-zinc-600 hover:border-zinc-400 active:border-amber-400/70 transition-colors" />
+                      )}
+                    </button>
+                    <input
+                      ref={el => { itemInputRefs.current[idx] = el; }}
+                      value={item.text}
+                      onChange={e => handleItemText(idx, e.target.value)}
+                      onKeyDown={e => handleItemKeyDown(e, idx)}
+                      placeholder="Item…"
+                      className={`flex-1 bg-transparent text-sm focus:outline-none placeholder-zinc-600 ${
+                        item.checked ? 'text-zinc-500 line-through' : 'text-zinc-100'
+                      }`}
+                    />
+                    <button
+                      onClick={() => handleDeleteItem(idx)}
+                      className="w-7 h-7 flex items-center justify-center text-zinc-700 hover:text-red-400 active:text-red-400 rounded-lg transition-colors shrink-0"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                ))}
 
-                  {/* Add item row */}
-                  <button
-                    onClick={handleAddItem}
-                    className="flex items-center gap-3 py-2.5 text-zinc-600 hover:text-amber-400 active:text-amber-400 transition-colors w-full text-left"
-                  >
-                    <div className="w-6 h-6 rounded-full border-2 border-dashed border-zinc-700 flex items-center justify-center shrink-0">
-                      <Plus size={11} />
-                    </div>
-                    <span className="text-sm">Add item</span>
-                  </button>
-                </div>
-              )}
+                {/* Add item */}
+                <button
+                  onClick={handleAddItem}
+                  className="flex items-center gap-3 py-2.5 text-zinc-600 hover:text-amber-400 active:text-amber-400 transition-colors w-full text-left"
+                >
+                  <div className="w-6 h-6 rounded-full border-2 border-dashed border-zinc-700 hover:border-amber-400/40 flex items-center justify-center shrink-0">
+                    <Plus size={11} />
+                  </div>
+                  <span className="text-sm">Add checklist item</span>
+                </button>
+              </div>
             </div>
 
             {/* Footer */}
