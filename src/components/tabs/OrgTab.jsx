@@ -1659,8 +1659,6 @@ function NotesView({ orgId, addToast }) {
     try { return format(new Date(str), 'd MMM · h:mm a'); } catch { return ''; }
   };
 
-  const currentType = editNote === 'new' ? editType : (editNote?.note_type || 'text');
-
   return (
     <>
       <div className="h-full flex flex-col">
