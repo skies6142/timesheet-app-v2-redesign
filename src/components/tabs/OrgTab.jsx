@@ -8,9 +8,12 @@ import { supabase } from '../../lib/supabase';
 import { downloadInvoicePDF } from '../../lib/pdf';
 import { getDaysInMonth, formatCurrency } from '../../lib/utils';
 import AuthModal from '../modals/AuthModal';
-import JobModal from '../modals/JobModal';
+import JobModal, { JOB_COLORS } from '../modals/JobModal';
 import SubmitInvoiceModal from '../modals/SubmitInvoiceModal';
 import BottomSheet from '../ui/BottomSheet';
+
+const jobColorHex = (colorId) =>
+  JOB_COLORS.find(c => c.id === (colorId || 'amber'))?.hex || '#f59e0b';
 
 const STATUS_COLORS = {
   scheduled:   { dot: 'bg-amber-400',   badge: 'bg-amber-400/15 text-amber-400'   },
@@ -531,8 +534,12 @@ function OrgCalendarView({ orgId, isOwner, isAdmin, members, onOpenJob }) {
                         const sc = STATUS_COLORS[job.status] || STATUS_COLORS.scheduled;
                         const isUpdating = updatingJobId === job.id;
                         const assignedToMe = job.job_assignments?.some(a => a.user_id === user?.id);
+                        const listJobHex = jobColorHex(job.color);
                         return (
-                          <div key={job.id} className={`bg-zinc-900 border rounded-xl overflow-hidden ${assignedToMe ? 'border-amber-500/30' : 'border-zinc-800'}`}>
+                          <div key={job.id} className={`bg-zinc-900 border rounded-xl overflow-hidden flex ${assignedToMe ? 'border-amber-500/30' : 'border-zinc-800'}`}>
+                            {/* Color stripe */}
+                            <div className="w-1 shrink-0 rounded-l-xl" style={{ backgroundColor: listJobHex }} />
+                            <div className="flex-1 min-w-0">
                             <button
                               onClick={() => onOpenJob(job, date)}
                               className="w-full text-left px-4 py-3 hover:bg-zinc-800/50 active:bg-zinc-800 transition-colors"
@@ -576,6 +583,7 @@ function OrgCalendarView({ orgId, isOwner, isAdmin, members, onOpenJob }) {
                                 )}
                               </div>
                             )}
+                            </div>{/* end flex-1 */}
                           </div>
                         );
                       })}
@@ -632,7 +640,8 @@ function OrgCalendarView({ orgId, isOwner, isAdmin, members, onOpenJob }) {
                           {isAssigned && <span className="text-[9px] text-amber-400 font-extrabold leading-tight tracking-wider">YOU</span>}
                           <div className="flex gap-0.5 mt-auto flex-wrap justify-center">
                             {dayJobs.slice(0, 3).map(j => (
-                              <span key={j.id} className={`w-1.5 h-1.5 rounded-full ${STATUS_COLORS[j.status]?.dot || 'bg-zinc-600'}`} />
+                              <span key={j.id} className="w-1.5 h-1.5 rounded-full"
+                                style={{ backgroundColor: jobColorHex(j.color) }} />
                             ))}
                             {dayJobs.length > 3 && <span className="text-[8px] text-zinc-600 leading-tight">+{dayJobs.length - 3}</span>}
                           </div>
@@ -682,8 +691,12 @@ function OrgCalendarView({ orgId, isOwner, isAdmin, members, onOpenJob }) {
             selectedDayJobs.map(job => {
               const sc = STATUS_COLORS[job.status] || STATUS_COLORS.scheduled;
               const isUpdating = updatingJobId === job.id;
+              const jobHex = jobColorHex(job.color);
               return (
-                <div key={job.id} className="bg-zinc-800 border border-zinc-700 rounded-xl overflow-hidden">
+                <div key={job.id} className="bg-zinc-800 border border-zinc-700 rounded-xl overflow-hidden flex">
+                  {/* Color stripe */}
+                  <div className="w-1 shrink-0 rounded-l-xl" style={{ backgroundColor: jobHex }} />
+                  <div className="flex-1 min-w-0">
                   <button
                     onClick={() => { setShowDaySheet(false); onOpenJob(job, selectedDate); }}
                     className="w-full text-left px-4 py-3 hover:bg-zinc-700/30 active:bg-zinc-700/50 transition-colors"
@@ -729,6 +742,7 @@ function OrgCalendarView({ orgId, isOwner, isAdmin, members, onOpenJob }) {
                       )}
                     </div>
                   )}
+                  </div>{/* end flex-1 wrapper */}
                 </div>
               );
             })

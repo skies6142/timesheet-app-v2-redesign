@@ -13,6 +13,17 @@ const STATUS_OPTIONS = [
   { value: 'cancelled',   label: 'Cancelled',    color: 'text-zinc-500'    },
 ];
 
+export const JOB_COLORS = [
+  { id: 'amber',   hex: '#f59e0b' },
+  { id: 'blue',    hex: '#60a5fa' },
+  { id: 'emerald', hex: '#34d399' },
+  { id: 'red',     hex: '#f87171' },
+  { id: 'purple',  hex: '#c084fc' },
+  { id: 'pink',    hex: '#f472b6' },
+  { id: 'orange',  hex: '#fb923c' },
+  { id: 'cyan',    hex: '#22d3ee' },
+];
+
 export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, orgId, members, isOwner }) {
   const { addToast } = useApp();
   const { user } = useAuth();
@@ -22,9 +33,10 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
   const [descText, setDescText]       = useState('');
   const [descItems, setDescItems]     = useState([]);
   const [date, setDate]               = useState(defaultDate || '');
-  const [extraDates, setExtraDates]   = useState([]); // additional dates for new multi-day jobs
+  const [extraDates, setExtraDates]   = useState([]);
   const [location, setLocation]       = useState('');
   const [status, setStatus]           = useState('scheduled');
+  const [color, setColor]             = useState('amber');
   const [assignedIds, setAssignedIds] = useState([]);
   const descItemRefs                  = useRef([]);
   const descTextareaRef               = useRef(null);
@@ -87,6 +99,7 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
       setLocation(job.location || '');
       setLocationInput(job.location || '');
       setStatus(job.status || 'scheduled');
+      setColor(job.color || 'amber');
       setAssignedIds(job.job_assignments?.map(a => a.user_id) || []);
     } else {
       setTitle('');
@@ -97,6 +110,7 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
       setLocation('');
       setLocationInput('');
       setStatus('scheduled');
+      setColor('amber');
       setAssignedIds([]);
     }
     // Revoke any blob URLs from the previous open
@@ -188,7 +202,7 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
         const jobs = await Promise.all(allDates.map(d =>
           orgApi.createJob(orgId, {
             title: title.trim(), description, date: d,
-            location: location.trim(), assignedUserIds: assignedIds, seriesId,
+            location: location.trim(), assignedUserIds: assignedIds, seriesId, color,
           })
         ));
         for (const item of queuedMedia) {
@@ -200,14 +214,14 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
       } else if (editScope === 'series' && hasSeries) {
         await orgApi.updateJobSeries(job.series_id, {
           title: title.trim(), description,
-          location: location.trim(), status, assignedUserIds: assignedIds,
+          location: location.trim(), status, color, assignedUserIds: assignedIds,
         });
         addToast('All days in series updated', 'success');
         onSaved();
       } else {
         await orgApi.updateJob(job.id, {
           title: title.trim(), description, date,
-          location: location.trim(), status, assignedUserIds: assignedIds,
+          location: location.trim(), status, color, assignedUserIds: assignedIds,
         });
         addToast('Job saved', 'success');
         onSaved();
@@ -219,12 +233,17 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
     }
   };
 
-  const handleDelete = async () => {
+  const handleDelete = async (scope = 'single') => {
     if (!job?.id) return;
     setDeleting(true);
     try {
-      await orgApi.deleteJob(job.id);
-      addToast('Job deleted', 'success');
+      if (scope === 'series' && job.series_id) {
+        await orgApi.deleteJobSeries(job.series_id);
+        addToast('All days deleted', 'success');
+      } else {
+        await orgApi.deleteJob(job.id);
+        addToast('Job deleted', 'success');
+      }
       setShowDeleteConfirm(false);
       onSaved();
     } catch (e) {
@@ -252,8 +271,14 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
     if (!job?.id) return;
     setSaving(true);
     try {
-      await orgApi.updateJobDescription(job.id, serializeDesc(descText, descItems));
+      const serialized = serializeDesc(descText, descItems);
+      if (job.series_id) {
+        await orgApi.updateJobSeries(job.series_id, { description: serialized });
+      } else {
+        await orgApi.updateJobDescription(job.id, serialized);
+      }
       addToast('Saved', 'success');
+      onSaved(); // closes modal + refreshes calendar so reopening shows fresh data
     } catch (e) {
       addToast(e.message || 'Failed to save', 'error');
     } finally {
@@ -276,7 +301,14 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
     const newItems = descItems.map((item, i) => i === idx ? { ...item, checked: !item.checked } : item);
     setDescItems(newItems);
     if (!isNew && job?.id) {
-      try { await orgApi.updateJobDescription(job.id, serializeDesc(descText, newItems)); } catch {}
+      const serialized = serializeDesc(descText, newItems);
+      try {
+        if (job.series_id) {
+          await orgApi.updateJobSeries(job.series_id, { description: serialized });
+        } else {
+          await orgApi.updateJobDescription(job.id, serialized);
+        }
+      } catch {}
     }
   };
   const handleDescItemText = (idx, val) =>
@@ -429,12 +461,24 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
 
         {/* Inline delete confirm */}
         {showDeleteConfirm && (
-          <div className="px-5 py-3 bg-red-950/40 border-b border-red-900/50 shrink-0 flex items-center gap-3">
-            <p className="flex-1 text-sm text-red-300">Delete this job?</p>
-            <button onClick={() => setShowDeleteConfirm(false)} className="px-3 py-1.5 text-xs text-zinc-400 bg-zinc-800 rounded-lg">Cancel</button>
-            <button onClick={handleDelete} disabled={deleting} className="px-3 py-1.5 text-xs text-white bg-red-500 hover:bg-red-400 rounded-lg font-semibold disabled:opacity-50">
-              {deleting ? '…' : 'Delete'}
-            </button>
+          <div className="px-5 py-3 bg-red-950/40 border-b border-red-900/50 shrink-0">
+            <p className="text-sm text-red-300 mb-2.5">
+              {hasSeries ? 'Delete just this day, or all days in the series?' : 'Delete this job?'}
+            </p>
+            <div className="flex items-center gap-2">
+              <button onClick={() => setShowDeleteConfirm(false)}
+                className="flex-1 px-3 py-2 text-xs text-zinc-400 bg-zinc-800 rounded-xl">Cancel</button>
+              {hasSeries && (
+                <button onClick={() => handleDelete('single')} disabled={deleting}
+                  className="flex-1 px-3 py-2 text-xs text-white bg-red-700 hover:bg-red-600 rounded-xl font-semibold disabled:opacity-50">
+                  {deleting ? '…' : 'This day'}
+                </button>
+              )}
+              <button onClick={() => handleDelete(hasSeries ? 'series' : 'single')} disabled={deleting}
+                className="flex-1 px-3 py-2 text-xs text-white bg-red-500 hover:bg-red-400 rounded-xl font-semibold disabled:opacity-50">
+                {deleting ? '…' : hasSeries ? 'All days' : 'Delete'}
+              </button>
+            </div>
           </div>
         )}
 
@@ -471,15 +515,37 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
         {/* Scrollable body */}
         <div className="flex-1 scroll-area overflow-y-auto px-5 py-4 space-y-5">
 
-          {/* Title */}
+          {/* Title + Color */}
           <div>
             <label className="block text-xs text-zinc-500 uppercase tracking-widest mb-1.5">Job Title *</label>
             {canEdit ? (
-              <input value={title} onChange={e => setTitle(e.target.value)}
-                placeholder="e.g. Roof repair at 42 Oak St"
-                className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-amber-400/50" />
+              <div className="flex items-center gap-2">
+                <input value={title} onChange={e => setTitle(e.target.value)}
+                  placeholder="e.g. Roof repair at 42 Oak St"
+                  className="flex-1 bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-amber-400/50" />
+                {/* Color dot button — opens picker */}
+                <div className="relative shrink-0 group">
+                  <button
+                    style={{ backgroundColor: JOB_COLORS.find(c => c.id === color)?.hex || '#f59e0b' }}
+                    className="w-10 h-10 rounded-xl border-2 border-transparent group-focus-within:border-white focus:outline-none transition-all"
+                    title="Pick colour"
+                    onClick={e => { e.currentTarget.nextSibling.classList.toggle('hidden'); }}
+                  />
+                  <div className="hidden absolute top-12 right-0 bg-zinc-800 border border-zinc-700 rounded-2xl p-3 z-20 shadow-2xl grid grid-cols-4 gap-2 w-44">
+                    {JOB_COLORS.map(c => (
+                      <button key={c.id} onClick={() => setColor(c.id)}
+                        style={{ backgroundColor: c.hex }}
+                        className={`w-8 h-8 rounded-xl transition-transform hover:scale-110 ${color === c.id ? 'ring-2 ring-white ring-offset-1 ring-offset-zinc-800' : ''}`}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
             ) : (
-              <p className="text-zinc-100 font-semibold">{title}</p>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-8 rounded-full shrink-0" style={{ backgroundColor: JOB_COLORS.find(c => c.id === color)?.hex || '#f59e0b' }} />
+                <p className="text-zinc-100 font-semibold">{title}</p>
+              </div>
             )}
           </div>
 
