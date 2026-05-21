@@ -98,7 +98,7 @@ export default function OrgTab() {
         .subscribe();
     }
     return () => { if (channel) supabase.removeChannel(channel); };
-  }, [orgData?.org?.id, orgData?.role, user?.id, addToast]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [orgData?.org?.id, orgData?.role, user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Handle ?join=CODE URL param
   useEffect(() => {

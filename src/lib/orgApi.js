@@ -205,12 +205,12 @@ export async function updateJobSeries(seriesId, { title, description, location, 
   if (assignedUserIds !== undefined) {
     const { data: seriesJobs } = await supabase.from('jobs').select('id').eq('series_id', seriesId);
     for (const j of (seriesJobs || [])) {
-      await supabase.from('job_assignments').delete().eq('job_id', j.id);
-      if (assignedUserIds.length > 0) {
-        await supabase.from('job_assignments').insert(
-          assignedUserIds.map(uid => ({ job_id: j.id, user_id: uid }))
-        );
-      }
+      const { data: existing } = await supabase.from('job_assignments').select('user_id').eq('job_id', j.id);
+      const existingIds = (existing || []).map(a => a.user_id);
+      const toAdd    = assignedUserIds.filter(uid => !existingIds.includes(uid));
+      const toRemove = existingIds.filter(uid => !assignedUserIds.includes(uid));
+      if (toRemove.length > 0) await supabase.from('job_assignments').delete().eq('job_id', j.id).in('user_id', toRemove);
+      if (toAdd.length > 0)    await supabase.from('job_assignments').insert(toAdd.map(uid => ({ job_id: j.id, user_id: uid })));
     }
   }
 }
@@ -225,12 +225,12 @@ export async function updateJob(jobId, { title, description, date, location, sta
   if (error) throw error;
 
   if (assignedUserIds !== undefined) {
-    await supabase.from('job_assignments').delete().eq('job_id', jobId);
-    if (assignedUserIds.length > 0) {
-      await supabase.from('job_assignments').insert(
-        assignedUserIds.map(uid => ({ job_id: jobId, user_id: uid }))
-      );
-    }
+    const { data: existing } = await supabase.from('job_assignments').select('user_id').eq('job_id', jobId);
+    const existingIds = (existing || []).map(a => a.user_id);
+    const toAdd    = assignedUserIds.filter(uid => !existingIds.includes(uid));
+    const toRemove = existingIds.filter(uid => !assignedUserIds.includes(uid));
+    if (toRemove.length > 0) await supabase.from('job_assignments').delete().eq('job_id', jobId).in('user_id', toRemove);
+    if (toAdd.length > 0)    await supabase.from('job_assignments').insert(toAdd.map(uid => ({ job_id: jobId, user_id: uid })));
   }
 }
 

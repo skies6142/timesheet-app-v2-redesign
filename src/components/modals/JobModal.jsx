@@ -213,9 +213,11 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
             location: location.trim(), assignedUserIds: assignedIds, seriesId, color,
           })
         ));
-        for (const item of queuedMedia) {
-          try { await orgApi.uploadJobMedia(jobs[0].id, item.file, item.type, '', true); }
-          catch (uploadErr) { addToast(`Media upload failed: ${uploadErr.message}`, 'error'); }
+        for (const createdJob of jobs) {
+          for (const item of queuedMedia) {
+            try { await orgApi.uploadJobMedia(createdJob.id, item.file, item.type, '', true); }
+            catch (uploadErr) { addToast(`Media upload failed: ${uploadErr.message}`, 'error'); }
+          }
         }
         addToast(jobs.length > 1 ? `${jobs.length} jobs created` : 'Job created', 'success');
         onSaved(jobs[0]);
@@ -681,7 +683,10 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
                     </button>
                     {canEdit ? (
                       <textarea
-                        ref={el => { descItemRefs.current[idx] = el; }}
+                        ref={el => {
+                          descItemRefs.current[idx] = el;
+                          if (el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; }
+                        }}
                         value={item.text}
                         onChange={e => {
                           handleDescItemText(idx, e.target.value);
