@@ -472,26 +472,30 @@ function OrgCalendarView({ orgId, isOwner, isAdmin, members, onOpenJob }) {
 
   // Group jobs for list view: series → one card, singles → one card each
   const listItems = useMemo(() => {
-    const seriesMap = {};
-    const result = [];
+    // Group key: prefer series_id, fall back to title+location match
+    const groupMap = {};
     for (const job of allJobs) {
-      if (job.series_id) {
-        if (!seriesMap[job.series_id]) seriesMap[job.series_id] = [];
-        seriesMap[job.series_id].push(job);
-      } else {
-        result.push({ type: 'single', job, date: job.date });
-      }
+      const key = job.series_id
+        ? `s:${job.series_id}`
+        : `t:${(job.title || '').toLowerCase().trim()}::${(job.location || '').toLowerCase().trim()}`;
+      if (!groupMap[key]) groupMap[key] = [];
+      groupMap[key].push(job);
     }
-    for (const jobs of Object.values(seriesMap)) {
+    const result = [];
+    for (const [, jobs] of Object.entries(groupMap)) {
       const sorted = [...jobs].sort((a, b) => a.date.localeCompare(b.date));
-      result.push({
-        type: 'series',
-        jobs: sorted,
-        series_id: sorted[0].series_id,
-        firstDate: sorted[0].date,
-        lastDate: sorted[sorted.length - 1].date,
-        representativeJob: sorted[0],
-      });
+      if (sorted.length === 1) {
+        result.push({ type: 'single', job: sorted[0], date: sorted[0].date });
+      } else {
+        result.push({
+          type: 'series',
+          jobs: sorted,
+          series_id: sorted[0].series_id || null,
+          firstDate: sorted[0].date,
+          lastDate: sorted[sorted.length - 1].date,
+          representativeJob: sorted[0],
+        });
+      }
     }
     return result.sort((a, b) => {
       const aDate = a.type === 'single' ? a.date : a.firstDate;
