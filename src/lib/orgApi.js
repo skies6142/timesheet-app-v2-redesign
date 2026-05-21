@@ -158,12 +158,15 @@ export async function getJob(jobId) {
   return data;
 }
 
-export async function createJob(orgId, { title, description, date, location, assignedUserIds = [] }) {
+export async function createJob(orgId, { title, description, date, location, assignedUserIds = [], seriesId }) {
   const { data: { user } } = await supabase.auth.getUser();
+
+  const row = { org_id: orgId, title, description, date, location, created_by: user.id };
+  if (seriesId) row.series_id = seriesId;
 
   const { data: job, error } = await supabase
     .from('jobs')
-    .insert({ org_id: orgId, title, description, date, location, created_by: user.id })
+    .insert(row)
     .select()
     .single();
   if (error) throw error;
@@ -174,6 +177,39 @@ export async function createJob(orgId, { title, description, date, location, ass
     );
   }
   return job;
+}
+
+export async function updateJobDescription(jobId, description) {
+  const { error } = await supabase
+    .from('jobs')
+    .update({ description })
+    .eq('id', jobId);
+  if (error) throw error;
+}
+
+export async function updateJobSeries(seriesId, { title, description, location, status, assignedUserIds }) {
+  const update = {};
+  if (title !== undefined)       update.title       = title;
+  if (description !== undefined) update.description = description;
+  if (location !== undefined)    update.location    = location;
+  if (status !== undefined)      update.status      = status;
+
+  if (Object.keys(update).length > 0) {
+    const { error } = await supabase.from('jobs').update(update).eq('series_id', seriesId);
+    if (error) throw error;
+  }
+
+  if (assignedUserIds !== undefined) {
+    const { data: seriesJobs } = await supabase.from('jobs').select('id').eq('series_id', seriesId);
+    for (const j of (seriesJobs || [])) {
+      await supabase.from('job_assignments').delete().eq('job_id', j.id);
+      if (assignedUserIds.length > 0) {
+        await supabase.from('job_assignments').insert(
+          assignedUserIds.map(uid => ({ job_id: j.id, user_id: uid }))
+        );
+      }
+    }
+  }
 }
 
 export async function updateJob(jobId, { title, description, date, location, status, assignedUserIds }) {

@@ -300,6 +300,7 @@ export default function OrgTab() {
             key={`cal-${calRefreshKey}`}
             orgId={orgData.org.id}
             isOwner={isOwner}
+            isAdmin={isAdmin}
             members={orgData.members}
             onOpenJob={openJob}
           />
@@ -393,15 +394,18 @@ function OrgHeader({ org, role, memberCount, addToast }) {
 }
 
 // ── Org calendar view ─────────────────────────────────────────
-function OrgCalendarView({ orgId, isOwner, members, onOpenJob }) {
+function OrgCalendarView({ orgId, isOwner, isAdmin, members, onOpenJob }) {
   const { addToast } = useApp();
   const { user } = useAuth();
-  const [viewDate, setViewDate]         = useState(new Date());
-  const [jobMap, setJobMap]             = useState({});
-  const [selectedDate, setSelectedDate] = useState(null);
-  const [showDaySheet, setShowDaySheet] = useState(false);
-  const [calLoading, setCalLoading]     = useState(false);
+  const [viewDate, setViewDate]           = useState(new Date());
+  const [jobMap, setJobMap]               = useState({});
+  const [allJobs, setAllJobs]             = useState([]);
+  const [selectedDate, setSelectedDate]   = useState(null);
+  const [showDaySheet, setShowDaySheet]   = useState(false);
+  const [calLoading, setCalLoading]       = useState(false);
   const [updatingJobId, setUpdatingJobId] = useState(null);
+  const [calView, setCalView]             = useState('grid'); // 'grid' | 'list'
+  const canSeeAll = isOwner || isAdmin;
 
   const year  = viewDate.getFullYear();
   const month = viewDate.getMonth() + 1;
@@ -412,19 +416,24 @@ function OrgCalendarView({ orgId, isOwner, members, onOpenJob }) {
     setCalLoading(true);
     try {
       const jobs = await orgApi.getJobsForMonth(orgId, year, month);
+      // Workers only see jobs they're assigned to
+      const visible = canSeeAll
+        ? jobs
+        : jobs.filter(j => j.job_assignments?.some(a => a.user_id === user?.id));
       const map = {};
-      for (const job of jobs) {
+      for (const job of visible) {
         if (!map[job.date]) map[job.date] = [];
         map[job.date].push(job);
       }
       setJobMap(map);
+      setAllJobs(visible);
     } catch (e) {
       console.error('[loadJobs]', e);
       addToast(`Calendar error: ${e.message}`, 'error');
     } finally {
       setCalLoading(false);
     }
-  }, [orgId, year, month, addToast]);
+  }, [orgId, year, month, addToast, canSeeAll, user?.id]);
 
   useEffect(() => { loadJobs(); }, [loadJobs]);
 
@@ -452,116 +461,206 @@ function OrgCalendarView({ orgId, isOwner, members, onOpenJob }) {
   const rows = [];
   for (let i = 0; i < days.length; i += 7) rows.push(days.slice(i, i + 7));
 
+  // Sorted dates that have visible jobs (for list view)
+  const listDates = Object.keys(jobMap).sort();
+
   return (
     <div className="h-full flex flex-col">
-      {/* Month nav */}
+      {/* Month nav + view toggle */}
       <div className="shrink-0 px-4 pt-3 pb-1">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-2">
           <button
             onClick={() => setViewDate(d => subMonths(d, 1))}
             className="w-10 h-10 flex items-center justify-center rounded-xl border border-zinc-700 text-zinc-400 text-xl min-h-[44px]"
           >
             ‹
           </button>
-          <p className="font-semibold text-zinc-50">{format(viewDate, 'MMMM yyyy')}</p>
-          <button
-            onClick={() => setViewDate(d => addMonths(d, 1))}
-            className="w-10 h-10 flex items-center justify-center rounded-xl border border-zinc-700 text-zinc-400 text-xl min-h-[44px]"
-          >
-            ›
-          </button>
+          <p className="font-semibold text-zinc-50 flex-1 text-center">{format(viewDate, 'MMMM yyyy')}</p>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setViewDate(d => addMonths(d, 1))}
+              className="w-10 h-10 flex items-center justify-center rounded-xl border border-zinc-700 text-zinc-400 text-xl min-h-[44px]"
+            >
+              ›
+            </button>
+            {/* Grid / List toggle */}
+            <div className="flex rounded-xl overflow-hidden border border-zinc-700 ml-1">
+              <button onClick={() => setCalView('grid')}
+                className={`w-9 h-9 flex items-center justify-center transition-colors ${calView === 'grid' ? 'bg-amber-400 text-zinc-950' : 'text-zinc-500 hover:text-zinc-300'}`}>
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="5" height="5" rx="1" fill="currentColor"/><rect x="8" y="1" width="5" height="5" rx="1" fill="currentColor"/><rect x="1" y="8" width="5" height="5" rx="1" fill="currentColor"/><rect x="8" y="8" width="5" height="5" rx="1" fill="currentColor"/></svg>
+              </button>
+              <button onClick={() => setCalView('list')}
+                className={`w-9 h-9 flex items-center justify-center border-l border-zinc-700 transition-colors ${calView === 'list' ? 'bg-amber-400 text-zinc-950' : 'text-zinc-500 hover:text-zinc-300'}`}>
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="2" width="12" height="2" rx="1" fill="currentColor"/><rect x="1" y="6" width="12" height="2" rx="1" fill="currentColor"/><rect x="1" y="10" width="12" height="2" rx="1" fill="currentColor"/></svg>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Calendar grid */}
-      <div className="flex-1 scroll-area px-2 pb-4">
-        {/* Day headers */}
-        <div className="grid grid-cols-7 mb-1">
-          {['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(d => (
-            <div key={d} className="text-center text-[10px] text-zinc-600 uppercase tracking-widest py-1">{d}</div>
-          ))}
-        </div>
-
+      {/* Calendar grid OR list view */}
+      <div className="flex-1 scroll-area px-2 pb-4 overflow-y-auto">
         {calLoading ? (
           <div className="flex justify-center py-10">
             <div className="w-6 h-6 rounded-full border-2 border-amber-400 border-t-transparent animate-spin" />
           </div>
-        ) : (
-          rows.map((row, rowIdx) => (
-            <div key={rowIdx} className="grid grid-cols-7 mb-1">
-              {row.map((date, cellIdx) => {
-                if (!date) return <div key={cellIdx} className="aspect-square" />;
+        ) : calView === 'list' ? (
+          /* ── LIST VIEW ── */
+          <div className="px-2 pt-2 space-y-4">
+            {listDates.length === 0 ? (
+              <div className="text-center py-10">
+                <p className="text-zinc-500 text-sm">No jobs this month</p>
+              </div>
+            ) : (
+              listDates.map(date => {
                 const dayJobs = jobMap[date] || [];
-                const isToday = date === today;
-                const dayNum  = parseInt(date.slice(8), 10);
-                const isAssigned = user && dayJobs.some(j =>
-                  j.job_assignments?.some(a => a.user_id === user.id)
-                );
-
                 return (
-                  <button
-                    key={date}
-                    onClick={() => openDay(date)}
-                    className={`aspect-square rounded-xl flex flex-col items-center justify-start p-1 transition-colors min-h-[44px] ${
-                      isToday
-                        ? 'border border-amber-400'
-                        : isAssigned
-                          ? 'border-2 border-amber-500/70'
-                          : 'border border-transparent'
-                    } ${
-                      isAssigned
-                        ? 'bg-amber-500/15 hover:bg-amber-500/22'
-                        : dayJobs.length > 0
-                          ? 'bg-zinc-900 hover:bg-zinc-800'
-                          : 'hover:bg-zinc-900/40'
-                    }`}
-                  >
-                    <span className={`text-xs font-medium ${
-                      isToday ? 'text-amber-400' : isAssigned ? 'text-amber-300 font-semibold' : 'text-zinc-300'
-                    }`}>{dayNum}</span>
-                    {dayJobs.length > 0 && (
-                      <>
-                        {isAssigned && (
-                          <span className="text-[9px] text-amber-400 font-extrabold leading-tight tracking-wider">YOU</span>
-                        )}
-                        <div className="flex gap-0.5 mt-auto flex-wrap justify-center">
-                          {dayJobs.slice(0, 3).map(j => (
-                            <span key={j.id} className={`w-1.5 h-1.5 rounded-full ${STATUS_COLORS[j.status]?.dot || 'bg-zinc-600'}`} />
-                          ))}
-                          {dayJobs.length > 3 && (
-                            <span className="text-[8px] text-zinc-600 leading-tight">+{dayJobs.length - 3}</span>
-                          )}
-                        </div>
-                      </>
-                    )}
-                  </button>
+                  <div key={date}>
+                    <p className="text-xs font-semibold text-zinc-500 uppercase tracking-widest mb-2 px-1">
+                      {format(parseISO(date), 'EEEE d MMMM')}
+                      {date === today && <span className="ml-2 text-amber-400">Today</span>}
+                    </p>
+                    <div className="space-y-2">
+                      {dayJobs.map(job => {
+                        const sc = STATUS_COLORS[job.status] || STATUS_COLORS.scheduled;
+                        const isUpdating = updatingJobId === job.id;
+                        const assignedToMe = job.job_assignments?.some(a => a.user_id === user?.id);
+                        return (
+                          <div key={job.id} className={`bg-zinc-900 border rounded-xl overflow-hidden ${assignedToMe ? 'border-amber-500/30' : 'border-zinc-800'}`}>
+                            <button
+                              onClick={() => onOpenJob(job, date)}
+                              className="w-full text-left px-4 py-3 hover:bg-zinc-800/50 active:bg-zinc-800 transition-colors"
+                            >
+                              <div className="flex items-start gap-3">
+                                <span className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${sc.dot}`} />
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-semibold text-zinc-100 leading-snug">{job.title}</p>
+                                  {job.location && <p className="text-xs text-zinc-500 mt-0.5 truncate">📍 {job.location}</p>}
+                                </div>
+                                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${sc.badge} capitalize`}>
+                                  {job.status.replace('_', ' ')}
+                                </span>
+                              </div>
+                            </button>
+                            {(canSeeAll || assignedToMe) && (
+                              <div className="flex gap-1.5 px-4 pb-3 border-t border-zinc-800/50 pt-2">
+                                {job.status === 'scheduled' && (
+                                  <button onClick={() => handleQuickStatus(job.id, 'in_progress')} disabled={isUpdating}
+                                    className="flex-1 text-xs text-blue-400 bg-blue-400/10 border border-blue-400/20 rounded-lg py-2 font-semibold disabled:opacity-50">
+                                    {isUpdating ? '…' : 'Start'}
+                                  </button>
+                                )}
+                                {(job.status === 'scheduled' || job.status === 'in_progress') && (
+                                  <button onClick={() => handleQuickStatus(job.id, 'completed')} disabled={isUpdating}
+                                    className="flex-1 text-xs text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 rounded-lg py-2 font-semibold disabled:opacity-50">
+                                    {isUpdating ? '…' : 'Complete'}
+                                  </button>
+                                )}
+                                {canSeeAll && job.status !== 'cancelled' && job.status !== 'completed' && (
+                                  <button onClick={() => handleQuickStatus(job.id, 'cancelled')} disabled={isUpdating}
+                                    className="flex-1 text-xs text-zinc-500 bg-zinc-700/50 border border-zinc-600 rounded-lg py-2 font-semibold disabled:opacity-50">
+                                    {isUpdating ? '…' : 'Cancel'}
+                                  </button>
+                                )}
+                                {canSeeAll && (job.status === 'cancelled' || job.status === 'completed') && (
+                                  <button onClick={() => handleQuickStatus(job.id, 'scheduled')} disabled={isUpdating}
+                                    className="flex-1 text-xs text-amber-400 bg-amber-400/10 border border-amber-400/20 rounded-lg py-2 font-semibold disabled:opacity-50">
+                                    {isUpdating ? '…' : 'Reopen'}
+                                  </button>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
                 );
-              })}
-            </div>
-          ))
-        )}
-        {/* Legend */}
-        <div className="flex items-center gap-4 px-2 pb-2 flex-wrap">
-          <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 rounded-sm bg-amber-500/15 border-2 border-amber-500/70" />
-            <span className="text-[10px] text-zinc-500">Assigned to you</span>
+              })
+            )}
+            {canSeeAll && (
+              <button
+                onClick={() => onOpenJob(null, today)}
+                className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-zinc-700 hover:border-amber-400/40 text-zinc-500 hover:text-amber-400 rounded-xl py-3 text-sm font-medium transition-colors"
+              >
+                <Plus size={16} />
+                Add job
+              </button>
+            )}
+            <div className="h-4" />
           </div>
-          <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 rounded-sm bg-zinc-900 border border-zinc-700" />
-            <span className="text-[10px] text-zinc-500">Has jobs</span>
-          </div>
-          {!isOwner && (
-            <div className="flex items-center gap-3 ml-auto">
-              {Object.entries(STATUS_COLORS).map(([k, v]) => (
-                <div key={k} className="flex items-center gap-1">
-                  <span className={`w-2 h-2 rounded-full ${v.dot}`} />
-                  <span className="text-[10px] text-zinc-600 capitalize">{k.replace('_', ' ')}</span>
-                </div>
+        ) : (
+          /* ── GRID VIEW ── */
+          <>
+            {/* Day headers */}
+            <div className="grid grid-cols-7 mb-1">
+              {['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(d => (
+                <div key={d} className="text-center text-[10px] text-zinc-600 uppercase tracking-widest py-1">{d}</div>
               ))}
             </div>
-          )}
-        </div>
-        <div className="h-2" />
+            {rows.map((row, rowIdx) => (
+              <div key={rowIdx} className="grid grid-cols-7 mb-1">
+                {row.map((date, cellIdx) => {
+                  if (!date) return <div key={cellIdx} className="aspect-square" />;
+                  const dayJobs    = jobMap[date] || [];
+                  const isToday    = date === today;
+                  const dayNum     = parseInt(date.slice(8), 10);
+                  const isAssigned = user && dayJobs.some(j =>
+                    j.job_assignments?.some(a => a.user_id === user.id)
+                  );
+                  return (
+                    <button key={date} onClick={() => openDay(date)}
+                      className={`aspect-square rounded-xl flex flex-col items-center justify-start p-1 transition-colors min-h-[44px] ${
+                        isToday ? 'border border-amber-400'
+                        : isAssigned ? 'border-2 border-amber-500/70'
+                        : 'border border-transparent'
+                      } ${
+                        isAssigned ? 'bg-amber-500/15 hover:bg-amber-500/22'
+                        : dayJobs.length > 0 ? 'bg-zinc-900 hover:bg-zinc-800'
+                        : 'hover:bg-zinc-900/40'
+                      }`}
+                    >
+                      <span className={`text-xs font-medium ${isToday ? 'text-amber-400' : isAssigned ? 'text-amber-300 font-semibold' : 'text-zinc-300'}`}>{dayNum}</span>
+                      {dayJobs.length > 0 && (
+                        <>
+                          {isAssigned && <span className="text-[9px] text-amber-400 font-extrabold leading-tight tracking-wider">YOU</span>}
+                          <div className="flex gap-0.5 mt-auto flex-wrap justify-center">
+                            {dayJobs.slice(0, 3).map(j => (
+                              <span key={j.id} className={`w-1.5 h-1.5 rounded-full ${STATUS_COLORS[j.status]?.dot || 'bg-zinc-600'}`} />
+                            ))}
+                            {dayJobs.length > 3 && <span className="text-[8px] text-zinc-600 leading-tight">+{dayJobs.length - 3}</span>}
+                          </div>
+                        </>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            ))}
+            {/* Legend */}
+            <div className="flex items-center gap-3 px-2 pb-2 flex-wrap">
+              {canSeeAll && (
+                <div className="flex items-center gap-1.5">
+                  <div className="w-3 h-3 rounded-sm bg-zinc-900 border border-zinc-700" />
+                  <span className="text-[10px] text-zinc-500">Has jobs</span>
+                </div>
+              )}
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 rounded-sm bg-amber-500/15 border-2 border-amber-500/70" />
+                <span className="text-[10px] text-zinc-500">{canSeeAll ? 'Assigned to someone' : 'Assigned to you'}</span>
+              </div>
+              <div className="flex items-center gap-3 ml-auto flex-wrap">
+                {Object.entries(STATUS_COLORS).map(([k, v]) => (
+                  <div key={k} className="flex items-center gap-1">
+                    <span className={`w-2 h-2 rounded-full ${v.dot}`} />
+                    <span className="text-[10px] text-zinc-600 capitalize">{k.replace('_', ' ')}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="h-2" />
+          </>
+        )}
       </div>
 
       {/* Day jobs sheet */}
@@ -596,41 +695,29 @@ function OrgCalendarView({ orgId, isOwner, members, onOpenJob }) {
                       </span>
                     </div>
                   </button>
-                  {isOwner && (
+                  {(canSeeAll || job.job_assignments?.some(a => a.user_id === user?.id)) && (
                     <div className="flex gap-1.5 px-4 pb-3 border-t border-zinc-700/40 pt-2">
                       {job.status === 'scheduled' && (
-                        <button
-                          onClick={() => handleQuickStatus(job.id, 'in_progress')}
-                          disabled={isUpdating}
-                          className="flex-1 text-xs text-blue-400 bg-blue-400/10 border border-blue-400/20 rounded-lg py-2 font-semibold hover:bg-blue-400/15 disabled:opacity-50 transition-colors"
-                        >
+                        <button onClick={() => handleQuickStatus(job.id, 'in_progress')} disabled={isUpdating}
+                          className="flex-1 text-xs text-blue-400 bg-blue-400/10 border border-blue-400/20 rounded-lg py-2 font-semibold hover:bg-blue-400/15 disabled:opacity-50 transition-colors">
                           {isUpdating ? '…' : 'Start'}
                         </button>
                       )}
                       {(job.status === 'scheduled' || job.status === 'in_progress') && (
-                        <button
-                          onClick={() => handleQuickStatus(job.id, 'completed')}
-                          disabled={isUpdating}
-                          className="flex-1 text-xs text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 rounded-lg py-2 font-semibold hover:bg-emerald-400/15 disabled:opacity-50 transition-colors"
-                        >
+                        <button onClick={() => handleQuickStatus(job.id, 'completed')} disabled={isUpdating}
+                          className="flex-1 text-xs text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 rounded-lg py-2 font-semibold hover:bg-emerald-400/15 disabled:opacity-50 transition-colors">
                           {isUpdating ? '…' : 'Complete'}
                         </button>
                       )}
-                      {job.status !== 'cancelled' && job.status !== 'completed' && (
-                        <button
-                          onClick={() => handleQuickStatus(job.id, 'cancelled')}
-                          disabled={isUpdating}
-                          className="flex-1 text-xs text-zinc-500 bg-zinc-700/50 border border-zinc-600 rounded-lg py-2 font-semibold hover:bg-zinc-700 disabled:opacity-50 transition-colors"
-                        >
+                      {canSeeAll && job.status !== 'cancelled' && job.status !== 'completed' && (
+                        <button onClick={() => handleQuickStatus(job.id, 'cancelled')} disabled={isUpdating}
+                          className="flex-1 text-xs text-zinc-500 bg-zinc-700/50 border border-zinc-600 rounded-lg py-2 font-semibold hover:bg-zinc-700 disabled:opacity-50 transition-colors">
                           {isUpdating ? '…' : 'Cancel'}
                         </button>
                       )}
-                      {(job.status === 'cancelled' || job.status === 'completed') && (
-                        <button
-                          onClick={() => handleQuickStatus(job.id, 'scheduled')}
-                          disabled={isUpdating}
-                          className="flex-1 text-xs text-amber-400 bg-amber-400/10 border border-amber-400/20 rounded-lg py-2 font-semibold hover:bg-amber-400/15 disabled:opacity-50 transition-colors"
-                        >
+                      {canSeeAll && (job.status === 'cancelled' || job.status === 'completed') && (
+                        <button onClick={() => handleQuickStatus(job.id, 'scheduled')} disabled={isUpdating}
+                          className="flex-1 text-xs text-amber-400 bg-amber-400/10 border border-amber-400/20 rounded-lg py-2 font-semibold hover:bg-amber-400/15 disabled:opacity-50 transition-colors">
                           {isUpdating ? '…' : 'Reopen'}
                         </button>
                       )}
@@ -1603,6 +1690,7 @@ function NotesView({ orgId, isOwner, isAdmin, members = [], addToast }) {
   const [editEditUsers, setEditEditUsers] = useState([]);
   const [saving, setSaving]             = useState(false);
   const [deleting, setDeleting]         = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const itemInputRefs                   = useRef([]);
   const textareaRef                     = useRef(null);
 
@@ -1650,6 +1738,7 @@ function NotesView({ orgId, isOwner, isAdmin, members = [], addToast }) {
     setEditEditable('everyone');
     setEditVisUsers([]);
     setEditEditUsers([]);
+    setConfirmDelete(false);
     setEditNote('new');
   };
 
@@ -1662,6 +1751,7 @@ function NotesView({ orgId, isOwner, isAdmin, members = [], addToast }) {
     setEditEditable(note.editable_by || 'everyone');
     setEditVisUsers(note.visibility_users || []);
     setEditEditUsers(note.editable_users || []);
+    setConfirmDelete(false);
     setEditNote(note);
   };
 
@@ -1720,12 +1810,13 @@ function NotesView({ orgId, isOwner, isAdmin, members = [], addToast }) {
   };
 
   const handleDelete = async () => {
-    if (!editNote?.id || !confirm('Delete this note?')) return;
+    if (!editNote?.id) return;
     setDeleting(true);
     try {
       await orgApi.deleteOrgNote(editNote.id);
       addToast('Note deleted', 'success');
       setEditNote(null);
+      setConfirmDelete(false);
       await load();
     } catch (e) {
       addToast(e.message || 'Failed to delete', 'error');
@@ -1860,10 +1951,10 @@ function NotesView({ orgId, isOwner, isAdmin, members = [], addToast }) {
                 className={`flex-1 bg-transparent text-base font-semibold placeholder-zinc-500 focus:outline-none ${canEdit ? 'text-zinc-50' : 'text-zinc-400'}`}
               />
               <div className="flex items-center gap-1.5 shrink-0">
-                {editNote !== 'new' && isOwner && (
-                  <button onClick={handleDelete} disabled={deleting}
+                {editNote !== 'new' && isOwner && !confirmDelete && (
+                  <button onClick={() => setConfirmDelete(true)}
                     className="text-red-400 hover:bg-red-400/10 rounded-lg px-2 py-1 text-xs font-semibold transition-colors">
-                    {deleting ? '…' : 'Delete'}
+                    Delete
                   </button>
                 )}
                 <button onClick={() => setEditNote(null)}
@@ -1872,6 +1963,17 @@ function NotesView({ orgId, isOwner, isAdmin, members = [], addToast }) {
                 </button>
               </div>
             </div>
+
+            {/* Inline delete confirm */}
+            {confirmDelete && (
+              <div className="px-5 py-3 bg-red-950/40 border-b border-red-900/50 shrink-0 flex items-center gap-3">
+                <p className="flex-1 text-sm text-red-300">Delete this note?</p>
+                <button onClick={() => setConfirmDelete(false)} className="px-3 py-1.5 text-xs text-zinc-400 bg-zinc-800 rounded-lg">Cancel</button>
+                <button onClick={handleDelete} disabled={deleting} className="px-3 py-1.5 text-xs text-white bg-red-500 hover:bg-red-400 rounded-lg font-semibold disabled:opacity-50">
+                  {deleting ? '…' : 'Delete'}
+                </button>
+              </div>
+            )}
 
             {/* Last-edited info */}
             {editNote !== 'new' && editNote.updated_by_name && (
@@ -1913,8 +2015,8 @@ function NotesView({ orgId, isOwner, isAdmin, members = [], addToast }) {
               {/* Checklist items */}
               <div className="px-5 pt-2 pb-4 space-y-0.5">
                 {editItems.map((item, idx) => (
-                  <div key={item.id} className="flex items-center gap-3 py-2 border-b border-zinc-800/40 last:border-0">
-                    <button onClick={() => handleToggleItem(idx)} className="shrink-0" disabled={!canEdit}>
+                  <div key={item.id} className="flex items-start gap-3 py-2 border-b border-zinc-800/40 last:border-0">
+                    <button onClick={() => handleToggleItem(idx)} disabled={!canEdit} className="shrink-0 mt-0.5">
                       {item.checked ? (
                         <div className="w-6 h-6 rounded-full bg-amber-400 flex items-center justify-center shadow-sm shadow-amber-400/25">
                           <Check size={13} className="text-zinc-950" strokeWidth={3} />
@@ -1923,21 +2025,30 @@ function NotesView({ orgId, isOwner, isAdmin, members = [], addToast }) {
                         <div className={`w-6 h-6 rounded-full border-2 border-zinc-600 transition-colors ${canEdit ? 'hover:border-zinc-400 active:border-amber-400/70' : 'opacity-50'}`} />
                       )}
                     </button>
-                    <input
-                      ref={el => { itemInputRefs.current[idx] = el; }}
-                      value={item.text}
-                      onChange={e => handleItemText(idx, e.target.value)}
-                      onKeyDown={e => handleItemKeyDown(e, idx)}
-                      readOnly={!canEdit}
-                      placeholder={canEdit ? 'Item…' : ''}
-                      className={`flex-1 bg-transparent text-sm focus:outline-none placeholder-zinc-600 ${
-                        item.checked ? 'text-zinc-500 line-through' : 'text-zinc-100'
-                      }`}
-                    />
+                    {canEdit ? (
+                      <textarea
+                        ref={el => { itemInputRefs.current[idx] = el; }}
+                        value={item.text}
+                        onChange={e => {
+                          handleItemText(idx, e.target.value);
+                          e.target.style.height = 'auto';
+                          e.target.style.height = e.target.scrollHeight + 'px';
+                        }}
+                        onKeyDown={e => handleItemKeyDown(e, idx)}
+                        placeholder="Item…"
+                        rows={1}
+                        style={{ minHeight: '1.5rem', height: 'auto' }}
+                        className={`flex-1 bg-transparent text-sm focus:outline-none placeholder-zinc-600 resize-none overflow-hidden leading-normal ${
+                          item.checked ? 'text-zinc-500 line-through' : 'text-zinc-100'
+                        }`}
+                      />
+                    ) : (
+                      <p className={`flex-1 text-sm leading-normal break-words ${item.checked ? 'text-zinc-500 line-through' : 'text-zinc-100'}`}>{item.text}</p>
+                    )}
                     {canEdit && (
                       <button
                         onClick={() => handleDeleteItem(idx)}
-                        className="w-7 h-7 flex items-center justify-center text-zinc-700 hover:text-red-400 active:text-red-400 rounded-lg transition-colors shrink-0"
+                        className="w-7 h-7 flex items-center justify-center text-zinc-700 hover:text-red-400 active:text-red-400 rounded-lg transition-colors shrink-0 mt-0.5"
                       >
                         <X size={14} />
                       </button>

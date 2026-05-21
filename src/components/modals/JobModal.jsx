@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { X, MapPin, FileText, Users, Camera, Mic, StopCircle, Trash2, Plus, Check, ChevronLeft, ChevronRight } from 'lucide-react';
-import { addMonths, subMonths, getDaysInMonth as dateFnsDays, startOfMonth } from 'date-fns';
-import { format, parseISO } from 'date-fns';
+import { X, MapPin, FileText, Users, Camera, Mic, StopCircle, Trash2, Plus, Check, ChevronLeft, ChevronRight, CalendarDays } from 'lucide-react';
+import { addMonths, subMonths, format, parseISO } from 'date-fns';
 import * as orgApi from '../../lib/orgApi';
+import { supabase } from '../../lib/supabase';
 import { useApp } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
 
@@ -49,15 +49,19 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
   const recTimerRef = useRef(null);
 
   // UI
-  const [saving, setSaving]             = useState(false);
-  const [deleting, setDeleting]         = useState(false);
-  const [uploading, setUploading]       = useState(false);
-  const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [saving, setSaving]                   = useState(false);
+  const [deleting, setDeleting]               = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [uploading, setUploading]             = useState(false);
+  const [updatingStatus, setUpdatingStatus]   = useState(false);
+  const [editScope, setEditScope]             = useState('single'); // 'single' | 'series'
   const photoInputRef = useRef(null);
 
-  const isNew       = !job?.id;
-  const canEdit     = isOwner;
-  const isAssigned  = !isNew && !!user && (job?.job_assignments?.some(a => a.user_id === user.id) ?? false);
+  const isNew        = !job?.id;
+  const canEdit      = isOwner;
+  const isAssigned   = !isNew && !!user && (job?.job_assignments?.some(a => a.user_id === user.id) ?? false);
+  const canTickItems = canEdit || isAssigned; // workers can check off items
+  const hasSeries    = !!job?.series_id;
 
   const parseDesc = (raw) => {
     if (!raw) return { text: '', items: [] };
@@ -103,6 +107,25 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
     setSuggestions([]);
     setMedia([]);
   }, [job, defaultDate]);
+
+  // Reset series scope when opening a different job
+  useEffect(() => { setEditScope('single'); setShowDeleteConfirm(false); }, [job?.id]);
+
+  // Realtime: sync checklist state while modal is open (other users ticking items)
+  useEffect(() => {
+    if (!job?.id) return;
+    const channel = supabase
+      .channel(`job-modal-${job.id}`)
+      .on('postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'jobs', filter: `id=eq.${job.id}` },
+        (payload) => {
+          const { items: newItems } = parseDesc(payload.new?.description || '');
+          setDescItems(newItems);
+        }
+      )
+      .subscribe();
+    return () => supabase.removeChannel(channel);
+  }, [job?.id]);
 
   // Load media for existing jobs
   const loadMedia = useCallback(async () => {
@@ -161,22 +184,26 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
     try {
       if (isNew) {
         const allDates = [date, ...extraDates].filter(Boolean);
+        const seriesId = allDates.length > 1 ? crypto.randomUUID() : undefined;
         const jobs = await Promise.all(allDates.map(d =>
           orgApi.createJob(orgId, {
             title: title.trim(), description, date: d,
-            location: location.trim(), assignedUserIds: assignedIds,
+            location: location.trim(), assignedUserIds: assignedIds, seriesId,
           })
         ));
-        // Upload queued media to the first job only
         for (const item of queuedMedia) {
-          try {
-            await orgApi.uploadJobMedia(jobs[0].id, item.file, item.type, '', true);
-          } catch (uploadErr) {
-            addToast(`Media upload failed: ${uploadErr.message}`, 'error');
-          }
+          try { await orgApi.uploadJobMedia(jobs[0].id, item.file, item.type, '', true); }
+          catch (uploadErr) { addToast(`Media upload failed: ${uploadErr.message}`, 'error'); }
         }
         addToast(jobs.length > 1 ? `${jobs.length} jobs created` : 'Job created', 'success');
         onSaved(jobs[0]);
+      } else if (editScope === 'series' && hasSeries) {
+        await orgApi.updateJobSeries(job.series_id, {
+          title: title.trim(), description,
+          location: location.trim(), status, assignedUserIds: assignedIds,
+        });
+        addToast('All days in series updated', 'success');
+        onSaved();
       } else {
         await orgApi.updateJob(job.id, {
           title: title.trim(), description, date,
@@ -193,11 +220,12 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
   };
 
   const handleDelete = async () => {
-    if (!job?.id || !confirm('Delete this job?')) return;
+    if (!job?.id) return;
     setDeleting(true);
     try {
       await orgApi.deleteJob(job.id);
       addToast('Job deleted', 'success');
+      setShowDeleteConfirm(false);
       onSaved();
     } catch (e) {
       addToast(e.message || 'Failed to delete', 'error');
@@ -231,8 +259,13 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
       return next;
     });
   };
-  const handleToggleDescItem = (idx) =>
-    setDescItems(prev => prev.map((item, i) => i === idx ? { ...item, checked: !item.checked } : item));
+  const handleToggleDescItem = async (idx) => {
+    const newItems = descItems.map((item, i) => i === idx ? { ...item, checked: !item.checked } : item);
+    setDescItems(newItems);
+    if (!isNew && job?.id) {
+      try { await orgApi.updateJobDescription(job.id, serializeDesc(descText, newItems)); } catch {}
+    }
+  };
   const handleDescItemText = (idx, val) =>
     setDescItems(prev => prev.map((item, i) => i === idx ? { ...item, text: val } : item));
   const handleDescItemKeyDown = (e, idx) => {
@@ -368,10 +401,10 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
             {isNew ? 'New Job' : canEdit ? 'Edit Job' : 'Job Details'}
           </h2>
           <div className="flex items-center gap-2">
-            {!isNew && canEdit && (
-              <button onClick={handleDelete} disabled={deleting}
+            {!isNew && canEdit && !showDeleteConfirm && (
+              <button onClick={() => setShowDeleteConfirm(true)}
                 className="text-red-400 hover:bg-red-400/10 rounded-lg px-2 py-1 text-xs font-semibold">
-                {deleting ? '…' : 'Delete'}
+                Delete
               </button>
             )}
             <button onClick={onClose}
@@ -380,6 +413,37 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
             </button>
           </div>
         </div>
+
+        {/* Inline delete confirm */}
+        {showDeleteConfirm && (
+          <div className="px-5 py-3 bg-red-950/40 border-b border-red-900/50 shrink-0 flex items-center gap-3">
+            <p className="flex-1 text-sm text-red-300">Delete this job?</p>
+            <button onClick={() => setShowDeleteConfirm(false)} className="px-3 py-1.5 text-xs text-zinc-400 bg-zinc-800 rounded-lg">Cancel</button>
+            <button onClick={handleDelete} disabled={deleting} className="px-3 py-1.5 text-xs text-white bg-red-500 hover:bg-red-400 rounded-lg font-semibold disabled:opacity-50">
+              {deleting ? '…' : 'Delete'}
+            </button>
+          </div>
+        )}
+
+        {/* Series scope selector — shown when editing a job that belongs to a series */}
+        {!isNew && canEdit && hasSeries && (
+          <div className="px-5 py-2.5 border-b border-zinc-800 shrink-0">
+            <div className="flex items-center gap-2">
+              <CalendarDays size={13} className="text-zinc-500 shrink-0" />
+              <p className="text-xs text-zinc-500 mr-auto">Part of a multi-day series</p>
+              <div className="flex rounded-lg overflow-hidden border border-zinc-700">
+                <button onClick={() => setEditScope('single')}
+                  className={`px-2.5 py-1 text-xs font-medium transition-colors ${editScope === 'single' ? 'bg-amber-400 text-zinc-950' : 'text-zinc-400 hover:text-zinc-200'}`}>
+                  This day
+                </button>
+                <button onClick={() => setEditScope('series')}
+                  className={`px-2.5 py-1 text-xs font-medium border-l border-zinc-700 transition-colors ${editScope === 'series' ? 'bg-amber-400 text-zinc-950' : 'text-zinc-400 hover:text-zinc-200'}`}>
+                  All days
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Single shared file input */}
         <input
@@ -518,30 +582,36 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
               {/* Checklist items */}
               <div className="px-4 pt-1 pb-2 space-y-0.5">
                 {descItems.map((item, idx) => (
-                  <div key={item.id} className="flex items-center gap-3 py-1.5">
-                    <button onClick={() => handleToggleDescItem(idx)} className="shrink-0">
+                  <div key={item.id} className="flex items-start gap-3 py-1.5">
+                    <button onClick={() => canTickItems && handleToggleDescItem(idx)} disabled={!canTickItems} className="shrink-0 mt-0.5">
                       {item.checked ? (
                         <div className="w-5 h-5 rounded-full bg-amber-400 flex items-center justify-center">
                           <Check size={11} className="text-zinc-950" strokeWidth={3} />
                         </div>
                       ) : (
-                        <div className={`w-5 h-5 rounded-full border-2 border-zinc-600 transition-colors ${canEdit ? 'hover:border-zinc-400' : ''}`} />
+                        <div className={`w-5 h-5 rounded-full border-2 border-zinc-600 transition-colors ${canTickItems ? 'hover:border-zinc-400' : 'opacity-40'}`} />
                       )}
                     </button>
                     {canEdit ? (
-                      <input
+                      <textarea
                         ref={el => { descItemRefs.current[idx] = el; }}
                         value={item.text}
-                        onChange={e => handleDescItemText(idx, e.target.value)}
+                        onChange={e => {
+                          handleDescItemText(idx, e.target.value);
+                          e.target.style.height = 'auto';
+                          e.target.style.height = e.target.scrollHeight + 'px';
+                        }}
                         onKeyDown={e => handleDescItemKeyDown(e, idx)}
                         placeholder="Item…"
-                        className={`flex-1 bg-transparent text-sm focus:outline-none placeholder-zinc-600 ${item.checked ? 'text-zinc-500 line-through' : 'text-zinc-100'}`}
+                        rows={1}
+                        style={{ minHeight: '1.5rem', height: 'auto' }}
+                        className={`flex-1 bg-transparent text-sm focus:outline-none placeholder-zinc-600 resize-none overflow-hidden leading-normal ${item.checked ? 'text-zinc-500 line-through' : 'text-zinc-100'}`}
                       />
                     ) : (
-                      <p className={`flex-1 text-sm ${item.checked ? 'text-zinc-500 line-through' : 'text-zinc-200'}`}>{item.text}</p>
+                      <p className={`flex-1 text-sm leading-normal break-words ${item.checked ? 'text-zinc-500 line-through' : 'text-zinc-200'}`}>{item.text}</p>
                     )}
                     {canEdit && (
-                      <button onClick={() => handleDeleteDescItem(idx)} className="w-6 h-6 flex items-center justify-center text-zinc-700 hover:text-red-400 rounded-lg">
+                      <button onClick={() => handleDeleteDescItem(idx)} className="w-6 h-6 flex items-center justify-center text-zinc-700 hover:text-red-400 rounded-lg shrink-0 mt-0.5">
                         <X size={13} />
                       </button>
                     )}
