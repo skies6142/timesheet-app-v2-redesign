@@ -197,6 +197,59 @@ export async function updateJobStatus(jobId, status) {
   if (error) throw error;
 }
 
+// ── Org notes ─────────────────────────────────────────────────
+
+export async function getOrgNotes(orgId) {
+  const { data, error } = await supabase
+    .from('org_notes')
+    .select('*')
+    .eq('org_id', orgId)
+    .order('updated_at', { ascending: false });
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function createOrgNote(orgId, title, content) {
+  const { data: { user } } = await supabase.auth.getUser();
+  const displayName = user.user_metadata?.display_name || user.email;
+  const { data, error } = await supabase
+    .from('org_notes')
+    .insert({
+      org_id: orgId,
+      title: title || 'Untitled Note',
+      content,
+      created_by: user.id,
+      created_by_name: displayName,
+      updated_by: user.id,
+      updated_by_name: displayName,
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function updateOrgNote(noteId, title, content) {
+  const { data: { user } } = await supabase.auth.getUser();
+  const displayName = user.user_metadata?.display_name || user.email;
+  const { error } = await supabase
+    .from('org_notes')
+    .update({
+      title,
+      content,
+      updated_by: user.id,
+      updated_by_name: displayName,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', noteId);
+  if (error) throw error;
+}
+
+export async function deleteOrgNote(noteId) {
+  const { error } = await supabase.from('org_notes').delete().eq('id', noteId);
+  if (error) throw error;
+}
+
 // ── Job media ─────────────────────────────────────────────────
 
 export async function getJobMedia(jobId) {

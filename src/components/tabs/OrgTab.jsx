@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Building2, Share2, Copy, Check, X, Plus, Users, ChevronLeft, ChevronRight, Download, SlidersHorizontal, Search } from 'lucide-react';
+import { Building2, Share2, Copy, Check, X, Plus, Users, ChevronLeft, ChevronRight, Download, SlidersHorizontal, Search, StickyNote, Pencil } from 'lucide-react';
 import { format, parseISO, addMonths, subMonths } from 'date-fns';
 import { useAuth } from '../../context/AuthContext';
 import { useApp } from '../../context/AppContext';
@@ -273,8 +273,8 @@ export default function OrgTab() {
   // ── In an organisation ─────────────────────────────────────
   const isOwner = orgData.role === 'owner';
   const views = isOwner
-    ? [{ id: 'calendar', label: 'Calendar' }, { id: 'members', label: 'Team' }, { id: 'invoices', label: 'Invoices' }, { id: 'reports', label: 'Reports' }]
-    : [{ id: 'calendar', label: 'Calendar' }, { id: 'invoices', label: 'My Invoices' }];
+    ? [{ id: 'calendar', label: 'Calendar' }, { id: 'members', label: 'Team' }, { id: 'notes', label: 'Notes' }, { id: 'invoices', label: 'Invoices' }, { id: 'reports', label: 'Reports' }]
+    : [{ id: 'calendar', label: 'Calendar' }, { id: 'notes', label: 'Notes' }, { id: 'invoices', label: 'My Invoices' }];
 
   return (
     <div className="h-full flex flex-col">
@@ -313,6 +313,9 @@ export default function OrgTab() {
             onSubmit={() => setShowSubmitInvoice(true)}
             addToast={addToast}
           />
+        )}
+        {activeView === 'notes' && (
+          <NotesView orgId={orgData.org.id} addToast={addToast} />
         )}
         {activeView === 'reports' && isOwner && (
           <HoursReportView orgId={orgData.org.id} addToast={addToast} />
@@ -1515,5 +1518,218 @@ function ReportGroup({ group, groupBy }) {
         </div>
       )}
     </div>
+  );
+}
+
+// ── Notes view (all members) ──────────────────────────────────
+function NotesView({ orgId, addToast }) {
+  const [notes, setNotes]     = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [editNote, setEditNote] = useState(null); // null | 'new' | note object
+  const [editTitle, setEditTitle]     = useState('');
+  const [editContent, setEditContent] = useState('');
+  const [saving, setSaving]   = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const load = useCallback(async () => {
+    try {
+      const data = await orgApi.getOrgNotes(orgId);
+      setNotes(data);
+    } catch (e) {
+      addToast(`Failed to load notes: ${e.message}`, 'error');
+    } finally {
+      setLoading(false);
+    }
+  }, [orgId, addToast]);
+
+  useEffect(() => { load(); }, [load]);
+
+  // Realtime: refresh on any change to this org's notes
+  useEffect(() => {
+    const channel = supabase
+      .channel(`org-notes-${orgId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'org_notes', filter: `org_id=eq.${orgId}` },
+        () => load())
+      .subscribe();
+    return () => supabase.removeChannel(channel);
+  }, [orgId, load]);
+
+  const openNew = () => {
+    setEditTitle('');
+    setEditContent('');
+    setEditNote('new');
+  };
+
+  const openEdit = (note) => {
+    setEditTitle(note.title);
+    setEditContent(note.content || '');
+    setEditNote(note);
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      if (editNote === 'new') {
+        await orgApi.createOrgNote(orgId, editTitle.trim() || 'Untitled Note', editContent);
+      } else {
+        await orgApi.updateOrgNote(editNote.id, editTitle.trim() || 'Untitled Note', editContent);
+      }
+      addToast('Note saved', 'success');
+      setEditNote(null);
+      await load();
+    } catch (e) {
+      addToast(e.message || 'Failed to save note', 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!editNote?.id || !confirm('Delete this note?')) return;
+    setDeleting(true);
+    try {
+      await orgApi.deleteOrgNote(editNote.id);
+      addToast('Note deleted', 'success');
+      setEditNote(null);
+      await load();
+    } catch (e) {
+      addToast(e.message || 'Failed to delete', 'error');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const safeDate = (str) => {
+    if (!str) return '';
+    try { return format(new Date(str), 'd MMM · h:mm a'); } catch { return ''; }
+  };
+
+  return (
+    <>
+      <div className="h-full flex flex-col">
+        <div className="flex-1 scroll-area px-4 py-4 space-y-2">
+          {/* New note button */}
+          <button
+            onClick={openNew}
+            className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-zinc-700 hover:border-amber-400/50 text-zinc-500 hover:text-amber-400 rounded-2xl py-4 min-h-[52px] transition-colors"
+          >
+            <Plus size={18} />
+            New Note
+          </button>
+
+          {loading ? (
+            <div className="flex justify-center py-10">
+              <div className="w-6 h-6 rounded-full border-2 border-amber-400 border-t-transparent animate-spin" />
+            </div>
+          ) : notes.length === 0 ? (
+            <div className="text-center py-10">
+              <div className="w-12 h-12 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center mx-auto mb-3">
+                <StickyNote size={22} className="text-zinc-600" />
+              </div>
+              <p className="text-zinc-500 text-sm">No notes yet</p>
+              <p className="text-zinc-600 text-xs mt-1">Notes are shared with everyone in the organisation</p>
+            </div>
+          ) : (
+            notes.map(note => (
+              <button
+                key={note.id}
+                onClick={() => openEdit(note)}
+                className="w-full text-left bg-zinc-900 border border-zinc-800 rounded-2xl p-4 hover:border-zinc-700 active:bg-zinc-800/50 transition-colors"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-zinc-100 text-sm">{note.title}</p>
+                    {note.content ? (
+                      <p className="text-xs text-zinc-500 mt-1 leading-relaxed line-clamp-2">{note.content}</p>
+                    ) : (
+                      <p className="text-xs text-zinc-600 mt-1 italic">No content</p>
+                    )}
+                  </div>
+                  <Pencil size={13} className="text-zinc-700 shrink-0 mt-0.5" />
+                </div>
+                <p className="text-[10px] text-zinc-600 mt-2">
+                  {note.updated_by_name ? `Edited by ${note.updated_by_name} · ` : ''}{safeDate(note.updated_at)}
+                </p>
+              </button>
+            ))
+          )}
+          <div className="h-4" />
+        </div>
+      </div>
+
+      {/* Edit / create sheet */}
+      {editNote !== null && (
+        <div className="fixed inset-0 z-[55] flex flex-col justify-end">
+          <div className="absolute inset-0 bg-black/65 backdrop-blur-sm" onClick={() => setEditNote(null)} />
+          <div
+            className="relative z-10 bg-zinc-900 rounded-t-2xl flex flex-col"
+            style={{ maxHeight: '92vh', paddingBottom: 'env(safe-area-inset-bottom, 16px)' }}
+          >
+            {/* Handle */}
+            <div className="flex justify-center pt-3 pb-1 shrink-0">
+              <div className="w-10 h-1 rounded-full bg-zinc-700" />
+            </div>
+
+            {/* Header */}
+            <div className="flex items-center gap-3 px-5 py-3 border-b border-zinc-800 shrink-0">
+              <input
+                value={editTitle}
+                onChange={e => setEditTitle(e.target.value)}
+                placeholder="Note title…"
+                className="flex-1 bg-transparent text-base font-semibold text-zinc-50 placeholder-zinc-500 focus:outline-none"
+              />
+              <div className="flex items-center gap-1.5 shrink-0">
+                {editNote !== 'new' && (
+                  <button
+                    onClick={handleDelete}
+                    disabled={deleting}
+                    className="text-red-400 hover:bg-red-400/10 rounded-lg px-2 py-1 text-xs font-semibold transition-colors"
+                  >
+                    {deleting ? '…' : 'Delete'}
+                  </button>
+                )}
+                <button
+                  onClick={() => setEditNote(null)}
+                  className="w-9 h-9 flex items-center justify-center rounded-full text-zinc-400 hover:bg-zinc-800"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+
+            {/* Last-edited info */}
+            {editNote !== 'new' && editNote.updated_by_name && (
+              <div className="px-5 py-2 border-b border-zinc-800/50 shrink-0">
+                <p className="text-[10px] text-zinc-600">
+                  Last edited by {editNote.updated_by_name} · {safeDate(editNote.updated_at)}
+                </p>
+              </div>
+            )}
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto px-5 py-4">
+              <textarea
+                value={editContent}
+                onChange={e => setEditContent(e.target.value)}
+                placeholder="Write anything — site rules, contacts, reminders, job notes…"
+                className="w-full h-full min-h-[180px] bg-transparent text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none resize-none leading-relaxed"
+                autoFocus={editNote === 'new'}
+              />
+            </div>
+
+            {/* Footer */}
+            <div className="px-5 py-4 border-t border-zinc-800 shrink-0">
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="w-full bg-amber-400 hover:bg-amber-300 disabled:opacity-50 text-zinc-950 font-bold rounded-2xl py-4 transition-colors"
+              >
+                {saving ? 'Saving…' : 'Save Note'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
