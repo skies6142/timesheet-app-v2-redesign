@@ -845,8 +845,8 @@ function MembersView({ org, members, onRefresh, addToast, isOwner }) {
       await orgApi.updateMemberRole(org.id, m.user_id, newRole);
       addToast(`${name} is now ${newRole}`, 'success');
       onRefresh();
-    } catch {
-      addToast('Failed to update role', 'error');
+    } catch (e) {
+      addToast(e?.message || 'Failed to update role', 'error');
     } finally {
       setWorking(null);
     }

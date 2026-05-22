@@ -123,12 +123,13 @@ export async function removeMember(orgId, userId) {
 }
 
 export async function updateMemberRole(orgId, userId, role) {
-  const { error } = await supabase
+  const { error, count } = await supabase
     .from('org_members')
-    .update({ role })
+    .update({ role }, { count: 'exact' })
     .eq('org_id', orgId)
     .eq('user_id', userId);
   if (error) throw error;
+  if (count === 0) throw new Error('Permission denied — add the UPDATE policy for org_members in Supabase');
 }
 
 // ── Jobs ──────────────────────────────────────────────────────
