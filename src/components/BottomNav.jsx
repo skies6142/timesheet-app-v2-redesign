@@ -1,10 +1,9 @@
-import { Timer, Briefcase, Calendar, BarChart2, Settings, Building2 } from 'lucide-react';
+import { Timer, Briefcase, BarChart2, Settings, Building2 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
 const TABS = [
   { id: 'timer',    label: 'Timer',    Icon: Timer },
   { id: 'work',     label: 'Work',     Icon: Briefcase },
-  { id: 'calendar', label: 'Calendar', Icon: Calendar },
   { id: 'stats',    label: 'Stats',    Icon: BarChart2 },
   { id: 'team',     label: 'Team',     Icon: Building2 },
   { id: 'settings', label: 'Settings', Icon: Settings },

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
 import EntryModal from '../modals/EntryModal';
 import BottomSheet from '../ui/BottomSheet';
@@ -20,6 +20,22 @@ export default function CalendarTab() {
   const [editEntry, setEditEntry] = useState(null);
   const [showDaySheet, setShowDaySheet] = useState(false);
   const [showAddEntry, setShowAddEntry] = useState(false);
+
+  const swipeRef = useRef(null);
+
+  const handleTouchStart = (e) => {
+    swipeRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+  };
+
+  const handleTouchEnd = (e) => {
+    if (!swipeRef.current) return;
+    const dx = e.changedTouches[0].clientX - swipeRef.current.x;
+    const dy = e.changedTouches[0].clientY - swipeRef.current.y;
+    swipeRef.current = null;
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 40) {
+      setViewDate(d => dx > 0 ? subMonths(d, 1) : addMonths(d, 1));
+    }
+  };
 
   const year = viewDate.getFullYear();
   const month = viewDate.getMonth();
@@ -62,7 +78,7 @@ export default function CalendarTab() {
   }
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
       {/* Header */}
       <div className="shrink-0 px-4 pt-3 pb-2">
         <div className="flex items-center justify-between mb-2">
