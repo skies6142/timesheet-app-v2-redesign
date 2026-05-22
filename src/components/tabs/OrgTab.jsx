@@ -811,11 +811,24 @@ function OrgCalendarView({ orgId, isOwner, isAdmin, members, onOpenJob }) {
 }
 
 // ── Members view ──────────────────────────────────────────────
+const ROLE_STYLES = {
+  owner:         { badge: 'bg-amber-400/15 text-amber-400',   avatar: 'bg-amber-400/20 border-amber-400/30 text-amber-400'  },
+  admin:         { badge: 'bg-teal-400/15 text-teal-400',     avatar: 'bg-teal-400/15 border-teal-400/20 text-teal-400'     },
+  employee:      { badge: 'bg-zinc-800 text-zinc-400',        avatar: 'bg-zinc-800 border-zinc-700 text-zinc-400'           },
+  subcontractor: { badge: 'bg-blue-400/15 text-blue-400',     avatar: 'bg-blue-400/15 border-blue-400/20 text-blue-400'    },
+};
+
+const ASSIGNABLE_ROLES = [
+  { value: 'admin',         label: 'Admin',         style: 'bg-teal-400/15 text-teal-300 border-teal-400/30'   },
+  { value: 'employee',      label: 'Employee',      style: 'bg-zinc-800 text-zinc-300 border-zinc-700'         },
+  { value: 'subcontractor', label: 'Subcontractor', style: 'bg-blue-400/15 text-blue-300 border-blue-400/30'  },
+];
+
 function MembersView({ org, members, onRefresh, addToast, isOwner }) {
-  const [copied, setCopied]           = useState(false);
-  const [openMenu, setOpenMenu]       = useState(null); // user_id with menu open
-  const [confirmRemove, setConfirmRemove] = useState(null); // user_id awaiting confirm
-  const [working, setWorking]         = useState(null); // user_id being mutated
+  const [copied, setCopied]               = useState(false);
+  const [openMenu, setOpenMenu]           = useState(null);
+  const [confirmRemove, setConfirmRemove] = useState(null);
+  const [working, setWorking]             = useState(null);
   const inviteLink = `${window.location.origin}?join=${org.invite_code}`;
 
   const share = async () => {
@@ -836,9 +849,9 @@ function MembersView({ org, members, onRefresh, addToast, isOwner }) {
     addToast('Invite code copied!', 'success');
   };
 
-  const handleToggleAdmin = async (m) => {
-    const name    = m.display_name || m.profiles?.display_name || 'Member';
-    const newRole = m.role === 'admin' ? 'employee' : 'admin';
+  const handleChangeRole = async (m, newRole) => {
+    if (m.role === newRole) return;
+    const name = m.display_name || m.profiles?.display_name || 'Member';
     setWorking(m.user_id);
     setOpenMenu(null);
     try {
@@ -860,18 +873,11 @@ function MembersView({ org, members, onRefresh, addToast, isOwner }) {
       await orgApi.removeMember(org.id, userId);
       addToast(`${name} removed`, 'success');
       onRefresh();
-    } catch {
-      addToast('Failed to remove member', 'error');
+    } catch (e) {
+      addToast(e?.message || 'Failed to remove member', 'error');
     } finally {
       setWorking(null);
     }
-  };
-
-  const ROLE_BADGE = {
-    owner:         'bg-amber-400/15 text-amber-400',
-    admin:         'bg-purple-400/15 text-purple-400',
-    employee:      'bg-zinc-800 text-zinc-400',
-    subcontractor: 'bg-blue-400/15 text-blue-400',
   };
 
   return (
@@ -903,7 +909,7 @@ function MembersView({ org, members, onRefresh, addToast, isOwner }) {
           <p className="text-xs font-semibold text-zinc-400 uppercase tracking-widest">
             {members.length} Member{members.length !== 1 ? 's' : ''}
           </p>
-          <p className="text-[10px] text-zinc-600 mt-0.5">Tap ⋯ to manage roles or remove a member</p>
+          <p className="text-[10px] text-zinc-600 mt-0.5">Tap ⋯ to change role or remove a member</p>
         </div>
         {members.length === 0 && (
           <p className="text-sm text-zinc-500 text-center py-6">No members yet — share your invite code</p>
@@ -912,11 +918,7 @@ function MembersView({ org, members, onRefresh, addToast, isOwner }) {
           const name      = m.display_name || m.profiles?.display_name || 'Unknown';
           const email     = m.profiles?.email || '';
           const initials  = name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() || '?';
-          const memberIsAdmin = m.role === 'admin';
-          const avatarBg  = m.role === 'owner'         ? 'bg-amber-400/20 border-amber-400/30 text-amber-400'
-            : memberIsAdmin                            ? 'bg-purple-400/15 border-purple-400/20 text-purple-400'
-            : m.role === 'subcontractor'               ? 'bg-blue-400/15 border-blue-400/20 text-blue-400'
-            : 'bg-zinc-800 border-zinc-700 text-zinc-400';
+          const roleStyle = ROLE_STYLES[m.role] || ROLE_STYLES.employee;
           const isWorking = working === m.user_id;
           const menuOpen  = openMenu === m.user_id;
           const removing  = confirmRemove === m.user_id;
@@ -925,7 +927,7 @@ function MembersView({ org, members, onRefresh, addToast, isOwner }) {
             <div key={m.id} className="border-b border-zinc-800/50 last:border-0">
               {/* Member row */}
               <div className="flex items-center gap-3 px-4 py-3">
-                <div className={`w-10 h-10 rounded-2xl border flex items-center justify-center shrink-0 ${avatarBg}`}>
+                <div className={`w-10 h-10 rounded-2xl border flex items-center justify-center shrink-0 ${roleStyle.avatar}`}>
                   {isWorking
                     ? <div className="w-4 h-4 rounded-full border-2 border-current border-t-transparent animate-spin" />
                     : <span className="text-sm font-bold">{initials}</span>
@@ -934,7 +936,7 @@ function MembersView({ org, members, onRefresh, addToast, isOwner }) {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <p className="text-sm font-semibold text-zinc-100 truncate">{name}</p>
-                    <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-md capitalize shrink-0 ${ROLE_BADGE[m.role] || 'bg-zinc-800 text-zinc-400'}`}>
+                    <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-md capitalize shrink-0 ${roleStyle.badge}`}>
                       {m.role}
                     </span>
                   </div>
@@ -954,31 +956,38 @@ function MembersView({ org, members, onRefresh, addToast, isOwner }) {
                 )}
               </div>
 
-              {/* Inline action menu */}
+              {/* Inline role menu */}
               {menuOpen && !removing && (
-                <div className="px-4 pb-3 flex gap-2 border-t border-zinc-800/60 pt-2.5">
-                  <button
-                    onClick={() => handleToggleAdmin(m)}
-                    className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-colors ${
-                      memberIsAdmin
-                        ? 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
-                        : 'bg-purple-400/15 text-purple-300 hover:bg-purple-400/25'
-                    }`}
-                  >
-                    {memberIsAdmin ? 'Revoke Admin' : 'Make Admin'}
-                  </button>
-                  <button
-                    onClick={() => setConfirmRemove(m.user_id)}
-                    className="flex-1 py-2 rounded-xl text-xs font-semibold bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors"
-                  >
-                    Remove
-                  </button>
-                  <button
-                    onClick={() => setOpenMenu(null)}
-                    className="w-9 flex items-center justify-center rounded-xl text-zinc-600 hover:bg-zinc-800 transition-colors"
-                  >
-                    <X size={14} />
-                  </button>
+                <div className="px-4 pb-3 space-y-2 border-t border-zinc-800/60 pt-2.5">
+                  <p className="text-[10px] text-zinc-600 uppercase tracking-widest">Change role</p>
+                  <div className="flex gap-2">
+                    {ASSIGNABLE_ROLES.map(r => (
+                      <button key={r.value}
+                        onClick={() => handleChangeRole(m, r.value)}
+                        className={`flex-1 py-2 rounded-xl text-xs font-semibold border transition-colors ${
+                          m.role === r.value
+                            ? r.style + ' ring-1 ring-current/40'
+                            : 'bg-zinc-800/50 text-zinc-500 border-zinc-700 hover:text-zinc-200 hover:bg-zinc-800'
+                        }`}
+                      >
+                        {r.label}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="flex gap-2 pt-0.5">
+                    <button
+                      onClick={() => setConfirmRemove(m.user_id)}
+                      className="flex-1 py-2 rounded-xl text-xs font-semibold bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20 transition-colors"
+                    >
+                      Remove from Org
+                    </button>
+                    <button
+                      onClick={() => setOpenMenu(null)}
+                      className="w-9 flex items-center justify-center rounded-xl text-zinc-600 hover:bg-zinc-800 border border-zinc-800 transition-colors"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
                 </div>
               )}
 
