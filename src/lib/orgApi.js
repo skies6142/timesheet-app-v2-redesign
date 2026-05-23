@@ -404,6 +404,19 @@ export async function getOrgSubmissions(orgId) {
   return data;
 }
 
+export async function getMyJobsForDate(orgId, date) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+  const { data, error } = await supabase
+    .from('jobs')
+    .select('id, title, location, color, job_assignments(user_id)')
+    .eq('org_id', orgId)
+    .eq('date', date)
+    .order('title');
+  if (error) throw error;
+  return (data || []).filter(j => j.job_assignments?.some(a => a.user_id === user.id));
+}
+
 // ── Job check-ins ─────────────────────────────────────────────
 
 export async function getJobCheckIns(jobId) {

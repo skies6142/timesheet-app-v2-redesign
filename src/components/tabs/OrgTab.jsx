@@ -278,7 +278,7 @@ export default function OrgTab() {
   const isAdmin   = orgData.role === 'admin';
   const canManage = isOwner || isAdmin; // admins have full owner-level access
   const views = canManage
-    ? [{ id: 'calendar', label: 'Calendar' }, { id: 'members', label: 'Team' }, { id: 'notes', label: 'Notes' }, { id: 'invoices', label: 'Invoices' }, { id: 'reports', label: 'Reports' }]
+    ? [{ id: 'calendar', label: 'Calendar' }, { id: 'members', label: 'Members' }, { id: 'notes', label: 'Notes' }, { id: 'invoices', label: 'Invoices' }, { id: 'reports', label: 'Reports' }]
     : [{ id: 'calendar', label: 'Calendar' }, { id: 'notes', label: 'Notes' }, { id: 'invoices', label: 'My Invoices' }];
 
   return (

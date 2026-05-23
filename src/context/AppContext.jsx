@@ -178,6 +178,8 @@ export function AppProvider({ children }) {
       clientName: opts.clientName ?? defaultProfile.clientName ?? '',
       hourlyRate: opts.hourlyRate ?? defaultProfile.hourlyRate ?? 0,
       description: opts.description || '',
+      checkedInJobId: opts.checkedInJobId || null,
+      checkedInOrgId: opts.checkedInOrgId || null,
     };
     setTimer(t);
     await persistTimer(t);
