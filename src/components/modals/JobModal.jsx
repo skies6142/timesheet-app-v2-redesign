@@ -497,30 +497,28 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
       return prev.filter((_, i) => i !== idx);
     });
 
-  const handleCheckIn = async () => {
-    if (!job?.id || !orgId) return;
+  const handleDeleteCheckIn = async (checkInId) => {
+    if (!checkInId) return;
     setCheckInWorking(true);
     try {
-      await orgApi.checkInToJob(job.id, orgId);
+      await orgApi.deleteJobCheckIn(checkInId);
       await loadCheckIns();
-      addToast('Checked in!', 'success');
-    } catch (e) { addToast(e?.message || 'Check-in failed', 'error'); }
-    finally { setCheckInWorking(false); }
-  };
-
-  const handleCheckOut = async () => {
-    if (!job?.id) return;
-    setCheckInWorking(true);
-    try {
-      await orgApi.checkOutFromJob(job.id);
-      await loadCheckIns();
-      addToast('Checked out!', 'success');
-    } catch (e) { addToast(e?.message || 'Check-out failed', 'error'); }
+      addToast('Record deleted', 'success');
+    } catch (e) { addToast(e?.message || 'Delete failed', 'error'); }
     finally { setCheckInWorking(false); }
   };
 
   const fmtCheckTime = (ts) => {
     try { return ts ? format(new Date(ts), 'h:mm a') : null; } catch { return null; }
+  };
+
+  const fmtDuration = (inAt, outAt) => {
+    if (!inAt || !outAt) return null;
+    const mins = Math.round((new Date(outAt) - new Date(inAt)) / 60000);
+    if (mins <= 0) return null;
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    return h > 0 ? `${h}h ${m > 0 ? ` ${m}m` : ''}`.trim() : `${m}m`;
   };
 
   const ownerMedia  = media.filter(m => m.is_owner_post);
@@ -870,55 +868,82 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
               const m = members.find(mb => mb.user_id === a.user_id);
               return { user_id: a.user_id, name: m?.display_name || m?.profiles?.display_name || 'Unknown' };
             });
+
+            const TimeRow = ({ label, checkIn, canDelete, placeholder }) => (
+              <div className="flex items-center gap-3 px-4 py-3.5 border-b border-zinc-800/40 last:border-0">
+                <div className="w-8 h-8 rounded-full bg-zinc-800 border border-zinc-700/60 flex items-center justify-center shrink-0">
+                  <span className="text-xs font-bold text-zinc-300">{(label[0] || '?').toUpperCase()}</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-zinc-300 mb-1.5">{label}</p>
+                  {checkIn ? (
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="inline-flex items-center gap-1 text-[11px] font-mono font-medium px-2 py-0.5 bg-emerald-500/10 text-emerald-400 rounded-lg border border-emerald-500/15">
+                        <span className="text-[9px]">IN</span> {fmtCheckTime(checkIn.checked_in_at)}
+                      </span>
+                      {checkIn.checked_out_at ? (
+                        <>
+                          <span className="text-zinc-700 text-xs">→</span>
+                          <span className="inline-flex items-center gap-1 text-[11px] font-mono font-medium px-2 py-0.5 bg-blue-500/10 text-blue-400 rounded-lg border border-blue-500/15">
+                            <span className="text-[9px]">OUT</span> {fmtCheckTime(checkIn.checked_out_at)}
+                          </span>
+                          {fmtDuration(checkIn.checked_in_at, checkIn.checked_out_at) && (
+                            <span className="text-[11px] font-mono font-semibold text-amber-400">
+                              {fmtDuration(checkIn.checked_in_at, checkIn.checked_out_at)}
+                            </span>
+                          )}
+                        </>
+                      ) : (
+                        <span className="text-[11px] text-amber-400 italic font-medium">· active</span>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-[11px] text-zinc-600 italic">{placeholder}</p>
+                  )}
+                </div>
+                {checkIn && canDelete && (
+                  <button onClick={() => handleDeleteCheckIn(checkIn.id)} disabled={checkInWorking}
+                    className="w-7 h-7 flex items-center justify-center text-zinc-700 hover:text-red-400 hover:bg-red-400/10 rounded-lg shrink-0 disabled:opacity-50 transition-colors">
+                    <Trash2 size={13} />
+                  </button>
+                )}
+              </div>
+            );
+
             return (
               <div>
                 <label className="block text-xs text-zinc-500 uppercase tracking-widest mb-2">Attendance</label>
                 <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
-                  {/* Current user's own row — always shown if assigned */}
                   {isAssigned && (
-                    <div className="flex items-center gap-3 px-4 py-3 border-b border-zinc-800/60 last:border-0">
-                      <div className="flex-1">
-                        <p className="text-xs text-zinc-500 mb-0.5">You</p>
-                        {myCheckIn ? (
-                          <div className="flex items-center gap-3 flex-wrap">
-                            <span className="text-sm text-zinc-200">In: <span className="font-mono text-emerald-400">{fmtCheckTime(myCheckIn.checked_in_at)}</span></span>
-                            {myCheckIn.checked_out_at
-                              ? <span className="text-sm text-zinc-200">Out: <span className="font-mono text-blue-400">{fmtCheckTime(myCheckIn.checked_out_at)}</span></span>
-                              : <button onClick={handleCheckOut} disabled={checkInWorking}
-                                  className="text-xs px-2.5 py-1 rounded-lg bg-blue-500/15 text-blue-400 border border-blue-500/20 hover:bg-blue-500/25 disabled:opacity-50 transition-colors">
-                                  Check Out
-                                </button>
-                            }
-                          </div>
-                        ) : (
-                          <button onClick={handleCheckIn} disabled={checkInWorking}
-                            className="text-xs px-3 py-1.5 rounded-lg bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/25 disabled:opacity-50 transition-colors">
-                            {checkInWorking ? 'Saving…' : 'Check In'}
-                          </button>
-                        )}
-                      </div>
-                    </div>
+                    <TimeRow
+                      label="You"
+                      checkIn={myCheckIn}
+                      canDelete={true}
+                      placeholder="Punch in via timer to record"
+                    />
                   )}
-                  {/* Owner/admin: all workers' times */}
                   {isOwner && assignedMembers.filter(a => a.user_id !== user?.id).map(a => {
                     const ci = checkIns.find(c => c.user_id === a.user_id);
                     return (
-                      <div key={a.user_id} className="flex items-center justify-between px-4 py-3 border-b border-zinc-800/60 last:border-0">
-                        <p className="text-sm text-zinc-300">{a.name}</p>
-                        <p className="text-xs text-zinc-500 font-mono">
-                          {ci ? `${fmtCheckTime(ci.checked_in_at)}${ci.checked_out_at ? ` → ${fmtCheckTime(ci.checked_out_at)}` : ' (in)'}` : '—'}
-                        </p>
-                      </div>
+                      <TimeRow
+                        key={a.user_id}
+                        label={a.name}
+                        checkIn={ci}
+                        canDelete={true}
+                        placeholder="Not clocked in"
+                      />
                     );
                   })}
-                  {/* Employee: co-workers names only (no times) */}
                   {!isOwner && assignedMembers.filter(a => a.user_id !== user?.id).map(a => (
-                    <div key={a.user_id} className="flex items-center px-4 py-3 border-b border-zinc-800/60 last:border-0">
-                      <p className="text-sm text-zinc-400">{a.name}</p>
+                    <div key={a.user_id} className="flex items-center gap-3 px-4 py-3.5 border-b border-zinc-800/40 last:border-0">
+                      <div className="w-8 h-8 rounded-full bg-zinc-800 border border-zinc-700/60 flex items-center justify-center shrink-0">
+                        <span className="text-xs font-bold text-zinc-300">{(a.name[0] || '?').toUpperCase()}</span>
+                      </div>
+                      <p className="text-sm text-zinc-400 font-medium">{a.name}</p>
                     </div>
                   ))}
                   {assignedMembers.length === 0 && !isAssigned && (
-                    <p className="text-xs text-zinc-600 px-4 py-3">No workers assigned</p>
+                    <p className="text-xs text-zinc-600 px-4 py-3.5">No workers assigned</p>
                   )}
                 </div>
               </div>

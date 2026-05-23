@@ -440,13 +440,18 @@ export async function checkInToJob(jobId, orgId) {
   if (error) throw error;
 }
 
-export async function checkOutFromJob(jobId) {
+export async function checkOutFromJob(jobId, checkOutAt) {
   const { data: { user } } = await supabase.auth.getUser();
   const { error } = await supabase
     .from('job_check_ins')
-    .update({ checked_out_at: new Date().toISOString() })
+    .update({ checked_out_at: checkOutAt ?? new Date().toISOString() })
     .eq('job_id', jobId)
     .eq('user_id', user.id);
+  if (error) throw error;
+}
+
+export async function deleteJobCheckIn(checkInId) {
+  const { error } = await supabase.from('job_check_ins').delete().eq('id', checkInId);
   if (error) throw error;
 }
 

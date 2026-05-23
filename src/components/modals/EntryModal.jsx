@@ -143,7 +143,7 @@ export default function EntryModal({ isOpen, onClose, entry = null, defaultDate 
         await window.storage.set(key, newEntry);
         // If this save is part of a clock-out, run the after-save hook first
         // (stops the timer + closes notification) before showing the toast
-        if (onAfterSave) await onAfterSave();
+        if (onAfterSave) await onAfterSave({ date: form.date, timeOut: form.timeOut });
         addToast(isClockOut ? `Clocked out — ${decimalToHHMM(workingHours)}` : 'Entry added', 'success');
       }
       triggerRefresh();

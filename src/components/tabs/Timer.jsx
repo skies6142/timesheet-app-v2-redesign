@@ -165,9 +165,22 @@ export default function TimerTab() {
     setShowClockOutEntry(true);
   };
 
-  const handleAfterClockOutSave = async () => {
+  const handleAfterClockOutSave = async (savedInfo) => {
     if (timer?.checkedInJobId) {
-      try { await orgApi.checkOutFromJob(timer.checkedInJobId); } catch {}
+      try {
+        let checkOutAt;
+        if (savedInfo?.date && savedInfo?.timeOut) {
+          const [h, m] = savedInfo.timeOut.split(':').map(Number);
+          const d = new Date(savedInfo.date + 'T00:00:00');
+          d.setHours(h, m, 0, 0);
+          // If clock-out time is earlier than clock-in time it crossed midnight — add a day
+          if (timer?.clockInTime && savedInfo.timeOut < timer.clockInTime) {
+            d.setDate(d.getDate() + 1);
+          }
+          checkOutAt = d.toISOString();
+        }
+        await orgApi.checkOutFromJob(timer.checkedInJobId, checkOutAt);
+      } catch {}
     }
     await stopTimer();
   };
