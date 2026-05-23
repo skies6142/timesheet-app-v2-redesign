@@ -408,6 +408,7 @@ function OrgCalendarView({ orgId, isOwner, isAdmin, members, onOpenJob }) {
   const [showDaySheet, setShowDaySheet]   = useState(false);
   const [calLoading, setCalLoading]       = useState(false);
   const [updatingJobId, setUpdatingJobId] = useState(null);
+  const [checkInsMap, setCheckInsMap]     = useState({}); // { jobId: [sessions] }
   const [calView, setCalView] = useState(() => {
     try { return localStorage.getItem('orgCalView') || 'grid'; } catch { return 'grid'; }
   });
@@ -451,6 +452,16 @@ function OrgCalendarView({ orgId, isOwner, isAdmin, members, onOpenJob }) {
       }
       setJobMap(map);
       setAllJobs(visible);
+
+      // Load check-ins for all visible jobs in one query
+      const jobIds = visible.map(j => j.id);
+      const allCheckIns = await orgApi.getCheckInsForJobs(jobIds);
+      const ciMap = {};
+      for (const ci of allCheckIns) {
+        if (!ciMap[ci.job_id]) ciMap[ci.job_id] = [];
+        ciMap[ci.job_id].push(ci);
+      }
+      setCheckInsMap(ciMap);
     } catch (e) {
       console.error('[loadJobs]', e);
       addToast(`Calendar error: ${e.message}`, 'error');
@@ -480,6 +491,24 @@ function OrgCalendarView({ orgId, isOwner, isAdmin, members, onOpenJob }) {
   };
 
   const selectedDayJobs = selectedDate ? (jobMap[selectedDate] || []) : [];
+
+  // Worker presence for a job — returns array of { userId, name, initial, status: 'in'|'done'|'pending' }
+  const workerPresence = (job) => {
+    const sessions = checkInsMap[job.id] || [];
+    return (job.job_assignments || []).map(a => {
+      const m = members.find(mb => mb.user_id === a.user_id);
+      const name = m?.display_name || m?.profiles?.display_name || '?';
+      const userSessions = sessions.filter(ci => ci.user_id === a.user_id);
+      const hasOpen = userSessions.some(ci => !ci.checked_out_at);
+      const allDone = userSessions.length > 0 && userSessions.every(ci => ci.checked_out_at);
+      return {
+        userId: a.user_id,
+        name,
+        initial: (name[0] || '?').toUpperCase(),
+        status: hasOpen ? 'in' : allDone ? 'done' : 'pending',
+      };
+    });
+  };
 
   // Build rows (7-day weeks)
   const rows = [];
@@ -612,6 +641,37 @@ function OrgCalendarView({ orgId, isOwner, isAdmin, members, onOpenJob }) {
                           </span>
                         </div>
                       </button>
+                      {/* Worker presence row — visible to owner/admin on non-series in_progress jobs */}
+                      {!isSeries && canSeeAll && job.status === 'in_progress' && (() => {
+                        const presence = workerPresence(job);
+                        if (!presence.length) return null;
+                        const inCount      = presence.filter(p => p.status === 'in').length;
+                        const doneCount    = presence.filter(p => p.status === 'done').length;
+                        const pendingCount = presence.filter(p => p.status === 'pending').length;
+                        return (
+                          <div className="flex items-center gap-2 px-4 pb-2.5 pt-0">
+                            <div className="flex items-center gap-1">
+                              {presence.map(p => (
+                                <div key={p.userId} title={`${p.name} — ${p.status === 'in' ? 'clocked in' : p.status === 'done' ? 'done' : 'not started'}`}
+                                  className={`w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-bold border-2 transition-colors ${
+                                    p.status === 'in'      ? 'bg-emerald-500/15 border-emerald-500 text-emerald-400'
+                                    : p.status === 'done'  ? 'bg-blue-500/15 border-blue-500 text-blue-400'
+                                    : 'bg-zinc-800 border-zinc-700 text-zinc-600'}`}>
+                                  {p.initial}
+                                </div>
+                              ))}
+                            </div>
+                            <span className="text-[10px] text-zinc-500">
+                              {inCount > 0 && <span className="text-emerald-400 font-semibold">{inCount} in</span>}
+                              {inCount > 0 && (doneCount + pendingCount) > 0 && <span className="text-zinc-700"> · </span>}
+                              {doneCount > 0 && <span className="text-blue-400 font-semibold">{doneCount} done</span>}
+                              {doneCount > 0 && pendingCount > 0 && <span className="text-zinc-700"> · </span>}
+                              {pendingCount > 0 && <span className="text-zinc-600">{pendingCount} pending</span>}
+                            </span>
+                          </div>
+                        );
+                      })()}
+
                       {!isSeries && (canSeeAll || assignedToMe) && (
                         <div className="flex gap-1.5 px-4 pb-3 border-t border-zinc-800/50 pt-2">
                           {job.status === 'scheduled' && (
@@ -780,6 +840,37 @@ function OrgCalendarView({ orgId, isOwner, isAdmin, members, onOpenJob }) {
                       </span>
                     </div>
                   </button>
+                  {/* Worker presence — owner/admin on in_progress jobs */}
+                  {canSeeAll && job.status === 'in_progress' && (() => {
+                    const presence = workerPresence(job);
+                    if (!presence.length) return null;
+                    const inCount      = presence.filter(p => p.status === 'in').length;
+                    const doneCount    = presence.filter(p => p.status === 'done').length;
+                    const pendingCount = presence.filter(p => p.status === 'pending').length;
+                    return (
+                      <div className="flex items-center gap-2 px-4 pb-2.5 pt-0">
+                        <div className="flex items-center gap-1">
+                          {presence.map(p => (
+                            <div key={p.userId} title={`${p.name} — ${p.status === 'in' ? 'clocked in' : p.status === 'done' ? 'done' : 'not started'}`}
+                              className={`w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-bold border-2 ${
+                                p.status === 'in'      ? 'bg-emerald-500/15 border-emerald-500 text-emerald-400'
+                                : p.status === 'done'  ? 'bg-blue-500/15 border-blue-500 text-blue-400'
+                                : 'bg-zinc-800 border-zinc-700 text-zinc-600'}`}>
+                              {p.initial}
+                            </div>
+                          ))}
+                        </div>
+                        <span className="text-[10px]">
+                          {inCount > 0 && <span className="text-emerald-400 font-semibold">{inCount} in</span>}
+                          {inCount > 0 && (doneCount + pendingCount) > 0 && <span className="text-zinc-700"> · </span>}
+                          {doneCount > 0 && <span className="text-blue-400 font-semibold">{doneCount} done</span>}
+                          {doneCount > 0 && pendingCount > 0 && <span className="text-zinc-700"> · </span>}
+                          {pendingCount > 0 && <span className="text-zinc-600">{pendingCount} pending</span>}
+                        </span>
+                      </div>
+                    );
+                  })()}
+
                   {(canSeeAll || job.job_assignments?.some(a => a.user_id === user?.id)) && (
                     <div className="flex gap-1.5 px-4 pb-3 border-t border-zinc-700/40 pt-2">
                       {job.status === 'scheduled' && (

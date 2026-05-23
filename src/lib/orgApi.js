@@ -465,6 +465,16 @@ export async function deleteJobCheckIn(checkInId) {
   if (error) throw error;
 }
 
+export async function getCheckInsForJobs(jobIds) {
+  if (!jobIds?.length) return [];
+  const { data, error } = await supabase
+    .from('job_check_ins')
+    .select('id, job_id, user_id, checked_in_at, checked_out_at')
+    .in('job_id', jobIds);
+  if (error) throw error;
+  return data || [];
+}
+
 export async function updateSubmissionStatus(submissionId, status, notes = '') {
   const { data: { user } } = await supabase.auth.getUser();
   const { error } = await supabase

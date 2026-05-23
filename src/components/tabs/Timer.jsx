@@ -155,7 +155,13 @@ export default function TimerTab() {
       checkedInOrgId: jobPickerOrgId || null,
     });
     if (jobId && jobPickerOrgId) {
-      try { await orgApi.checkInToJob(jobId, jobPickerOrgId); } catch {}
+      try {
+        await orgApi.checkInToJob(jobId, jobPickerOrgId);
+        // Auto-start the job if it was still scheduled
+        if (job?.status === 'scheduled') {
+          await orgApi.updateJobStatus(jobId, 'in_progress');
+        }
+      } catch {}
     }
     addToast(jobId ? `Checked in: ${job?.title}` : 'Timer started', 'success');
   };
