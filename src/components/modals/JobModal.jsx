@@ -919,7 +919,7 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
                             className={`w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-bold border-2 transition-colors ${
                               status === 'active' ? 'bg-emerald-500/15 border-emerald-500 text-emerald-400'
                               : status === 'done' ? 'bg-blue-500/15 border-blue-500 text-blue-400'
-                              : 'bg-zinc-700/60 border-zinc-600 text-zinc-500'
+                              : 'bg-zinc-700 border-zinc-500 text-zinc-300'
                             }`}>
                             {(a.name[0] || '?').toUpperCase()}
                           </div>
