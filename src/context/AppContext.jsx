@@ -67,7 +67,7 @@ const AppContext = createContext(null);
 export function AppProvider({ children }) {
   const [settings, setSettings] = useState(null);
   const [isLoadingSettings, setIsLoadingSettings] = useState(true);
-  const [activeTab, setActiveTab] = useState('timer');
+  const [activeTab, setActiveTab] = useState(() => localStorage.getItem('activeTab') || 'timer');
   const [toasts, setToasts] = useState([]);
   const [refreshKey, setRefreshKey] = useState(0);
   const [pendingClockOutConfirm, setPendingClockOutConfirm] = useState(false);
@@ -124,6 +124,9 @@ export function AppProvider({ children }) {
       setIsLoadingSettings(false);
     })();
   }, [reloadSettings]);
+
+  // Persist active tab
+  useEffect(() => { localStorage.setItem('activeTab', activeTab); }, [activeTab]);
 
   // Keep timerRef in sync
   useEffect(() => { timerRef.current = timer; }, [timer]);

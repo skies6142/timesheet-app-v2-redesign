@@ -404,6 +404,39 @@ export async function getOrgSubmissions(orgId) {
   return data;
 }
 
+// ── Job check-ins ─────────────────────────────────────────────
+
+export async function getJobCheckIns(jobId) {
+  const { data, error } = await supabase
+    .from('job_check_ins')
+    .select('*')
+    .eq('job_id', jobId);
+  if (error) throw error;
+  return data || [];
+}
+
+export async function checkInToJob(jobId, orgId) {
+  const { data: { user } } = await supabase.auth.getUser();
+  const { error } = await supabase.from('job_check_ins').upsert({
+    job_id: jobId,
+    user_id: user.id,
+    org_id: orgId,
+    checked_in_at: new Date().toISOString(),
+    checked_out_at: null,
+  }, { onConflict: 'job_id,user_id' });
+  if (error) throw error;
+}
+
+export async function checkOutFromJob(jobId) {
+  const { data: { user } } = await supabase.auth.getUser();
+  const { error } = await supabase
+    .from('job_check_ins')
+    .update({ checked_out_at: new Date().toISOString() })
+    .eq('job_id', jobId)
+    .eq('user_id', user.id);
+  if (error) throw error;
+}
+
 export async function updateSubmissionStatus(submissionId, status, notes = '') {
   const { data: { user } } = await supabase.auth.getUser();
   const { error } = await supabase

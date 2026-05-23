@@ -1857,6 +1857,21 @@ function NotesView({ orgId, isOwner, isAdmin, members = [], addToast }) {
     return () => supabase.removeChannel(channel);
   }, [orgId, load]);
 
+  // Resize note textareas whenever a note is opened or items load
+  useEffect(() => {
+    if (!editNote) return;
+    const resize = () => {
+      const main = textareaRef.current;
+      if (main) { main.style.height = 'auto'; main.style.height = main.scrollHeight + 'px'; }
+      (itemInputRefs.current || []).forEach(el => {
+        if (el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; }
+      });
+    };
+    resize();
+    const t = setTimeout(resize, 60);
+    return () => clearTimeout(t);
+  }, [editNote, editItems.length]);
+
   // Parse content (handles new combined format, old array, and plain text)
   const parseContent = (raw) => {
     if (!raw) return { text: '', items: [] };
@@ -2141,7 +2156,7 @@ function NotesView({ orgId, isOwner, isAdmin, members = [], addToast }) {
                   readOnly={!canEdit}
                   placeholder={canEdit ? 'Add notes, context, instructions…' : ''}
                   autoFocus={editNote === 'new'}
-                  style={{ minHeight: '4.5rem', height: 'auto' }}
+                  style={{ minHeight: '4.5rem' }}
                   className={`w-full bg-transparent text-sm placeholder-zinc-600 focus:outline-none resize-none leading-relaxed overflow-hidden ${canEdit ? 'text-zinc-200' : 'text-zinc-400'}`}
                 />
               </div>
@@ -2178,7 +2193,7 @@ function NotesView({ orgId, isOwner, isAdmin, members = [], addToast }) {
                         onKeyDown={e => handleItemKeyDown(e, idx)}
                         placeholder="Item…"
                         rows={1}
-                        style={{ minHeight: '1.5rem', height: 'auto' }}
+                        style={{ minHeight: '1.5rem' }}
                         className={`flex-1 bg-transparent text-sm focus:outline-none placeholder-zinc-600 resize-none overflow-hidden leading-normal ${
                           item.checked ? 'text-zinc-500 line-through' : 'text-zinc-100'
                         }`}

@@ -75,6 +75,8 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
   const [uploading, setUploading]             = useState(false);
   const [updatingStatus, setUpdatingStatus]   = useState(false);
   const [editScope, setEditScope]             = useState('single'); // 'single' | 'series'
+  const [checkIns, setCheckIns]               = useState([]);
+  const [checkInWorking, setCheckInWorking]   = useState(false);
   const photoInputRef = useRef(null);
 
   const isNew        = !job?.id;
@@ -172,7 +174,15 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
     }
   }, [job?.id]);
 
-  useEffect(() => { if (isOpen) loadMedia(); }, [isOpen, loadMedia]);
+  const loadCheckIns = useCallback(async () => {
+    if (!job?.id) return;
+    try {
+      const data = await orgApi.getJobCheckIns(job.id);
+      setCheckIns(data);
+    } catch {}
+  }, [job?.id]);
+
+  useEffect(() => { if (isOpen) { loadMedia(); loadCheckIns(); } }, [isOpen, loadMedia, loadCheckIns]);
 
   if (!isOpen) return null;
 
@@ -457,6 +467,32 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
       try { URL.revokeObjectURL(prev[idx].preview); } catch {}
       return prev.filter((_, i) => i !== idx);
     });
+
+  const handleCheckIn = async () => {
+    if (!job?.id || !orgId) return;
+    setCheckInWorking(true);
+    try {
+      await orgApi.checkInToJob(job.id, orgId);
+      await loadCheckIns();
+      addToast('Checked in!', 'success');
+    } catch (e) { addToast(e?.message || 'Check-in failed', 'error'); }
+    finally { setCheckInWorking(false); }
+  };
+
+  const handleCheckOut = async () => {
+    if (!job?.id) return;
+    setCheckInWorking(true);
+    try {
+      await orgApi.checkOutFromJob(job.id);
+      await loadCheckIns();
+      addToast('Checked out!', 'success');
+    } catch (e) { addToast(e?.message || 'Check-out failed', 'error'); }
+    finally { setCheckInWorking(false); }
+  };
+
+  const fmtCheckTime = (ts) => {
+    try { return ts ? format(new Date(ts), 'h:mm a') : null; } catch { return null; }
+  };
 
   const ownerMedia  = media.filter(m => m.is_owner_post);
   const workerMedia = media.filter(m => !m.is_owner_post);
@@ -757,13 +793,13 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
           </div>
 
           {/* Assign workers */}
-          {members.filter(m => m.role !== 'owner').length > 0 && (
+          {members.length > 0 && (
             <div>
               <label className="block text-xs text-zinc-500 uppercase tracking-widest mb-2">
                 <Users size={11} className="inline mr-1" />Assigned Workers
               </label>
               <div className="space-y-2">
-                {members.filter(m => m.role !== 'owner').map(m => {
+                {members.map(m => {
                   const name = m.profiles?.display_name || m.display_name || m.profiles?.email || 'Unknown';
                   const assigned = assignedIds.includes(m.user_id);
                   return (
@@ -791,6 +827,68 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
               </div>
             </div>
           )}
+
+          {/* ── Attendance ── */}
+          {!isNew && (isAssigned || isOwner) && (() => {
+            const myCheckIn = checkIns.find(c => c.user_id === user?.id);
+            const assignedMembers = (job?.job_assignments || []).map(a => {
+              const m = members.find(mb => mb.user_id === a.user_id);
+              return { user_id: a.user_id, name: m?.display_name || m?.profiles?.display_name || 'Unknown' };
+            });
+            return (
+              <div>
+                <label className="block text-xs text-zinc-500 uppercase tracking-widest mb-2">Attendance</label>
+                <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
+                  {/* Current user's own row — always shown if assigned */}
+                  {isAssigned && (
+                    <div className="flex items-center gap-3 px-4 py-3 border-b border-zinc-800/60 last:border-0">
+                      <div className="flex-1">
+                        <p className="text-xs text-zinc-500 mb-0.5">You</p>
+                        {myCheckIn ? (
+                          <div className="flex items-center gap-3 flex-wrap">
+                            <span className="text-sm text-zinc-200">In: <span className="font-mono text-emerald-400">{fmtCheckTime(myCheckIn.checked_in_at)}</span></span>
+                            {myCheckIn.checked_out_at
+                              ? <span className="text-sm text-zinc-200">Out: <span className="font-mono text-blue-400">{fmtCheckTime(myCheckIn.checked_out_at)}</span></span>
+                              : <button onClick={handleCheckOut} disabled={checkInWorking}
+                                  className="text-xs px-2.5 py-1 rounded-lg bg-blue-500/15 text-blue-400 border border-blue-500/20 hover:bg-blue-500/25 disabled:opacity-50 transition-colors">
+                                  Check Out
+                                </button>
+                            }
+                          </div>
+                        ) : (
+                          <button onClick={handleCheckIn} disabled={checkInWorking}
+                            className="text-xs px-3 py-1.5 rounded-lg bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/25 disabled:opacity-50 transition-colors">
+                            {checkInWorking ? 'Saving…' : 'Check In'}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  {/* Owner/admin: all workers' times */}
+                  {isOwner && assignedMembers.filter(a => a.user_id !== user?.id).map(a => {
+                    const ci = checkIns.find(c => c.user_id === a.user_id);
+                    return (
+                      <div key={a.user_id} className="flex items-center justify-between px-4 py-3 border-b border-zinc-800/60 last:border-0">
+                        <p className="text-sm text-zinc-300">{a.name}</p>
+                        <p className="text-xs text-zinc-500 font-mono">
+                          {ci ? `${fmtCheckTime(ci.checked_in_at)}${ci.checked_out_at ? ` → ${fmtCheckTime(ci.checked_out_at)}` : ' (in)'}` : '—'}
+                        </p>
+                      </div>
+                    );
+                  })}
+                  {/* Employee: co-workers names only (no times) */}
+                  {!isOwner && assignedMembers.filter(a => a.user_id !== user?.id).map(a => (
+                    <div key={a.user_id} className="flex items-center px-4 py-3 border-b border-zinc-800/60 last:border-0">
+                      <p className="text-sm text-zinc-400">{a.name}</p>
+                    </div>
+                  ))}
+                  {assignedMembers.length === 0 && !isAssigned && (
+                    <p className="text-xs text-zinc-600 px-4 py-3">No workers assigned</p>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
 
           {/* ── Media: Boss posts (owner upload buttons + content) ── */}
           <div>
@@ -902,12 +1000,6 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
         {!canEdit && !isNew && isAssigned && (
           <div className="px-5 py-4 border-t border-zinc-800 shrink-0 space-y-2">
             {/* Status action buttons */}
-            {status === 'scheduled' && (
-              <button onClick={() => handleWorkerStatus('in_progress')} disabled={updatingStatus}
-                className="w-full bg-blue-500 hover:bg-blue-400 disabled:opacity-50 text-white font-bold rounded-2xl py-4 transition-colors">
-                {updatingStatus ? 'Updating…' : 'Start Job'}
-              </button>
-            )}
             {status === 'in_progress' && (
               <button onClick={() => handleWorkerStatus('completed')} disabled={updatingStatus}
                 className="w-full bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-white font-bold rounded-2xl py-4 transition-colors">
