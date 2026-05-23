@@ -656,7 +656,7 @@ function OrgCalendarView({ orgId, isOwner, isAdmin, members, onOpenJob }) {
                                   className={`w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-bold border-2 transition-colors ${
                                     p.status === 'in'      ? 'bg-emerald-500/15 border-emerald-500 text-emerald-400'
                                     : p.status === 'done'  ? 'bg-blue-500/15 border-blue-500 text-blue-400'
-                                    : 'bg-zinc-800 border-zinc-700 text-zinc-600'}`}>
+                                    : 'bg-zinc-700/60 border-zinc-600 text-zinc-500'}`}>
                                   {p.initial}
                                 </div>
                               ))}
@@ -855,7 +855,7 @@ function OrgCalendarView({ orgId, isOwner, isAdmin, members, onOpenJob }) {
                               className={`w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-bold border-2 ${
                                 p.status === 'in'      ? 'bg-emerald-500/15 border-emerald-500 text-emerald-400'
                                 : p.status === 'done'  ? 'bg-blue-500/15 border-blue-500 text-blue-400'
-                                : 'bg-zinc-800 border-zinc-700 text-zinc-600'}`}>
+                                : 'bg-zinc-700/60 border-zinc-600 text-zinc-500'}`}>
                               {p.initial}
                             </div>
                           ))}

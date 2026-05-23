@@ -898,24 +898,38 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
               return h > 0 ? (m > 0 ? `${h}h ${m}m` : `${h}h`) : `${m}m`;
             };
 
-            const doneCount = assignedMembers.filter(a => workerStatus(a.user_id) === 'done').length;
-            const totalCount = assignedMembers.length;
-            const allDone = doneCount === totalCount && totalCount > 0;
-            const pct = totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0;
+            const doneCount    = assignedMembers.filter(a => workerStatus(a.user_id) === 'done').length;
+            const activeCount  = assignedMembers.filter(a => workerStatus(a.user_id) === 'active').length;
+            const totalCount   = assignedMembers.length;
+            const allDone      = doneCount === totalCount && totalCount > 0;
+            const pct          = totalCount > 0 ? Math.round(((doneCount + activeCount) / totalCount) * 100) : 0;
 
             return (
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <label className="text-xs text-zinc-500 uppercase tracking-widest">Attendance</label>
                   {isOwner && totalCount > 0 && (
-                    <div className="flex items-center gap-2">
-                      <div className="w-20 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                    <div className="flex items-center gap-1.5">
+                      {/* Avatar presence pills */}
+                      {assignedMembers.map(a => {
+                        const status = workerStatus(a.user_id);
+                        return (
+                          <div key={a.user_id}
+                            title={`${a.name} — ${status === 'active' ? 'clocked in' : status === 'done' ? 'done' : 'not started'}`}
+                            className={`w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-bold border-2 transition-colors ${
+                              status === 'active' ? 'bg-emerald-500/15 border-emerald-500 text-emerald-400'
+                              : status === 'done' ? 'bg-blue-500/15 border-blue-500 text-blue-400'
+                              : 'bg-zinc-700/60 border-zinc-600 text-zinc-500'
+                            }`}>
+                            {(a.name[0] || '?').toUpperCase()}
+                          </div>
+                        );
+                      })}
+                      {/* Progress bar */}
+                      <div className="w-14 h-1.5 bg-zinc-800 rounded-full overflow-hidden ml-1">
                         <div className="h-full rounded-full transition-all duration-500"
                           style={{ width: `${pct}%`, backgroundColor: allDone ? '#34d399' : '#f59e0b' }} />
                       </div>
-                      <span className={`text-xs font-semibold ${allDone ? 'text-emerald-400' : 'text-zinc-500'}`}>
-                        {doneCount}/{totalCount}
-                      </span>
                     </div>
                   )}
                 </div>

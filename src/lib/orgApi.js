@@ -409,7 +409,7 @@ export async function getMyJobsForDate(orgId, date) {
   if (!user) return [];
   const { data, error } = await supabase
     .from('jobs')
-    .select('id, title, location, color, job_assignments(user_id)')
+    .select('id, title, location, color, status, job_assignments(user_id)')
     .eq('org_id', orgId)
     .eq('date', date)
     .order('title');

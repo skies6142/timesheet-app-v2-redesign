@@ -157,8 +157,8 @@ export default function TimerTab() {
     if (jobId && jobPickerOrgId) {
       try {
         await orgApi.checkInToJob(jobId, jobPickerOrgId);
-        // Auto-start the job if it was still scheduled
-        if (job?.status === 'scheduled') {
+        // Auto-start the job unless it's already finished or cancelled
+        if (job?.status !== 'in_progress' && job?.status !== 'completed' && job?.status !== 'cancelled') {
           await orgApi.updateJobStatus(jobId, 'in_progress');
         }
       } catch {}
