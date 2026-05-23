@@ -423,30 +423,40 @@ export async function getJobCheckIns(jobId) {
   const { data, error } = await supabase
     .from('job_check_ins')
     .select('*')
-    .eq('job_id', jobId);
+    .eq('job_id', jobId)
+    .order('checked_in_at', { ascending: true });
   if (error) throw error;
   return data || [];
 }
 
 export async function checkInToJob(jobId, orgId) {
   const { data: { user } } = await supabase.auth.getUser();
-  const { error } = await supabase.from('job_check_ins').upsert({
+  const { error } = await supabase.from('job_check_ins').insert({
     job_id: jobId,
     user_id: user.id,
     org_id: orgId,
     checked_in_at: new Date().toISOString(),
     checked_out_at: null,
-  }, { onConflict: 'job_id,user_id' });
+  });
   if (error) throw error;
 }
 
 export async function checkOutFromJob(jobId, checkOutAt) {
   const { data: { user } } = await supabase.auth.getUser();
+  // Close only the latest open session for this user on this job
+  const { data: open } = await supabase
+    .from('job_check_ins')
+    .select('id')
+    .eq('job_id', jobId)
+    .eq('user_id', user.id)
+    .is('checked_out_at', null)
+    .order('checked_in_at', { ascending: false })
+    .limit(1);
+  if (!open?.length) return;
   const { error } = await supabase
     .from('job_check_ins')
     .update({ checked_out_at: checkOutAt ?? new Date().toISOString() })
-    .eq('job_id', jobId)
-    .eq('user_id', user.id);
+    .eq('id', open[0].id);
   if (error) throw error;
 }
 

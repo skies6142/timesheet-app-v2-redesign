@@ -863,86 +863,166 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
 
           {/* ── Attendance ── */}
           {!isNew && (isAssigned || isOwner) && (() => {
-            const myCheckIn = checkIns.find(c => c.user_id === user?.id);
             const assignedMembers = (job?.job_assignments || []).map(a => {
               const m = members.find(mb => mb.user_id === a.user_id);
               return { user_id: a.user_id, name: m?.display_name || m?.profiles?.display_name || 'Unknown' };
             });
 
-            const TimeRow = ({ label, checkIn, canDelete, placeholder }) => (
-              <div className="flex items-center gap-3 px-4 py-3.5 border-b border-zinc-800/40 last:border-0">
-                <div className="w-8 h-8 rounded-full bg-zinc-800 border border-zinc-700/60 flex items-center justify-center shrink-0">
-                  <span className="text-xs font-bold text-zinc-300">{(label[0] || '?').toUpperCase()}</span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-semibold text-zinc-300 mb-1.5">{label}</p>
-                  {checkIn ? (
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="inline-flex items-center gap-1 text-[11px] font-mono font-medium px-2 py-0.5 bg-emerald-500/10 text-emerald-400 rounded-lg border border-emerald-500/15">
-                        <span className="text-[9px]">IN</span> {fmtCheckTime(checkIn.checked_in_at)}
-                      </span>
-                      {checkIn.checked_out_at ? (
-                        <>
-                          <span className="text-zinc-700 text-xs">→</span>
-                          <span className="inline-flex items-center gap-1 text-[11px] font-mono font-medium px-2 py-0.5 bg-blue-500/10 text-blue-400 rounded-lg border border-blue-500/15">
-                            <span className="text-[9px]">OUT</span> {fmtCheckTime(checkIn.checked_out_at)}
-                          </span>
-                          {fmtDuration(checkIn.checked_in_at, checkIn.checked_out_at) && (
-                            <span className="text-[11px] font-mono font-semibold text-amber-400">
-                              {fmtDuration(checkIn.checked_in_at, checkIn.checked_out_at)}
-                            </span>
-                          )}
-                        </>
-                      ) : (
-                        <span className="text-[11px] text-amber-400 italic font-medium">· active</span>
-                      )}
-                    </div>
-                  ) : (
-                    <p className="text-[11px] text-zinc-600 italic">{placeholder}</p>
-                  )}
-                </div>
-                {checkIn && canDelete && (
-                  <button onClick={() => handleDeleteCheckIn(checkIn.id)} disabled={checkInWorking}
-                    className="w-7 h-7 flex items-center justify-center text-zinc-700 hover:text-red-400 hover:bg-red-400/10 rounded-lg shrink-0 disabled:opacity-50 transition-colors">
-                    <Trash2 size={13} />
-                  </button>
-                )}
-              </div>
-            );
+            // Group sessions by user_id, sorted by checked_in_at (already ordered from API)
+            const sessionsByUser = {};
+            checkIns.forEach(ci => {
+              if (!sessionsByUser[ci.user_id]) sessionsByUser[ci.user_id] = [];
+              sessionsByUser[ci.user_id].push(ci);
+            });
+
+            // Worker status: 'done' | 'active' | 'none'
+            const workerStatus = (uid) => {
+              const s = sessionsByUser[uid] || [];
+              if (!s.length) return 'none';
+              if (s.some(x => !x.checked_out_at)) return 'active';
+              return 'done';
+            };
+
+            // Total worked minutes across all sessions (active session counts live time)
+            const totalMins = (uid) => {
+              return (sessionsByUser[uid] || []).reduce((sum, s) => {
+                const out = s.checked_out_at ? new Date(s.checked_out_at) : new Date();
+                return sum + Math.max(0, Math.round((out - new Date(s.checked_in_at)) / 60000));
+              }, 0);
+            };
+
+            const fmtMins = (mins) => {
+              if (!mins) return null;
+              const h = Math.floor(mins / 60);
+              const m = mins % 60;
+              return h > 0 ? (m > 0 ? `${h}h ${m}m` : `${h}h`) : `${m}m`;
+            };
+
+            const doneCount = assignedMembers.filter(a => workerStatus(a.user_id) === 'done').length;
+            const totalCount = assignedMembers.length;
+            const allDone = doneCount === totalCount && totalCount > 0;
+            const pct = totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0;
 
             return (
               <div>
-                <label className="block text-xs text-zinc-500 uppercase tracking-widest mb-2">Attendance</label>
-                <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
-                  {isAssigned && (
-                    <TimeRow
-                      label="You"
-                      checkIn={myCheckIn}
-                      canDelete={true}
-                      placeholder="Punch in via timer to record"
-                    />
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-xs text-zinc-500 uppercase tracking-widest">Attendance</label>
+                  {isOwner && totalCount > 0 && (
+                    <div className="flex items-center gap-2">
+                      <div className="w-20 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                        <div className="h-full rounded-full transition-all duration-500"
+                          style={{ width: `${pct}%`, backgroundColor: allDone ? '#34d399' : '#f59e0b' }} />
+                      </div>
+                      <span className={`text-xs font-semibold ${allDone ? 'text-emerald-400' : 'text-zinc-500'}`}>
+                        {doneCount}/{totalCount}
+                      </span>
+                    </div>
                   )}
-                  {isOwner && assignedMembers.filter(a => a.user_id !== user?.id).map(a => {
-                    const ci = checkIns.find(c => c.user_id === a.user_id);
+                </div>
+
+                <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden divide-y divide-zinc-800/50">
+                  {assignedMembers.map(a => {
+                    const isMe = a.user_id === user?.id;
+                    if (!isMe && !isOwner) {
+                      // Non-owner: show co-workers name only
+                      return (
+                        <div key={a.user_id} className="flex items-center gap-3 px-4 py-3.5">
+                          <div className="w-7 h-7 rounded-full bg-zinc-800 border border-zinc-700/60 flex items-center justify-center shrink-0">
+                            <span className="text-[11px] font-bold text-zinc-400">{(a.name[0] || '?').toUpperCase()}</span>
+                          </div>
+                          <p className="text-sm text-zinc-400 font-medium">{a.name}</p>
+                        </div>
+                      );
+                    }
+
+                    const sessions = sessionsByUser[a.user_id] || [];
+                    const status = workerStatus(a.user_id);
+                    const total = totalMins(a.user_id);
+
                     return (
-                      <TimeRow
-                        key={a.user_id}
-                        label={a.name}
-                        checkIn={ci}
-                        canDelete={true}
-                        placeholder="Not clocked in"
-                      />
+                      <div key={a.user_id} className="px-4 py-3.5">
+                        {/* Worker header row */}
+                        <div className="flex items-center gap-2.5 mb-2.5">
+                          <div className="w-7 h-7 rounded-full bg-zinc-800 border border-zinc-700/60 flex items-center justify-center shrink-0">
+                            <span className="text-[11px] font-bold text-zinc-300">{(isMe ? (user?.email || 'Y') : a.name)[0].toUpperCase()}</span>
+                          </div>
+                          <span className="text-sm font-semibold text-zinc-100 flex-1 min-w-0 truncate">
+                            {isMe ? 'You' : a.name}
+                          </span>
+                          {status === 'done' && (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/12 text-emerald-400 border border-emerald-500/20 shrink-0">
+                              ✓ Done{fmtMins(total) ? ` · ${fmtMins(total)}` : ''}
+                            </span>
+                          )}
+                          {status === 'active' && (
+                            <span className="inline-flex items-center gap-1.5 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-400/10 text-amber-400 border border-amber-400/20 shrink-0">
+                              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                              Active
+                            </span>
+                          )}
+                          {status === 'none' && (
+                            <span className="text-[10px] text-zinc-700 shrink-0">Not started</span>
+                          )}
+                        </div>
+
+                        {/* Sessions list */}
+                        {sessions.length > 0 ? (
+                          <div className="space-y-1.5 ml-9">
+                            {sessions.map((s, si) => {
+                              const sessionMins = s.checked_out_at
+                                ? Math.round((new Date(s.checked_out_at) - new Date(s.checked_in_at)) / 60000)
+                                : null;
+                              return (
+                                <div key={s.id} className="flex items-center gap-1.5 flex-wrap min-h-[22px]">
+                                  {sessions.length > 1 && (
+                                    <span className="text-[9px] font-bold text-zinc-700 w-3 shrink-0">{si + 1}</span>
+                                  )}
+                                  <span className="inline-flex items-center gap-0.5 text-[11px] font-mono px-1.5 py-0.5 bg-emerald-500/10 text-emerald-400 rounded-md border border-emerald-500/15">
+                                    <span className="text-[8px] font-extrabold opacity-70">IN</span>
+                                    {fmtCheckTime(s.checked_in_at)}
+                                  </span>
+                                  {s.checked_out_at ? (
+                                    <>
+                                      <span className="text-zinc-700 text-[10px] shrink-0">→</span>
+                                      <span className="inline-flex items-center gap-0.5 text-[11px] font-mono px-1.5 py-0.5 bg-blue-500/10 text-blue-400 rounded-md border border-blue-500/15">
+                                        <span className="text-[8px] font-extrabold opacity-70">OUT</span>
+                                        {fmtCheckTime(s.checked_out_at)}
+                                      </span>
+                                      {fmtMins(sessionMins) && (
+                                        <span className="text-[10px] font-mono text-zinc-500 shrink-0">
+                                          {fmtMins(sessionMins)}
+                                        </span>
+                                      )}
+                                    </>
+                                  ) : (
+                                    <span className="text-[11px] text-amber-400 font-medium italic shrink-0">· live</span>
+                                  )}
+                                  <button
+                                    onClick={() => handleDeleteCheckIn(s.id)}
+                                    disabled={checkInWorking}
+                                    className="w-5 h-5 flex items-center justify-center text-zinc-700 hover:text-red-400 hover:bg-red-400/10 rounded disabled:opacity-40 transition-colors ml-auto shrink-0"
+                                  >
+                                    <Trash2 size={11} />
+                                  </button>
+                                </div>
+                              );
+                            })}
+                            {sessions.length > 1 && fmtMins(total) && (
+                              <p className="text-[11px] font-bold text-amber-400 pt-0.5">
+                                Total: {fmtMins(total)}
+                              </p>
+                            )}
+                          </div>
+                        ) : (
+                          <p className="text-[11px] text-zinc-700 italic ml-9">
+                            {isMe ? 'Punch in via timer to record' : 'No sessions yet'}
+                          </p>
+                        )}
+                      </div>
                     );
                   })}
-                  {!isOwner && assignedMembers.filter(a => a.user_id !== user?.id).map(a => (
-                    <div key={a.user_id} className="flex items-center gap-3 px-4 py-3.5 border-b border-zinc-800/40 last:border-0">
-                      <div className="w-8 h-8 rounded-full bg-zinc-800 border border-zinc-700/60 flex items-center justify-center shrink-0">
-                        <span className="text-xs font-bold text-zinc-300">{(a.name[0] || '?').toUpperCase()}</span>
-                      </div>
-                      <p className="text-sm text-zinc-400 font-medium">{a.name}</p>
-                    </div>
-                  ))}
-                  {assignedMembers.length === 0 && !isAssigned && (
+
+                  {assignedMembers.length === 0 && (
                     <p className="text-xs text-zinc-600 px-4 py-3.5">No workers assigned</p>
                   )}
                 </div>

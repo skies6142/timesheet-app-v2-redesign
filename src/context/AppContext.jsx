@@ -3,6 +3,7 @@ import {
   secondsToHHMMSS, currentTimeStr, todayStr,
   generateId, getDefaultProfile, calcEarnings, entryKey,
 } from '../lib/utils';
+import * as orgApi from '../lib/orgApi';
 
 // Get SW registration — use cached global first, fall back to navigator.serviceWorker.ready
 async function getSwReg() {
@@ -200,8 +201,11 @@ export function AppProvider({ children }) {
     };
     setTimer(updated);
     await persistTimer(updated);
-    // Update notification with Resume button — replaces existing via same tag
     showTimerNotification(updated);
+    // Close the current job check-in session while paused
+    if (current.checkedInJobId) {
+      try { await orgApi.checkOutFromJob(current.checkedInJobId); } catch {}
+    }
   }, [persistTimer]);
 
   // Resume
@@ -211,8 +215,11 @@ export function AppProvider({ children }) {
     const updated = { ...current, isPaused: false, sessionStart: Date.now() };
     setTimer(updated);
     await persistTimer(updated);
-    // Update notification with Pause button
     showTimerNotification(updated);
+    // Start a new job check-in session when resuming
+    if (current.checkedInJobId && current.checkedInOrgId) {
+      try { await orgApi.checkInToJob(current.checkedInJobId, current.checkedInOrgId); } catch {}
+    }
   }, [persistTimer]);
 
   const stopTimer = useCallback(async () => {

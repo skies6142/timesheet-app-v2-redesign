@@ -585,7 +585,10 @@ function OrgCalendarView({ orgId, isOwner, isAdmin, members, onOpenJob }) {
                 return (
                   <div key={isSeries ? item.series_id : job.id}
                     className="bg-zinc-900 rounded-xl overflow-hidden flex border"
-                    style={{ borderColor: assignedToMe ? jobHex + '50' : '#27272a' }}
+                    style={{
+                      borderColor: job.status === 'completed' ? '#34d39940'
+                        : assignedToMe ? jobHex + '50' : '#27272a',
+                    }}
                   >
                     {/* Color stripe */}
                     <div className="w-1 shrink-0 rounded-l-xl" style={{ backgroundColor: jobHex }} />
@@ -605,7 +608,7 @@ function OrgCalendarView({ orgId, isOwner, isAdmin, members, onOpenJob }) {
                             {job.location && <p className="text-xs text-zinc-500 mt-0.5 truncate">📍 {job.location}</p>}
                           </div>
                           <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${sc.badge} capitalize`}>
-                            {job.status.replace('_', ' ')}
+                            {job.status === 'completed' ? '✓ Done' : job.status.replace('_', ' ')}
                           </span>
                         </div>
                       </button>
@@ -696,8 +699,11 @@ function OrgCalendarView({ orgId, isOwner, isAdmin, members, onOpenJob }) {
                           {isAssigned && <span className="text-[9px] font-extrabold leading-tight tracking-wider" style={{ color: myJobHex }}>YOU</span>}
                           <div className="flex gap-0.5 mt-auto flex-wrap justify-center">
                             {dayJobs.slice(0, 3).map(j => (
-                              <span key={j.id} className="w-1.5 h-1.5 rounded-full"
-                                style={{ backgroundColor: jobColorHex(j.color) }} />
+                              j.status === 'completed'
+                                ? <span key={j.id} className="w-1.5 h-1.5 rounded-full ring-1 ring-emerald-400 ring-offset-[1px] ring-offset-zinc-900"
+                                    style={{ backgroundColor: jobColorHex(j.color) + '60' }} />
+                                : <span key={j.id} className="w-1.5 h-1.5 rounded-full"
+                                    style={{ backgroundColor: jobColorHex(j.color) }} />
                             ))}
                             {dayJobs.length > 3 && <span className="text-[8px] text-zinc-600 leading-tight">+{dayJobs.length - 3}</span>}
                           </div>
@@ -770,7 +776,7 @@ function OrgCalendarView({ orgId, isOwner, isAdmin, members, onOpenJob }) {
                         )}
                       </div>
                       <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${sc.badge} capitalize`}>
-                        {job.status.replace('_', ' ')}
+                        {job.status === 'completed' ? '✓ Done' : job.status.replace('_', ' ')}
                       </span>
                     </div>
                   </button>
