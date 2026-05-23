@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { LayoutList, CalendarDays } from 'lucide-react';
+import { CalendarDays, LayoutList } from 'lucide-react';
 import LogTab from './Log';
 import InvoicesTab from './Invoices';
 import CalendarTab from './Calendar';
@@ -10,10 +10,9 @@ export default function WorkTab() {
   const [sub, setSub] = useState('log');
   const [logView, setLogView] = useState(() => localStorage.getItem(VIEW_KEY) || 'list');
 
-  const toggleLogView = () => {
-    const next = logView === 'list' ? 'calendar' : 'list';
-    setLogView(next);
-    localStorage.setItem(VIEW_KEY, next);
+  const setView = (v) => {
+    setLogView(v);
+    localStorage.setItem(VIEW_KEY, v);
   };
 
   return (
@@ -25,17 +24,24 @@ export default function WorkTab() {
             <button onClick={() => setSub('invoices')} className={sub === 'invoices' ? 'active' : ''}>Invoices</button>
           </div>
           {sub === 'log' && (
-            <button
-              onClick={toggleLogView}
-              title={logView === 'calendar' ? 'Switch to list' : 'Switch to calendar'}
-              className={`w-10 h-10 flex items-center justify-center rounded-xl border transition-colors min-h-[44px] ${
-                logView === 'calendar'
-                  ? 'border-amber-400 text-amber-400'
-                  : 'border-zinc-700 text-zinc-400 hover:border-zinc-500 hover:text-zinc-200'
-              }`}
-            >
-              {logView === 'calendar' ? <LayoutList size={18} /> : <CalendarDays size={18} />}
-            </button>
+            <div className="flex rounded-xl overflow-hidden border border-zinc-700">
+              <button
+                onClick={() => setView('list')}
+                className={`w-9 h-9 flex items-center justify-center transition-colors ${
+                  logView === 'list' ? 'bg-amber-400 text-zinc-950' : 'text-zinc-500 hover:text-zinc-300'
+                }`}
+              >
+                <LayoutList size={15} />
+              </button>
+              <button
+                onClick={() => setView('calendar')}
+                className={`w-9 h-9 flex items-center justify-center border-l border-zinc-700 transition-colors ${
+                  logView === 'calendar' ? 'bg-amber-400 text-zinc-950' : 'text-zinc-500 hover:text-zinc-300'
+                }`}
+              >
+                <CalendarDays size={15} />
+              </button>
+            </div>
           )}
         </div>
       </div>
