@@ -1834,6 +1834,35 @@ function NotesView({ orgId, isOwner, isAdmin, members = [], addToast }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const itemInputRefs                   = useRef([]);
   const textareaRef                     = useRef(null);
+  const sheetRef                        = useRef(null);
+  const swipeRef                        = useRef(null);
+
+  const handleSheetTouchStart = (e) => {
+    swipeRef.current = { startY: e.touches[0].clientY, dy: 0 };
+  };
+  const handleSheetTouchMove = (e) => {
+    if (!swipeRef.current) return;
+    const dy = Math.max(0, e.touches[0].clientY - swipeRef.current.startY);
+    swipeRef.current.dy = dy;
+    if (sheetRef.current) {
+      sheetRef.current.style.transition = 'none';
+      sheetRef.current.style.transform = `translateY(${dy}px)`;
+    }
+  };
+  const handleSheetTouchEnd = () => {
+    if (!swipeRef.current || !sheetRef.current) { swipeRef.current = null; return; }
+    const dy = swipeRef.current.dy;
+    swipeRef.current = null;
+    if (dy > 100) {
+      sheetRef.current.style.transition = 'transform 0.25s ease';
+      sheetRef.current.style.transform = 'translateY(100%)';
+      setTimeout(() => setEditNote(null), 240);
+    } else {
+      sheetRef.current.style.transition = 'transform 0.2s ease';
+      sheetRef.current.style.transform = 'translateY(0)';
+      setTimeout(() => { if (sheetRef.current) { sheetRef.current.style.transition = ''; sheetRef.current.style.transform = ''; } }, 200);
+    }
+  };
 
   const load = useCallback(async () => {
     try {
@@ -2089,11 +2118,17 @@ function NotesView({ orgId, isOwner, isAdmin, members = [], addToast }) {
         <div className="fixed inset-0 z-[55] flex flex-col justify-end">
           <div className="absolute inset-0 bg-black/65 backdrop-blur-sm" onClick={() => setEditNote(null)} />
           <div
+            ref={sheetRef}
             className="relative z-10 bg-zinc-900 rounded-t-2xl flex flex-col"
             style={{ maxHeight: '93vh', paddingBottom: 'env(safe-area-inset-bottom, 16px)' }}
           >
-            {/* Handle */}
-            <div className="flex justify-center pt-3 pb-1 shrink-0">
+            {/* Handle — drag down to dismiss */}
+            <div
+              className="flex justify-center pt-3 pb-2 shrink-0 cursor-grab active:cursor-grabbing"
+              onTouchStart={handleSheetTouchStart}
+              onTouchMove={handleSheetTouchMove}
+              onTouchEnd={handleSheetTouchEnd}
+            >
               <div className="w-10 h-1 rounded-full bg-zinc-700" />
             </div>
 
@@ -2183,7 +2218,10 @@ function NotesView({ orgId, isOwner, isAdmin, members = [], addToast }) {
                     </button>
                     {canEdit ? (
                       <textarea
-                        ref={el => { itemInputRefs.current[idx] = el; }}
+                        ref={el => {
+                          itemInputRefs.current[idx] = el;
+                          if (el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; }
+                        }}
                         value={item.text}
                         onChange={e => {
                           handleItemText(idx, e.target.value);
