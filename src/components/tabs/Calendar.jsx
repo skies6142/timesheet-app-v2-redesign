@@ -83,20 +83,20 @@ export default function CalendarTab() {
       <div className="shrink-0 px-4 pt-3 pb-2">
         <div className="flex items-center justify-between mb-2">
           <button onClick={() => setViewDate(subMonths(viewDate, 1))}
-            className="w-10 h-10 flex items-center justify-center rounded-xl border border-zinc-700 text-zinc-400 min-h-[44px] text-lg">
+            className="w-10 h-10 flex items-center justify-center rounded-xl border border-slate-700 text-slate-400 min-h-[44px] text-lg">
             ‹
           </button>
           <div className="text-center">
-            <p className="font-semibold text-zinc-50">{format(viewDate, 'MMMM yyyy')}</p>
+            <p className="font-semibold text-slate-50">{format(viewDate, 'MMMM yyyy')}</p>
           </div>
           <button onClick={() => setViewDate(addMonths(viewDate, 1))}
-            className="w-10 h-10 flex items-center justify-center rounded-xl border border-zinc-700 text-zinc-400 min-h-[44px] text-lg">
+            className="w-10 h-10 flex items-center justify-center rounded-xl border border-slate-700 text-slate-400 min-h-[44px] text-lg">
             ›
           </button>
         </div>
         {/* Month totals */}
-        <div className="flex justify-center gap-6 text-sm text-zinc-400 pb-1">
-          <span><span className="font-mono text-zinc-200">{decimalToHHMM(monthHours)}</span> hrs</span>
+        <div className="flex justify-center gap-6 text-sm text-slate-400 pb-1">
+          <span><span className="font-mono text-slate-200">{decimalToHHMM(monthHours)}</span> hrs</span>
           <span><span className="font-mono text-amber-400">{formatCurrency(monthEarnings)}</span></span>
         </div>
       </div>
@@ -106,7 +106,7 @@ export default function CalendarTab() {
         {/* Day headers */}
         <div className="grid grid-cols-8 mb-1 pl-8">
           {DAY_LABELS.map((d) => (
-            <div key={d} className="text-center text-[10px] text-zinc-600 uppercase tracking-widest py-1">
+            <div key={d} className="text-center text-[10px] text-slate-600 uppercase tracking-widest py-1">
               {d}
             </div>
           ))}
@@ -122,7 +122,7 @@ export default function CalendarTab() {
             <div key={rowIdx} className="grid grid-cols-8 mb-1 items-start">
               {/* Week number */}
               <div className="flex items-start justify-center pt-2">
-                <span className="text-[9px] text-zinc-600 font-medium">Wk{wkNum}</span>
+                <span className="text-[9px] text-slate-600 font-medium">Wk{wkNum}</span>
               </div>
 
               {row.map((date, cellIdx) => {
@@ -147,15 +147,15 @@ export default function CalendarTab() {
                     onClick={() => openDay(date)}
                     className={`aspect-square rounded-xl flex flex-col items-center justify-start p-1 transition-colors min-h-[44px] ${
                       isToday ? 'border border-amber-400' : 'border border-transparent'
-                    } ${dayEntries.length > 0 ? 'bg-zinc-900 hover:bg-zinc-800' : 'hover:bg-zinc-900/50'}`}
+                    } ${dayEntries.length > 0 ? 'bg-slate-900 hover:bg-slate-800' : 'hover:bg-slate-900/50'}`}
                   >
-                    <span className={`text-xs font-medium ${isToday ? 'text-amber-400' : isCurrentMonth ? 'text-zinc-300' : 'text-zinc-600'}`}>
+                    <span className={`text-xs font-medium ${isToday ? 'text-amber-400' : isCurrentMonth ? 'text-slate-300' : 'text-slate-600'}`}>
                       {dayNum}
                     </span>
                     {hours > 0 && (
                       <>
                         <span className="font-mono text-[9px] text-amber-400 leading-tight">{decimalToHHMM(hours)}</span>
-                        <span className="font-mono text-[8px] text-zinc-400 leading-tight">{earnings.toFixed(0)}</span>
+                        <span className="font-mono text-[8px] text-slate-400 leading-tight">{earnings.toFixed(0)}</span>
                       </>
                     )}
                     {dayEntries.length > 0 && (
@@ -182,7 +182,7 @@ export default function CalendarTab() {
       >
         <div className="px-4 py-3 space-y-2">
           {selectedDayEntries.length === 0 ? (
-            <p className="text-center text-zinc-500 py-8 text-sm">No entries for this day</p>
+            <p className="text-center text-slate-500 py-8 text-sm">No entries for this day</p>
           ) : (
             selectedDayEntries
               .sort((a, b) => a.timeIn.localeCompare(b.timeIn))
@@ -190,20 +190,20 @@ export default function CalendarTab() {
                 <button
                   key={entry.key}
                   onClick={() => { setShowDaySheet(false); setEditEntry(entry); }}
-                  className="w-full text-left bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 hover:border-zinc-600 transition-colors min-h-[64px]"
+                  className="w-full text-left bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 hover:border-slate-600 transition-colors min-h-[64px]"
                 >
                   <div className="flex justify-between items-start gap-2">
                     <div className="flex-1 min-w-0">
-                      <p className="font-mono text-sm text-zinc-300">{entry.timeIn} – {entry.timeOut}</p>
-                      <p className="text-sm text-zinc-200 mt-0.5 truncate">{entry.description || entry.projectName || 'Labour'}</p>
+                      <p className="font-mono text-sm text-slate-300">{entry.timeIn} – {entry.timeOut}</p>
+                      <p className="text-sm text-slate-200 mt-0.5 truncate">{entry.description || entry.projectName || 'Labour'}</p>
                       <div className="flex items-center gap-1.5 mt-1">
                         <span className={`w-1.5 h-1.5 rounded-full ${statusDotColor(entry.status)}`} />
-                        <span className="text-[10px] text-zinc-500 uppercase tracking-wider">{statusLabel(entry.status)}</span>
+                        <span className="text-[10px] text-slate-500 uppercase tracking-wider">{statusLabel(entry.status)}</span>
                       </div>
                     </div>
                     <div className="text-right shrink-0">
-                      <p className="font-mono text-sm font-medium text-zinc-50">{formatCurrency(entry.earnings)}</p>
-                      <p className="font-mono text-xs text-zinc-500">{decimalToHHMM(entry.workingHours)}</p>
+                      <p className="font-mono text-sm font-medium text-slate-50">{formatCurrency(entry.earnings)}</p>
+                      <p className="font-mono text-xs text-slate-500">{decimalToHHMM(entry.workingHours)}</p>
                     </div>
                   </div>
                 </button>
@@ -211,17 +211,17 @@ export default function CalendarTab() {
           )}
           {/* Totals */}
           {selectedDayEntries.length > 1 && (
-            <div className="border-t border-zinc-800 pt-2 flex justify-between px-1">
-              <span className="text-xs text-zinc-500">Day total</span>
+            <div className="border-t border-slate-800 pt-2 flex justify-between px-1">
+              <span className="text-xs text-slate-500">Day total</span>
               <div className="flex gap-4">
-                <span className="font-mono text-xs text-zinc-300">{decimalToHHMM(sumHours(selectedDayEntries))}</span>
+                <span className="font-mono text-xs text-slate-300">{decimalToHHMM(sumHours(selectedDayEntries))}</span>
                 <span className="font-mono text-xs text-amber-400">{formatCurrency(sumEarnings(selectedDayEntries))}</span>
               </div>
             </div>
           )}
           <button
             onClick={() => { setShowDaySheet(false); setShowAddEntry(true); }}
-            className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-zinc-700 hover:border-amber-400/50 text-zinc-500 hover:text-amber-400 rounded-xl py-3 min-h-[48px] transition-colors text-sm font-medium"
+            className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-slate-700 hover:border-amber-400/50 text-slate-500 hover:text-amber-400 rounded-xl py-3 min-h-[48px] transition-colors text-sm font-medium"
           >
             <Plus size={16} />
             Add Entry for {selectedDate ? formatDateDisplay(selectedDate) : 'this day'}

@@ -45,7 +45,7 @@ export default function ConfirmModal({
       />
 
       {/* Dialog card */}
-      <div className="relative z-10 w-full max-w-[320px] bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden shadow-2xl shadow-black/60 confirm-pop">
+      <div className="relative z-10 w-full max-w-[320px] bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl shadow-black/60 confirm-pop">
 
         {/* Icon + text */}
         <div className="flex flex-col items-center pt-8 pb-6 px-6 text-center gap-4">
@@ -58,19 +58,19 @@ export default function ConfirmModal({
             }
           </div>
           <div>
-            <h2 className="text-base font-bold text-zinc-50">{title}</h2>
+            <h2 className="text-base font-bold text-slate-50">{title}</h2>
             {message && (
-              <p className="text-sm text-zinc-400 mt-1.5 leading-relaxed">{message}</p>
+              <p className="text-sm text-slate-400 mt-1.5 leading-relaxed">{message}</p>
             )}
           </div>
         </div>
 
         {/* Buttons — iOS two-column style */}
-        <div className="flex border-t border-zinc-800/80">
+        <div className="flex border-t border-slate-800/80">
           <button
             onClick={onCancel}
             disabled={loading}
-            className="flex-1 py-4 text-sm font-medium text-zinc-300 hover:bg-zinc-800 active:bg-zinc-700 transition-colors border-r border-zinc-800/80 min-h-[52px]"
+            className="flex-1 py-4 text-sm font-medium text-slate-300 hover:bg-slate-800 active:bg-slate-700 transition-colors border-r border-slate-800/80 min-h-[52px]"
           >
             {cancelLabel}
           </button>

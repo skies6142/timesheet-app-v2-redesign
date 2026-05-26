@@ -140,10 +140,10 @@ function CreateInvoice() {
     <div className="flex-1 flex flex-col overflow-hidden">
       {/* Client filter chips */}
       {clients.length > 1 && (
-        <div className="shrink-0 px-4 py-2 border-b border-zinc-800 flex items-center gap-2 overflow-x-auto">
+        <div className="shrink-0 px-4 py-2 border-b border-slate-800 flex items-center gap-2 overflow-x-auto">
           <button
             onClick={() => setFilterClient(null)}
-            className={`shrink-0 px-3 py-1 rounded-full text-xs font-semibold transition-colors ${!activeFilter ? 'bg-amber-400 text-zinc-950' : 'bg-zinc-800 text-zinc-400 border border-zinc-700'}`}
+            className={`shrink-0 px-3 py-1 rounded-full text-xs font-semibold transition-colors ${!activeFilter ? 'bg-violet-600 text-white' : 'bg-slate-800 text-slate-400 border border-slate-700'}`}
           >
             All
           </button>
@@ -151,7 +151,7 @@ function CreateInvoice() {
             <button
               key={c}
               onClick={() => setFilterClient(c === activeFilter ? null : c)}
-              className={`shrink-0 px-3 py-1 rounded-full text-xs font-semibold transition-colors ${activeFilter === c ? 'bg-amber-400 text-zinc-950' : 'bg-zinc-800 text-zinc-400 border border-zinc-700'}`}
+              className={`shrink-0 px-3 py-1 rounded-full text-xs font-semibold transition-colors ${activeFilter === c ? 'bg-violet-600 text-white' : 'bg-slate-800 text-slate-400 border border-slate-700'}`}
             >
               {c}
             </button>
@@ -161,14 +161,14 @@ function CreateInvoice() {
 
       {/* Select all bar */}
       {entries.length > 0 && (
-        <div className="shrink-0 px-4 py-2 flex items-center justify-between border-b border-zinc-800">
-          <button onClick={selectAll} className="flex items-center gap-2 text-sm text-zinc-300 min-h-[44px]">
+        <div className="shrink-0 px-4 py-2 flex items-center justify-between border-b border-slate-800">
+          <button onClick={selectAll} className="flex items-center gap-2 text-sm text-slate-300 min-h-[44px]">
             {allVisibleSelected
-              ? <CheckSquare size={18} className="text-amber-400" />
-              : <Square size={18} className="text-zinc-500" />}
+              ? <CheckSquare size={18} className="text-violet-400" />
+              : <Square size={18} className="text-slate-500" />}
             Select all
           </button>
-          <span className="text-xs text-zinc-500">{visibleEntries.length} unbilled entr{visibleEntries.length === 1 ? 'y' : 'ies'}</span>
+          <span className="text-xs text-slate-500">{visibleEntries.length} unbilled entr{visibleEntries.length === 1 ? 'y' : 'ies'}</span>
         </div>
       )}
 
@@ -177,8 +177,8 @@ function CreateInvoice() {
         {visibleEntries.length === 0 ? (
           <div className="text-center py-12">
             <CheckCircle size={40} className="text-emerald-400 mx-auto mb-3 opacity-50" />
-            <p className="text-zinc-400 font-medium">All caught up!</p>
-            <p className="text-sm text-zinc-600 mt-1">No unbilled entries{activeFilter ? ` for ${activeFilter}` : ''}</p>
+            <p className="text-slate-400 font-medium">All caught up!</p>
+            <p className="text-sm text-slate-600 mt-1">No unbilled entries{activeFilter ? ` for ${activeFilter}` : ''}</p>
           </div>
         ) : (
           sortedDates.map((date) => {
@@ -189,31 +189,31 @@ function CreateInvoice() {
             return (
               <div key={date} className="mb-4">
                 <div className="flex justify-between items-center py-1.5 mb-1">
-                  <p className="text-xs font-semibold text-zinc-400 uppercase tracking-widest">
+                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest">
                     {formatDateDisplay(date)}
                   </p>
                   <div className="flex gap-3">
-                    <span className="font-mono text-xs text-zinc-500">{decimalToHHMM(dayHours)}</span>
-                    <span className="font-mono text-xs text-zinc-400">{formatCurrency(dayEarnings)}</span>
+                    <span className="font-mono text-xs text-slate-500">{decimalToHHMM(dayHours)}</span>
+                    <span className="font-mono text-xs text-slate-400">{formatCurrency(dayEarnings)}</span>
                   </div>
                 </div>
-                <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
+                <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
                   {dayEntries.map((entry, idx) => (
                     <button
                       key={entry.key}
                       onClick={() => toggle(entry.key)}
-                      className={`w-full text-left flex items-center gap-3 px-4 py-3 hover:bg-zinc-800/60 transition-colors min-h-[60px] ${idx < dayEntries.length - 1 ? 'border-b border-zinc-800' : ''}`}
+                      className={`w-full text-left flex items-center gap-3 px-4 py-3 hover:bg-slate-800/60 transition-colors min-h-[60px] ${idx < dayEntries.length - 1 ? 'border-b border-slate-800' : ''}`}
                     >
                       {selected.has(entry.key)
-                        ? <CheckSquare size={18} className="text-amber-400 shrink-0" />
-                        : <Square size={18} className="text-zinc-600 shrink-0" />}
+                        ? <CheckSquare size={18} className="text-violet-400 shrink-0" />
+                        : <Square size={18} className="text-slate-600 shrink-0" />}
                       <div className="flex-1 min-w-0">
-                        <p className="font-mono text-xs text-zinc-400">{entry.timeIn} – {entry.timeOut}</p>
-                        <p className="text-sm text-zinc-200 truncate">{entry.description || entry.projectName || 'Labour'}</p>
+                        <p className="font-mono text-xs text-slate-400">{entry.timeIn} – {entry.timeOut}</p>
+                        <p className="text-sm text-slate-200 truncate">{entry.description || entry.projectName || 'Labour'}</p>
                       </div>
                       <div className="text-right shrink-0">
-                        <p className="font-mono text-sm font-medium text-zinc-50">{formatCurrency(entry.earnings)}</p>
-                        <p className="font-mono text-xs text-zinc-500">{decimalToHHMM(entry.workingHours)}</p>
+                        <p className="font-mono text-sm font-medium text-slate-50">{formatCurrency(entry.earnings)}</p>
+                        <p className="font-mono text-xs text-slate-500">{decimalToHHMM(entry.workingHours)}</p>
                       </div>
                     </button>
                   ))}
@@ -227,23 +227,23 @@ function CreateInvoice() {
 
       {/* Sticky footer */}
       {selected.size > 0 && (
-        <div className="shrink-0 border-t border-zinc-800 bg-zinc-950 px-4 py-3">
+        <div className="shrink-0 border-t border-slate-800 bg-slate-950 px-4 py-3">
           <div className="flex justify-between items-center mb-3">
             <div className="flex gap-4">
               <div>
-                <p className="font-mono text-sm font-semibold text-zinc-50">{decimalToHHMM(selectedHours)}</p>
-                <p className="text-[10px] text-zinc-500 uppercase tracking-widest">Hours</p>
+                <p className="font-mono text-sm font-semibold text-slate-50">{decimalToHHMM(selectedHours)}</p>
+                <p className="text-[10px] text-slate-500 uppercase tracking-widest">Hours</p>
               </div>
               <div>
                 <p className="font-mono text-sm font-semibold text-amber-400">{formatCurrency(selectedEarnings)}</p>
-                <p className="text-[10px] text-zinc-500 uppercase tracking-widest">Total</p>
+                <p className="text-[10px] text-slate-500 uppercase tracking-widest">Total</p>
               </div>
             </div>
-            <span className="text-xs text-zinc-400">{selected.size} selected</span>
+            <span className="text-xs text-slate-400">{selected.size} selected</span>
           </div>
           <button
             onClick={handleGenerate}
-            className="w-full bg-amber-400 hover:bg-amber-300 text-zinc-950 font-bold rounded-xl py-3.5 min-h-[52px] transition-colors"
+            className="w-full bg-gradient-to-r from-violet-600 to-violet-800 hover:from-violet-500 hover:to-violet-700 text-white font-bold rounded-xl py-3.5 min-h-[52px] transition-colors"
           >
             Generate Invoice →
           </button>
@@ -293,7 +293,7 @@ function InvoiceHistory() {
     <div className="flex-1 scroll-area px-4 py-3">
       {invoices.length === 0 ? (
         <div className="text-center py-12">
-          <p className="text-zinc-500 text-sm">No invoices yet</p>
+          <p className="text-slate-500 text-sm">No invoices yet</p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -301,12 +301,12 @@ function InvoiceHistory() {
             <button
               key={inv.invoiceNumber}
               onClick={() => setViewInvoice(inv)}
-              className="w-full text-left bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 hover:border-zinc-700 transition-colors min-h-[64px]"
+              className="w-full text-left bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 hover:border-slate-700 transition-colors min-h-[64px]"
             >
               <div className="flex justify-between items-start gap-2">
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
-                    <span className="font-mono text-sm font-semibold text-zinc-50">{inv.invoiceNumber}</span>
+                    <span className="font-mono text-sm font-semibold text-slate-50">{inv.invoiceNumber}</span>
                     <span className={`text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded-md ${
                       inv.status === 'paid'
                         ? 'bg-emerald-400/15 text-emerald-400'
@@ -315,11 +315,11 @@ function InvoiceHistory() {
                       {inv.status === 'paid' ? 'PAID' : 'OUTSTANDING'}
                     </span>
                   </div>
-                  <p className="text-sm text-zinc-400 mt-0.5">{inv.clientName}</p>
-                  <p className="text-xs text-zinc-600 mt-0.5">{formatDateFull(inv.date)} · {inv.entries?.length || 0} entries</p>
+                  <p className="text-sm text-slate-400 mt-0.5">{inv.clientName}</p>
+                  <p className="text-xs text-slate-600 mt-0.5">{formatDateFull(inv.date)} · {inv.entries?.length || 0} entries</p>
                 </div>
                 <div className="text-right shrink-0">
-                  <p className="font-mono text-base font-semibold text-zinc-50">{formatCurrency(inv.total)}</p>
+                  <p className="font-mono text-base font-semibold text-slate-50">{formatCurrency(inv.total)}</p>
                 </div>
               </div>
             </button>
@@ -379,15 +379,15 @@ function InvoiceDetailSheet({ invoice, settings, onClose, onMarkPaid }) {
   return (
     <div className="fixed inset-0 z-50 flex flex-col justify-end">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 bg-zinc-900 rounded-t-2xl max-h-[90vh] flex flex-col"
+      <div className="relative z-10 bg-slate-900 rounded-t-2xl max-h-[90vh] flex flex-col"
         style={{ paddingBottom: 'env(safe-area-inset-bottom, 16px)' }}>
         <div className="flex justify-center pt-3 pb-1 shrink-0">
-          <div className="w-10 h-1 rounded-full bg-zinc-700" />
+          <div className="w-10 h-1 rounded-full bg-slate-700" />
         </div>
-        <div className="flex items-center justify-between px-5 py-3 border-b border-zinc-800 shrink-0">
+        <div className="flex items-center justify-between px-5 py-3 border-b border-slate-800 shrink-0">
           <div>
-            <h2 className="font-mono font-semibold text-zinc-50">{invoice.invoiceNumber}</h2>
-            <p className="text-xs text-zinc-500">{invoice.clientName} · {formatDateFull(invoice.date)}</p>
+            <h2 className="font-mono font-semibold text-slate-50">{invoice.invoiceNumber}</h2>
+            <p className="text-xs text-slate-500">{invoice.clientName} · {formatDateFull(invoice.date)}</p>
           </div>
           <span className={`text-xs font-semibold uppercase tracking-wider px-2 py-1 rounded-lg ${
             invoice.status === 'paid' ? 'bg-emerald-400/15 text-emerald-400' : 'bg-blue-400/15 text-blue-400'
@@ -397,18 +397,18 @@ function InvoiceDetailSheet({ invoice, settings, onClose, onMarkPaid }) {
         </div>
         <div className="flex-1 scroll-area px-4 py-3 space-y-2">
           {(invoice.entries || []).map((entry, i) => (
-            <div key={entry.key || i} className="bg-zinc-800 rounded-xl px-4 py-2.5">
+            <div key={entry.key || i} className="bg-slate-800 rounded-xl px-4 py-2.5">
               <div className="flex justify-between items-start">
                 <div className="flex-1">
-                  <p className="font-mono text-xs text-zinc-400">{formatDateFull(entry.date)}</p>
-                  <p className="text-sm text-zinc-200">{entry.description || 'Labour'}</p>
+                  <p className="font-mono text-xs text-slate-400">{formatDateFull(entry.date)}</p>
+                  <p className="text-sm text-slate-200">{entry.description || 'Labour'}</p>
                 </div>
-                <p className="font-mono text-sm text-zinc-50 ml-3">{formatCurrency(entry.earnings)}</p>
+                <p className="font-mono text-sm text-slate-50 ml-3">{formatCurrency(entry.earnings)}</p>
               </div>
             </div>
           ))}
-          <div className="bg-zinc-800 rounded-xl px-4 py-3 flex justify-between items-center">
-            <span className="font-semibold text-zinc-200">Total</span>
+          <div className="bg-slate-800 rounded-xl px-4 py-3 flex justify-between items-center">
+            <span className="font-semibold text-slate-200">Total</span>
             <span className="font-mono text-lg font-bold text-amber-400">{formatCurrency(invoice.total)}</span>
           </div>
           <div className="space-y-2 pt-1">
@@ -417,7 +417,7 @@ function InvoiceDetailSheet({ invoice, settings, onClose, onMarkPaid }) {
                 <button
                   onClick={handleShare}
                   disabled={sharing}
-                  className="flex items-center justify-center gap-2 bg-zinc-800 border border-zinc-700 hover:bg-zinc-700 disabled:opacity-60 text-zinc-50 font-medium rounded-xl py-3.5 min-h-[52px] transition-colors"
+                  className="flex items-center justify-center gap-2 bg-slate-800 border border-slate-700 hover:bg-slate-700 disabled:opacity-60 text-slate-50 font-medium rounded-xl py-3.5 min-h-[52px] transition-colors"
                 >
                   <Share2 size={16} />
                   {sharing ? 'Preparing…' : 'Share'}
@@ -425,7 +425,7 @@ function InvoiceDetailSheet({ invoice, settings, onClose, onMarkPaid }) {
               )}
               <button
                 onClick={handleSavePDF}
-                className={`flex items-center justify-center gap-2 bg-zinc-800 border border-zinc-700 hover:bg-zinc-700 text-zinc-50 font-medium rounded-xl py-3.5 min-h-[52px] transition-colors ${!canShare ? 'w-full' : ''}`}
+                className={`flex items-center justify-center gap-2 bg-slate-800 border border-slate-700 hover:bg-slate-700 text-slate-50 font-medium rounded-xl py-3.5 min-h-[52px] transition-colors ${!canShare ? 'w-full' : ''}`}
               >
                 <Download size={16} />
                 Save PDF

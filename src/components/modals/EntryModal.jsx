@@ -9,7 +9,7 @@ import ConfirmModal from '../ui/ConfirmModal';
 import { Trash2, Copy, Check } from 'lucide-react';
 
 const STATUS_OPTIONS = [
-  { value: 'unpaid', label: 'Unpaid', color: 'text-zinc-400' },
+  { value: 'unpaid', label: 'Unpaid', color: 'text-slate-400' },
   { value: 'paid_cash', label: 'Paid Cash', color: 'text-emerald-400' },
 ];
 
@@ -262,7 +262,7 @@ export default function EntryModal({ isOpen, onClose, entry = null, defaultDate 
             />
           </FormField>
           <FormField label="Working Hours">
-            <div className="bg-zinc-800/50 border border-zinc-700 rounded-xl px-4 py-3 font-mono text-amber-400 min-h-[48px] flex items-center">
+            <div className="bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 font-mono text-violet-400 min-h-[48px] flex items-center">
               {decimalToHHMM(workingHours)}
             </div>
           </FormField>
@@ -271,7 +271,7 @@ export default function EntryModal({ isOpen, onClose, entry = null, defaultDate 
         {/* Rate */}
         <FormField label="Hourly Rate (AUD)" error={errors.hourlyRate} required>
           <div className="relative">
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 font-mono">$</span>
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-mono">$</span>
             <input
               type="number"
               value={form.hourlyRate}
@@ -286,9 +286,9 @@ export default function EntryModal({ isOpen, onClose, entry = null, defaultDate 
 
         {/* Earnings display */}
         {workingHours > 0 && (
-          <div className="bg-zinc-800/40 rounded-xl px-4 py-3 flex justify-between items-center">
-            <span className="text-sm text-zinc-400">Earnings</span>
-            <span className="font-mono text-lg font-semibold text-zinc-50">{formatCurrency(earnings)}</span>
+          <div className="bg-slate-800/40 rounded-xl px-4 py-3 flex justify-between items-center">
+            <span className="text-sm text-slate-400">Earnings</span>
+            <span className="font-mono text-lg font-semibold text-slate-50">{formatCurrency(earnings)}</span>
           </div>
         )}
 
@@ -298,7 +298,7 @@ export default function EntryModal({ isOpen, onClose, entry = null, defaultDate 
           if (profiles.length < 2) return null;
           return (
             <div>
-              <p className="text-xs text-zinc-500 uppercase tracking-widest mb-2">Quick-fill from profile</p>
+              <p className="text-xs text-slate-500 uppercase tracking-widest mb-2">Quick-fill from profile</p>
               <div className="flex flex-wrap gap-2">
                 {profiles.map((p) => (
                   <button
@@ -310,7 +310,7 @@ export default function EntryModal({ isOpen, onClose, entry = null, defaultDate 
                       clientName: p.clientName || '',
                       hourlyRate: String(p.hourlyRate || ''),
                     }))}
-                    className="px-3 py-1.5 rounded-xl text-sm font-medium bg-zinc-800 border border-zinc-700 text-zinc-300 hover:border-amber-400/60 hover:text-amber-400 transition-colors"
+                    className="px-3 py-1.5 rounded-xl text-sm font-medium bg-slate-800 border border-slate-700 text-slate-300 hover:border-violet-500/60 hover:text-violet-400 transition-colors"
                   >
                     {p.name}
                   </button>
@@ -349,7 +349,7 @@ export default function EntryModal({ isOpen, onClose, entry = null, defaultDate 
             onChange={(e) => set('description', e.target.value)}
             placeholder="What did you work on?"
             rows={2}
-            className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-zinc-50 placeholder-zinc-600 text-sm focus:outline-none focus:border-amber-400 transition-colors resize-none"
+            className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-slate-50 placeholder-slate-600 text-sm focus:outline-none focus:border-violet-500 transition-colors resize-none"
           />
         </FormField>
 
@@ -360,14 +360,14 @@ export default function EntryModal({ isOpen, onClose, entry = null, defaultDate 
             onChange={(e) => set('notes', e.target.value)}
             placeholder="Additional notes"
             rows={2}
-            className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-zinc-50 placeholder-zinc-600 text-sm focus:outline-none focus:border-amber-400 transition-colors resize-none"
+            className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-slate-50 placeholder-slate-600 text-sm focus:outline-none focus:border-violet-500 transition-colors resize-none"
           />
         </FormField>
 
         {/* Status */}
         <FormField label="Payment Status">
           {isInvoiced ? (
-            <div className={`bg-zinc-800/50 border border-zinc-700 rounded-xl px-4 py-3 text-sm ${entry.status === 'paid_invoice' ? 'text-emerald-400' : 'text-blue-400'}`}>
+            <div className={`bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-sm ${entry.status === 'paid_invoice' ? 'text-emerald-400' : 'text-blue-400'}`}>
               {entry.status === 'paid_invoice' ? `Paid via invoice ${entry.invoiceNumber}` : `Invoiced on ${entry.invoiceNumber}`}
             </div>
           ) : (
@@ -387,10 +387,10 @@ export default function EntryModal({ isOpen, onClose, entry = null, defaultDate 
 
         {/* Billable toggle */}
         <label className="flex items-center justify-between py-2 cursor-pointer">
-          <span className="text-sm font-medium text-zinc-300">Billable</span>
+          <span className="text-sm font-medium text-slate-300">Billable</span>
           <div
             onClick={() => set('billable', !form.billable)}
-            className={`relative w-11 h-6 rounded-full transition-colors ${form.billable ? 'bg-amber-400' : 'bg-zinc-700'}`}
+            className={`relative w-11 h-6 rounded-full transition-colors ${form.billable ? 'bg-violet-600' : 'bg-slate-700'}`}
           >
             <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white transition-transform shadow ${form.billable ? 'translate-x-5' : 'translate-x-0.5'}`} />
           </div>
@@ -401,7 +401,7 @@ export default function EntryModal({ isOpen, onClose, entry = null, defaultDate 
           <button
             onClick={handleSave}
             disabled={saving}
-            className="w-full bg-amber-400 hover:bg-amber-300 disabled:opacity-60 text-zinc-950 font-bold rounded-xl py-3.5 text-base transition-colors min-h-[52px]"
+            className="w-full bg-gradient-to-r from-violet-600 to-violet-800 hover:from-violet-500 hover:to-violet-700 disabled:opacity-60 text-white font-bold rounded-xl py-3.5 text-base transition-colors min-h-[52px]"
           >
             {saving ? 'Saving…' : isClockOut ? 'Save & Clock Out' : isEdit ? 'Update Entry' : 'Add Entry'}
           </button>
@@ -417,7 +417,7 @@ export default function EntryModal({ isOpen, onClose, entry = null, defaultDate 
               </button>
               <button
                 onClick={handleCopy}
-                className="flex-1 flex items-center justify-center gap-2 border border-zinc-700 text-zinc-400 hover:bg-zinc-800 active:bg-zinc-700 rounded-xl py-3 min-h-[48px] transition-colors text-sm font-medium"
+                className="flex-1 flex items-center justify-center gap-2 border border-slate-700 text-slate-400 hover:bg-slate-800 active:bg-slate-700 rounded-xl py-3 min-h-[48px] transition-colors text-sm font-medium"
               >
                 <Copy size={15} />
                 Duplicate
@@ -445,8 +445,8 @@ export default function EntryModal({ isOpen, onClose, entry = null, defaultDate 
 function FormField({ label, error, required, children }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-zinc-400 mb-1.5">
-        {label}{required && <span className="text-amber-400 ml-0.5">*</span>}
+      <label className="block text-sm font-medium text-slate-400 mb-1.5">
+        {label}{required && <span className="text-violet-400 ml-0.5">*</span>}
       </label>
       {children}
       {error && <p className="text-xs text-red-400 mt-1">{error}</p>}
@@ -455,5 +455,5 @@ function FormField({ label, error, required, children }) {
 }
 
 function inputCls(error, disabled) {
-  return `w-full bg-zinc-800 border ${error ? 'border-red-400' : 'border-zinc-700'} rounded-xl px-4 py-3 text-zinc-50 placeholder-zinc-600 text-sm focus:outline-none focus:border-amber-400 transition-colors min-h-[48px] ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`;
+  return `w-full bg-slate-800 border ${error ? 'border-red-400' : 'border-slate-700'} rounded-xl px-4 py-3 text-slate-50 placeholder-slate-600 text-sm focus:outline-none focus:border-violet-500 transition-colors min-h-[48px] ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`;
 }

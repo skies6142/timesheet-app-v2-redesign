@@ -10,7 +10,7 @@ const STATUS_OPTIONS = [
   { value: 'scheduled',   label: 'Scheduled',   color: 'text-amber-400'   },
   { value: 'in_progress', label: 'In Progress',  color: 'text-blue-400'    },
   { value: 'completed',   label: 'Completed',    color: 'text-emerald-400' },
-  { value: 'cancelled',   label: 'Cancelled',    color: 'text-zinc-500'    },
+  { value: 'cancelled',   label: 'Cancelled',    color: 'text-slate-500'    },
 ];
 
 export const JOB_COLORS = [
@@ -599,7 +599,7 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
       <div className="absolute inset-0 bg-black/65 backdrop-blur-sm" onClick={onClose} />
       <div
         ref={sheetRef}
-        className="relative z-10 bg-zinc-900 rounded-t-2xl flex flex-col"
+        className="relative z-10 bg-slate-900 rounded-t-2xl flex flex-col"
         style={{ maxHeight: '95vh', paddingBottom: 'env(safe-area-inset-bottom, 16px)' }}
       >
         {/* Handle — drag down to dismiss */}
@@ -609,12 +609,12 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
           onTouchMove={handleSheetTouchMove}
           onTouchEnd={handleSheetTouchEnd}
         >
-          <div className="w-10 h-1 rounded-full bg-zinc-700" />
+          <div className="w-10 h-1 rounded-full bg-slate-700" />
         </div>
 
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-3 border-b border-zinc-800 shrink-0">
-          <h2 className="text-base font-semibold text-zinc-50">
+        <div className="flex items-center justify-between px-5 py-3 border-b border-slate-800 shrink-0">
+          <h2 className="text-base font-semibold text-slate-50">
             {isNew ? 'New Job' : canEdit ? 'Edit Job' : 'Job Details'}
           </h2>
           <div className="flex items-center gap-2">
@@ -625,7 +625,7 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
               </button>
             )}
             <button onClick={onClose}
-              className="w-9 h-9 flex items-center justify-center rounded-full text-zinc-400 hover:bg-zinc-800">
+              className="w-9 h-9 flex items-center justify-center rounded-full text-slate-400 hover:bg-slate-800">
               <X size={18} />
             </button>
           </div>
@@ -639,7 +639,7 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
             </p>
             <div className="flex items-center gap-2">
               <button onClick={() => setShowDeleteConfirm(false)}
-                className="flex-1 px-3 py-2 text-xs text-zinc-400 bg-zinc-800 rounded-xl">Cancel</button>
+                className="flex-1 px-3 py-2 text-xs text-slate-400 bg-slate-800 rounded-xl">Cancel</button>
               {hasSeries && (
                 <button onClick={() => handleDelete('single')} disabled={deleting}
                   className="flex-1 px-3 py-2 text-xs text-white bg-red-700 hover:bg-red-600 rounded-xl font-semibold disabled:opacity-50">
@@ -656,17 +656,17 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
 
         {/* Series scope selector — shown when editing a job that belongs to a series */}
         {!isNew && canEdit && hasSeries && (
-          <div className="px-5 py-2.5 border-b border-zinc-800 shrink-0">
+          <div className="px-5 py-2.5 border-b border-slate-800 shrink-0">
             <div className="flex items-center gap-2">
-              <CalendarDays size={13} className="text-zinc-500 shrink-0" />
-              <p className="text-xs text-zinc-500 mr-auto">Part of a multi-day series</p>
-              <div className="flex rounded-lg overflow-hidden border border-zinc-700">
+              <CalendarDays size={13} className="text-slate-500 shrink-0" />
+              <p className="text-xs text-slate-500 mr-auto">Part of a multi-day series</p>
+              <div className="flex rounded-lg overflow-hidden border border-slate-700">
                 <button onClick={() => setEditScope('single')}
-                  className={`px-2.5 py-1 text-xs font-medium transition-colors ${editScope === 'single' ? 'bg-amber-400 text-zinc-950' : 'text-zinc-400 hover:text-zinc-200'}`}>
+                  className={`px-2.5 py-1 text-xs font-medium transition-colors ${editScope === 'single' ? 'bg-violet-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}>
                   This day
                 </button>
                 <button onClick={() => setEditScope('series')}
-                  className={`px-2.5 py-1 text-xs font-medium border-l border-zinc-700 transition-colors ${editScope === 'series' ? 'bg-amber-400 text-zinc-950' : 'text-zinc-400 hover:text-zinc-200'}`}>
+                  className={`px-2.5 py-1 text-xs font-medium border-l border-slate-700 transition-colors ${editScope === 'series' ? 'bg-violet-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}>
                   All days
                 </button>
               </div>
@@ -689,12 +689,12 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
 
           {/* Title + Color */}
           <div>
-            <label className="block text-xs text-zinc-500 uppercase tracking-widest mb-1.5">Job Title *</label>
+            <label className="block text-xs text-slate-500 uppercase tracking-widest mb-1.5">Job Title *</label>
             {canEdit ? (
               <div className="flex items-center gap-2">
                 <input value={title} onChange={e => setTitle(e.target.value)}
                   placeholder="e.g. Roof repair at 42 Oak St"
-                  className="flex-1 bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-amber-400/50" />
+                  className="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-violet-500/50" />
                 {/* Color dot button — opens picker */}
                 <div className="relative shrink-0 group">
                   <button
@@ -703,11 +703,11 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
                     title="Pick colour"
                     onClick={e => { e.currentTarget.nextSibling.classList.toggle('hidden'); }}
                   />
-                  <div className="hidden absolute top-12 right-0 bg-zinc-800 border border-zinc-700 rounded-2xl p-3 z-20 shadow-2xl grid grid-cols-4 gap-2 w-44">
+                  <div className="hidden absolute top-12 right-0 bg-slate-800 border border-slate-700 rounded-2xl p-3 z-20 shadow-2xl grid grid-cols-4 gap-2 w-44">
                     {JOB_COLORS.map(c => (
                       <button key={c.id} onClick={() => setColor(c.id)}
                         style={{ backgroundColor: c.hex }}
-                        className={`w-8 h-8 rounded-xl transition-transform hover:scale-110 ${color === c.id ? 'ring-2 ring-white ring-offset-1 ring-offset-zinc-800' : ''}`}
+                        className={`w-8 h-8 rounded-xl transition-transform hover:scale-110 ${color === c.id ? 'ring-2 ring-white ring-offset-1 ring-offset-slate-800' : ''}`}
                       />
                     ))}
                   </div>
@@ -716,7 +716,7 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
             ) : (
               <div className="flex items-center gap-2">
                 <div className="w-3 h-8 rounded-full shrink-0" style={{ backgroundColor: JOB_COLORS.find(c => c.id === color)?.hex || '#f59e0b' }} />
-                <p className="text-zinc-100 font-semibold">{title}</p>
+                <p className="text-slate-100 font-semibold">{title}</p>
               </div>
             )}
           </div>
@@ -724,28 +724,28 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
           {/* Date + Status */}
           {isNew ? (
             <div className="space-y-3">
-              <label className="block text-xs text-zinc-500 uppercase tracking-widest">Date(s) *</label>
+              <label className="block text-xs text-slate-500 uppercase tracking-widest">Date(s) *</label>
               <input type="date" value={date} onChange={e => { setDate(e.target.value); setExtraDates([]); }}
-                className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-3 text-sm text-zinc-100 focus:outline-none focus:border-amber-400/50" />
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-3 text-sm text-slate-100 focus:outline-none focus:border-violet-500/50" />
               {/* Mini calendar for additional dates */}
               <MultiDatePicker primaryDate={date} extraDates={extraDates} onToggle={toggleExtraDate} />
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs text-zinc-500 uppercase tracking-widest mb-1.5">Date *</label>
+                <label className="block text-xs text-slate-500 uppercase tracking-widest mb-1.5">Date *</label>
                 {canEdit ? (
                   <input type="date" value={date} onChange={e => setDate(e.target.value)}
-                    className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-3 text-sm text-zinc-100 focus:outline-none focus:border-amber-400/50" />
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-3 text-sm text-slate-100 focus:outline-none focus:border-violet-500/50" />
                 ) : (
-                  <p className="text-zinc-100">{date ? format(parseISO(date), 'd MMM yyyy') : '—'}</p>
+                  <p className="text-slate-100">{date ? format(parseISO(date), 'd MMM yyyy') : '—'}</p>
                 )}
               </div>
               <div>
-                <label className="block text-xs text-zinc-500 uppercase tracking-widest mb-1.5">Status</label>
+                <label className="block text-xs text-slate-500 uppercase tracking-widest mb-1.5">Status</label>
                 {canEdit ? (
                   <select value={status} onChange={e => setStatus(e.target.value)}
-                    className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-3 text-sm text-zinc-100 focus:outline-none focus:border-amber-400/50">
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-3 text-sm text-slate-100 focus:outline-none focus:border-violet-500/50">
                     {STATUS_OPTIONS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
                   </select>
                 ) : (
@@ -760,7 +760,7 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
           {/* Client Name + Phone */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs text-zinc-500 uppercase tracking-widest mb-1.5">
+              <label className="block text-xs text-slate-500 uppercase tracking-widest mb-1.5">
                 <User size={11} className="inline mr-1" />Client Name
               </label>
               {canEdit ? (
@@ -768,14 +768,14 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
                   value={clientName}
                   onChange={e => setClientName(e.target.value)}
                   placeholder="Client name…"
-                  className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-amber-400/50"
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-violet-500/50"
                 />
               ) : (
-                <p className="text-zinc-300 text-sm">{clientName || '—'}</p>
+                <p className="text-slate-300 text-sm">{clientName || '—'}</p>
               )}
             </div>
             <div>
-              <label className="block text-xs text-zinc-500 uppercase tracking-widest mb-1.5">
+              <label className="block text-xs text-slate-500 uppercase tracking-widest mb-1.5">
                 <Phone size={11} className="inline mr-1" />Client Phone
               </label>
               {canEdit ? (
@@ -784,13 +784,13 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
                   value={clientPhone}
                   onChange={e => setClientPhone(e.target.value)}
                   placeholder="0400 000 000"
-                  className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-amber-400/50"
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-violet-500/50"
                 />
               ) : (
                 clientPhone ? (
-                  <a href={`tel:${clientPhone}`} className="text-amber-400 text-sm">{clientPhone}</a>
+                  <a href={`tel:${clientPhone}`} className="text-violet-400 text-sm">{clientPhone}</a>
                 ) : (
-                  <p className="text-zinc-300 text-sm">—</p>
+                  <p className="text-slate-300 text-sm">—</p>
                 )
               )}
             </div>
@@ -798,7 +798,7 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
 
           {/* Location + map */}
           <div>
-            <label className="block text-xs text-zinc-500 uppercase tracking-widest mb-1.5">
+            <label className="block text-xs text-slate-500 uppercase tracking-widest mb-1.5">
               <MapPin size={11} className="inline mr-1" />Location
             </label>
             {canEdit ? (
@@ -809,14 +809,14 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
                   onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
                   onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
                   placeholder="Start typing an address…"
-                  className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-amber-400/50"
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-violet-500/50"
                 />
                 {showSuggestions && (
-                  <div className="absolute top-full left-0 right-0 mt-1 bg-zinc-800 border border-zinc-600 rounded-xl overflow-hidden z-20 shadow-2xl">
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-slate-800 border border-slate-600 rounded-xl overflow-hidden z-20 shadow-2xl">
                     {suggestions.map((s, i) => (
                       <button key={i} type="button" onMouseDown={() => selectSuggestion(s)}
-                        className="w-full text-left px-3 py-2.5 text-xs text-zinc-200 hover:bg-zinc-700 border-b border-zinc-700/50 last:border-0 flex items-start gap-2">
-                        <MapPin size={11} className="text-zinc-500 shrink-0 mt-0.5" />
+                        className="w-full text-left px-3 py-2.5 text-xs text-slate-200 hover:bg-slate-700 border-b border-slate-700/50 last:border-0 flex items-start gap-2">
+                        <MapPin size={11} className="text-slate-500 shrink-0 mt-0.5" />
                         <span className="leading-relaxed">{s.display_name}</span>
                       </button>
                     ))}
@@ -824,10 +824,10 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
                 )}
               </div>
             ) : (
-              <p className="text-zinc-300">{location || '—'}</p>
+              <p className="text-slate-300">{location || '—'}</p>
             )}
             {mapUrl && (
-              <div className="mt-2 rounded-xl overflow-hidden border border-zinc-700" style={{ height: 220 }}>
+              <div className="mt-2 rounded-xl overflow-hidden border border-slate-700" style={{ height: 220 }}>
                 <iframe title="Job location" src={mapUrl} width="100%" height="220"
                   style={{ border: 0, display: 'block' }} loading="lazy" referrerPolicy="no-referrer" />
               </div>
@@ -836,10 +836,10 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
 
           {/* Notes / Instructions — combined text + checklist */}
           <div>
-            <label className="block text-xs text-zinc-500 uppercase tracking-widest mb-1.5">
+            <label className="block text-xs text-slate-500 uppercase tracking-widest mb-1.5">
               <FileText size={11} className="inline mr-1" />Notes / Instructions
             </label>
-            <div className="bg-zinc-800 border border-zinc-700 rounded-xl overflow-hidden">
+            <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
               {/* Free text */}
               <div className="px-4 pt-3 pb-2">
                 {canEdit ? (
@@ -853,19 +853,19 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
                     }}
                     placeholder="Describe the job, tools to bring, safety notes…"
                     style={{ minHeight: '3.5rem' }}
-                    className="w-full bg-transparent text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none resize-none leading-relaxed overflow-hidden"
+                    className="w-full bg-transparent text-sm text-slate-100 placeholder-slate-500 focus:outline-none resize-none leading-relaxed overflow-hidden"
                   />
                 ) : (
-                  <p className="text-zinc-300 text-sm whitespace-pre-wrap leading-relaxed py-1">{descText || <span className="text-zinc-600 italic">No notes</span>}</p>
+                  <p className="text-slate-300 text-sm whitespace-pre-wrap leading-relaxed py-1">{descText || <span className="text-slate-600 italic">No notes</span>}</p>
                 )}
               </div>
 
               {/* Divider */}
               {(descItems.length > 0 || canEdit) && (
                 <div className="flex items-center gap-2 px-4 py-1">
-                  <div className="flex-1 h-px bg-zinc-700" />
-                  <span className="text-[10px] text-zinc-600 uppercase tracking-widest">Checklist</span>
-                  <div className="flex-1 h-px bg-zinc-700" />
+                  <div className="flex-1 h-px bg-slate-700" />
+                  <span className="text-[10px] text-slate-600 uppercase tracking-widest">Checklist</span>
+                  <div className="flex-1 h-px bg-slate-700" />
                 </div>
               )}
 
@@ -893,17 +893,17 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
                           className={`flex items-start gap-2 py-1.5 rounded-lg transition-opacity ${isDragging ? 'opacity-30' : 'opacity-100'}`}
                         >
                           {canEdit && (
-                            <span data-dh className="shrink-0 mt-1 touch-none cursor-grab active:cursor-grabbing text-zinc-600 hover:text-zinc-400 select-none">
+                            <span data-dh className="shrink-0 mt-1 touch-none cursor-grab active:cursor-grabbing text-slate-600 hover:text-slate-400 select-none">
                               <GripVertical size={13} />
                             </span>
                           )}
                           <button onClick={() => canTickItems && handleToggleDescItem(idx)} disabled={!canTickItems} className="shrink-0 mt-0.5">
                             {item.checked ? (
                               <div className="w-5 h-5 rounded-full bg-amber-400 flex items-center justify-center">
-                                <Check size={11} className="text-zinc-950" strokeWidth={3} />
+                                <Check size={11} className="text-slate-950" strokeWidth={3} />
                               </div>
                             ) : (
-                              <div className={`w-5 h-5 rounded-full border-2 border-zinc-600 transition-colors ${canTickItems ? 'hover:border-zinc-400' : 'opacity-40'}`} />
+                              <div className={`w-5 h-5 rounded-full border-2 border-slate-600 transition-colors ${canTickItems ? 'hover:border-slate-400' : 'opacity-40'}`} />
                             )}
                           </button>
                           {canEdit ? (
@@ -922,13 +922,13 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
                               placeholder="Item…"
                               rows={1}
                               style={{ minHeight: '1.5rem' }}
-                              className={`flex-1 bg-transparent text-sm focus:outline-none placeholder-zinc-600 resize-none overflow-hidden leading-normal ${item.checked ? 'text-zinc-500 line-through' : 'text-zinc-100'}`}
+                              className={`flex-1 bg-transparent text-sm focus:outline-none placeholder-slate-600 resize-none overflow-hidden leading-normal ${item.checked ? 'text-slate-500 line-through' : 'text-slate-100'}`}
                             />
                           ) : (
-                            <p className={`flex-1 text-sm leading-normal break-words ${item.checked ? 'text-zinc-500 line-through' : 'text-zinc-200'}`}>{item.text}</p>
+                            <p className={`flex-1 text-sm leading-normal break-words ${item.checked ? 'text-slate-500 line-through' : 'text-slate-200'}`}>{item.text}</p>
                           )}
                           {canEdit && (
-                            <button onClick={() => handleDeleteDescItem(idx)} className="w-6 h-6 flex items-center justify-center text-zinc-700 hover:text-red-400 rounded-lg shrink-0 mt-0.5">
+                            <button onClick={() => handleDeleteDescItem(idx)} className="w-6 h-6 flex items-center justify-center text-slate-700 hover:text-red-400 rounded-lg shrink-0 mt-0.5">
                               <X size={13} />
                             </button>
                           )}
@@ -942,8 +942,8 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
                 )}
                 {canEdit && (
                   <button onClick={handleAddDescItem}
-                    className="flex items-center gap-2.5 py-2 text-zinc-600 hover:text-amber-400 transition-colors w-full text-left">
-                    <div className="w-5 h-5 rounded-full border-2 border-dashed border-zinc-600 hover:border-amber-400/50 flex items-center justify-center shrink-0">
+                    className="flex items-center gap-2.5 py-2 text-slate-600 hover:text-violet-400 transition-colors w-full text-left">
+                    <div className="w-5 h-5 rounded-full border-2 border-dashed border-slate-600 hover:border-violet-400/50 flex items-center justify-center shrink-0">
                       <Plus size={9} />
                     </div>
                     <span className="text-xs">Add checklist item</span>
@@ -956,7 +956,7 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
           {/* Assign workers */}
           {members.length > 0 && (
             <div>
-              <label className="block text-xs text-zinc-500 uppercase tracking-widest mb-2">
+              <label className="block text-xs text-slate-500 uppercase tracking-widest mb-2">
                 <Users size={11} className="inline mr-1" />Assigned Workers
               </label>
               <div className="space-y-2">
@@ -967,19 +967,19 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
                     <button key={m.id} onClick={() => canEdit && toggleAssign(m.user_id)}
                       className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition-colors ${
                         assigned ? 'bg-amber-400/10 border-amber-400/30 text-amber-400'
-                        : canEdit ? 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-zinc-600'
-                        : 'bg-zinc-800 border-zinc-700 text-zinc-400'} ${!canEdit ? 'cursor-default' : ''}`}>
-                      <div className="w-7 h-7 rounded-full bg-zinc-700 flex items-center justify-center shrink-0">
+                        : canEdit ? 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-600'
+                        : 'bg-slate-800 border-slate-700 text-slate-400'} ${!canEdit ? 'cursor-default' : ''}`}>
+                      <div className="w-7 h-7 rounded-full bg-slate-700 flex items-center justify-center shrink-0">
                         <span className="text-xs font-bold">{name[0]?.toUpperCase()}</span>
                       </div>
                       <div className="flex-1 text-left">
                         <p className="text-sm font-medium">{name}</p>
-                        <p className="text-[10px] capitalize text-zinc-600">{m.role}</p>
+                        <p className="text-[10px] capitalize text-slate-600">{m.role}</p>
                       </div>
                       {canEdit && (
                         <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                          assigned ? 'border-amber-400 bg-amber-400' : 'border-zinc-600'}`}>
-                          {assigned && <span className="text-[10px] text-zinc-950 font-bold">✓</span>}
+                          assigned ? 'border-amber-400 bg-amber-400' : 'border-slate-600'}`}>
+                          {assigned && <span className="text-[10px] text-slate-950 font-bold">✓</span>}
                         </div>
                       )}
                     </button>
@@ -1035,7 +1035,7 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
             return (
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="text-xs text-zinc-500 uppercase tracking-widest">Attendance</label>
+                  <label className="text-xs text-slate-500 uppercase tracking-widest">Attendance</label>
                   {isOwner && totalCount > 0 && (
                     <div className="flex items-center gap-1.5">
                       {/* Avatar presence pills */}
@@ -1047,14 +1047,14 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
                             className={`w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-bold border-2 transition-colors ${
                               status === 'active' ? 'bg-emerald-500/15 border-emerald-500 text-emerald-400'
                               : status === 'done' ? 'bg-blue-500/15 border-blue-500 text-blue-400'
-                              : 'bg-zinc-700 border-zinc-500 text-zinc-300'
+                              : 'bg-slate-700 border-slate-500 text-slate-300'
                             }`}>
                             {(a.name[0] || '?').toUpperCase()}
                           </div>
                         );
                       })}
                       {/* Progress bar */}
-                      <div className="w-14 h-1.5 bg-zinc-800 rounded-full overflow-hidden ml-1">
+                      <div className="w-14 h-1.5 bg-slate-800 rounded-full overflow-hidden ml-1">
                         <div className="h-full rounded-full transition-all duration-500"
                           style={{ width: `${pct}%`, backgroundColor: allDone ? '#34d399' : '#f59e0b' }} />
                       </div>
@@ -1062,17 +1062,17 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
                   )}
                 </div>
 
-                <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden divide-y divide-zinc-800/50">
+                <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden divide-y divide-slate-800/50">
                   {assignedMembers.map(a => {
                     const isMe = a.user_id === user?.id;
                     if (!isMe && !isOwner) {
                       // Non-owner: show co-workers name only
                       return (
                         <div key={a.user_id} className="flex items-center gap-3 px-4 py-3.5">
-                          <div className="w-7 h-7 rounded-full bg-zinc-800 border border-zinc-700/60 flex items-center justify-center shrink-0">
-                            <span className="text-[11px] font-bold text-zinc-400">{(a.name[0] || '?').toUpperCase()}</span>
+                          <div className="w-7 h-7 rounded-full bg-slate-800 border border-slate-700/60 flex items-center justify-center shrink-0">
+                            <span className="text-[11px] font-bold text-slate-400">{(a.name[0] || '?').toUpperCase()}</span>
                           </div>
-                          <p className="text-sm text-zinc-400 font-medium">{a.name}</p>
+                          <p className="text-sm text-slate-400 font-medium">{a.name}</p>
                         </div>
                       );
                     }
@@ -1085,10 +1085,10 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
                       <div key={a.user_id} className="px-4 py-3.5">
                         {/* Worker header row */}
                         <div className="flex items-center gap-2.5 mb-2.5">
-                          <div className="w-7 h-7 rounded-full bg-zinc-800 border border-zinc-700/60 flex items-center justify-center shrink-0">
-                            <span className="text-[11px] font-bold text-zinc-300">{(isMe ? (user?.email || 'Y') : a.name)[0].toUpperCase()}</span>
+                          <div className="w-7 h-7 rounded-full bg-slate-800 border border-slate-700/60 flex items-center justify-center shrink-0">
+                            <span className="text-[11px] font-bold text-slate-300">{(isMe ? (user?.email || 'Y') : a.name)[0].toUpperCase()}</span>
                           </div>
-                          <span className="text-sm font-semibold text-zinc-100 flex-1 min-w-0 truncate">
+                          <span className="text-sm font-semibold text-slate-100 flex-1 min-w-0 truncate">
                             {isMe ? 'You' : a.name}
                           </span>
                           {status === 'done' && (
@@ -1103,7 +1103,7 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
                             </span>
                           )}
                           {status === 'none' && (
-                            <span className="text-[10px] text-zinc-700 shrink-0">Not started</span>
+                            <span className="text-[10px] text-slate-700 shrink-0">Not started</span>
                           )}
                         </div>
 
@@ -1117,7 +1117,7 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
                               return (
                                 <div key={s.id} className="flex items-center gap-1.5 flex-wrap min-h-[22px]">
                                   {sessions.length > 1 && (
-                                    <span className="text-[9px] font-bold text-zinc-700 w-3 shrink-0">{si + 1}</span>
+                                    <span className="text-[9px] font-bold text-slate-700 w-3 shrink-0">{si + 1}</span>
                                   )}
                                   <span className="inline-flex items-center gap-0.5 text-[11px] font-mono px-1.5 py-0.5 bg-emerald-500/10 text-emerald-400 rounded-md border border-emerald-500/15">
                                     <span className="text-[8px] font-extrabold opacity-70">IN</span>
@@ -1125,13 +1125,13 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
                                   </span>
                                   {s.checked_out_at ? (
                                     <>
-                                      <span className="text-zinc-700 text-[10px] shrink-0">→</span>
+                                      <span className="text-slate-700 text-[10px] shrink-0">→</span>
                                       <span className="inline-flex items-center gap-0.5 text-[11px] font-mono px-1.5 py-0.5 bg-blue-500/10 text-blue-400 rounded-md border border-blue-500/15">
                                         <span className="text-[8px] font-extrabold opacity-70">OUT</span>
                                         {fmtCheckTime(s.checked_out_at)}
                                       </span>
                                       {fmtMins(sessionMins) && (
-                                        <span className="text-[10px] font-mono text-zinc-500 shrink-0">
+                                        <span className="text-[10px] font-mono text-slate-500 shrink-0">
                                           {fmtMins(sessionMins)}
                                         </span>
                                       )}
@@ -1142,7 +1142,7 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
                                   <button
                                     onClick={() => handleDeleteCheckIn(s.id)}
                                     disabled={checkInWorking}
-                                    className="w-5 h-5 flex items-center justify-center text-zinc-700 hover:text-red-400 hover:bg-red-400/10 rounded disabled:opacity-40 transition-colors ml-auto shrink-0"
+                                    className="w-5 h-5 flex items-center justify-center text-slate-700 hover:text-red-400 hover:bg-red-400/10 rounded disabled:opacity-40 transition-colors ml-auto shrink-0"
                                   >
                                     <Trash2 size={11} />
                                   </button>
@@ -1156,7 +1156,7 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
                             )}
                           </div>
                         ) : (
-                          <p className="text-[11px] text-zinc-700 italic ml-9">
+                          <p className="text-[11px] text-slate-700 italic ml-9">
                             {isMe ? 'Punch in via timer to record' : 'No sessions yet'}
                           </p>
                         )}
@@ -1165,7 +1165,7 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
                   })}
 
                   {assignedMembers.length === 0 && (
-                    <p className="text-xs text-zinc-600 px-4 py-3.5">No workers assigned</p>
+                    <p className="text-xs text-slate-600 px-4 py-3.5">No workers assigned</p>
                   )}
                 </div>
               </div>
@@ -1175,7 +1175,7 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
           {/* ── Media: Boss posts (owner upload buttons + content) ── */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="text-xs text-zinc-500 uppercase tracking-widest">
+              <label className="text-xs text-slate-500 uppercase tracking-widest">
                 {isNew ? 'Attach Media' : 'Boss Posts'}
               </label>
               {isOwner && (
@@ -1189,7 +1189,7 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
                     onClick={recording ? stopRecording : startRecording}
                     disabled={uploading}
                     className={`flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg disabled:opacity-50 ${
-                      recording ? 'text-red-400 bg-red-400/15 animate-pulse' : 'text-zinc-400 bg-zinc-800 hover:bg-zinc-700'}`}>
+                      recording ? 'text-red-400 bg-red-400/15 animate-pulse' : 'text-slate-400 bg-slate-800 hover:bg-slate-700'}`}>
                     {recording ? <StopCircle size={13} /> : <Mic size={13} />}
                     {recording ? `Stop ${fmtSecs(recSecs)}` : 'Voice'}
                   </button>
@@ -1202,7 +1202,7 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
               queuedMedia.length > 0 ? (
                 <div className="space-y-2">
                   {queuedMedia.map((item, idx) => (
-                    <div key={idx} className="bg-zinc-800 border border-zinc-700 rounded-xl overflow-hidden">
+                    <div key={idx} className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
                       {item.type === 'photo' && (
                         <img src={item.preview} alt="preview" className="w-full max-h-48 object-cover" />
                       )}
@@ -1213,11 +1213,11 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
                         </div>
                       )}
                       <div className="flex items-center justify-between px-3 py-2">
-                        <p className="text-[10px] text-zinc-500">
+                        <p className="text-[10px] text-slate-500">
                           {item.type === 'photo' ? 'Photo' : 'Voice memo'} — uploads on save
                         </p>
                         <button onClick={() => removeQueued(idx)}
-                          className="w-7 h-7 flex items-center justify-center text-zinc-600 hover:text-red-400 hover:bg-red-400/10 rounded-lg">
+                          className="w-7 h-7 flex items-center justify-center text-slate-600 hover:text-red-400 hover:bg-red-400/10 rounded-lg">
                           <Trash2 size={13} />
                         </button>
                       </div>
@@ -1225,16 +1225,16 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
                   ))}
                 </div>
               ) : (
-                <p className="text-xs text-zinc-600 italic py-1">No media attached — optional</p>
+                <p className="text-xs text-slate-600 italic py-1">No media attached — optional</p>
               )
             )}
 
             {/* Existing job: uploaded boss media */}
             {!isNew && (
               mediaLoading ? (
-                <p className="text-xs text-zinc-600 py-2">Loading…</p>
+                <p className="text-xs text-slate-600 py-2">Loading…</p>
               ) : ownerMedia.length === 0 ? (
-                <p className="text-xs text-zinc-600 py-2 italic">No posts yet</p>
+                <p className="text-xs text-slate-600 py-2 italic">No posts yet</p>
               ) : (
                 <MediaGrid items={ownerMedia} onDelete={isOwner ? handleDeleteMedia : null} userId={user?.id} members={members} />
               )
@@ -1245,17 +1245,17 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
           {!isNew && (
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="text-xs text-zinc-500 uppercase tracking-widest">Worker Responses</label>
+                <label className="text-xs text-slate-500 uppercase tracking-widest">Worker Responses</label>
                 {!isOwner && (
                   <button onClick={() => photoInputRef.current?.click()} disabled={uploading}
-                    className="flex items-center gap-1.5 text-xs text-zinc-400 bg-zinc-800 hover:bg-zinc-700 px-2.5 py-1.5 rounded-lg disabled:opacity-50">
+                    className="flex items-center gap-1.5 text-xs text-slate-400 bg-slate-800 hover:bg-slate-700 px-2.5 py-1.5 rounded-lg disabled:opacity-50">
                     <Camera size={13} />
                     {uploading ? 'Uploading…' : 'Add Photo'}
                   </button>
                 )}
               </div>
               {workerMedia.length === 0 ? (
-                <p className="text-xs text-zinc-600 py-2 italic">No responses yet</p>
+                <p className="text-xs text-slate-600 py-2 italic">No responses yet</p>
               ) : (
                 <MediaGrid
                   items={workerMedia}
@@ -1272,15 +1272,15 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
 
         {/* Footer */}
         {canEdit && (
-          <div className="px-5 py-4 border-t border-zinc-800 shrink-0">
+          <div className="px-5 py-4 border-t border-slate-800 shrink-0">
             <button onClick={handleSave} disabled={saving}
-              className="w-full bg-amber-400 hover:bg-amber-300 disabled:opacity-50 text-zinc-950 font-bold rounded-2xl py-4">
+              className="w-full bg-amber-400 hover:bg-amber-300 disabled:opacity-50 text-slate-950 font-bold rounded-2xl py-4">
               {saveBtnLabel}
             </button>
           </div>
         )}
         {!canEdit && !isNew && isAssigned && (
-          <div className="px-5 py-4 border-t border-zinc-800 shrink-0 space-y-2">
+          <div className="px-5 py-4 border-t border-slate-800 shrink-0 space-y-2">
             {/* Status action buttons */}
             {status === 'in_progress' && (
               <button onClick={() => handleWorkerStatus('completed')} disabled={updatingStatus}
@@ -1290,7 +1290,7 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
             )}
             {/* Save checklist / notes changes */}
             <button onClick={handleWorkerSave} disabled={saving}
-              className="w-full bg-zinc-800 hover:bg-zinc-700 disabled:opacity-50 border border-zinc-700 text-zinc-200 font-semibold rounded-2xl py-3.5 transition-colors">
+              className="w-full bg-slate-800 hover:bg-slate-700 disabled:opacity-50 border border-slate-700 text-slate-200 font-semibold rounded-2xl py-3.5 transition-colors">
               {saving ? 'Saving…' : 'Save Changes'}
             </button>
           </div>
@@ -1328,22 +1328,22 @@ function MultiDatePicker({ primaryDate, extraDates, onToggle }) {
   const canGoBack = year > primaryYY || (year === primaryYY && month > primaryMM);
 
   return (
-    <div className="bg-zinc-800 border border-zinc-700 rounded-xl p-3">
+    <div className="bg-slate-800 border border-slate-700 rounded-xl p-3">
       <div className="flex items-center justify-between mb-2">
         <button onClick={() => canGoBack && setViewMonth(m => subMonths(m, 1))} disabled={!canGoBack}
-          className={`w-7 h-7 flex items-center justify-center rounded-lg transition-colors ${canGoBack ? 'text-zinc-400 hover:text-zinc-200' : 'text-zinc-700 cursor-not-allowed'}`}>
+          className={`w-7 h-7 flex items-center justify-center rounded-lg transition-colors ${canGoBack ? 'text-slate-400 hover:text-slate-200' : 'text-slate-700 cursor-not-allowed'}`}>
           <ChevronLeft size={15} />
         </button>
-        <p className="text-xs font-semibold text-zinc-300">
+        <p className="text-xs font-semibold text-slate-300">
           {viewMonth.toLocaleDateString('en', { month: 'long', year: 'numeric' })}
         </p>
-        <button onClick={() => setViewMonth(m => addMonths(m, 1))} className="w-7 h-7 flex items-center justify-center text-zinc-400 hover:text-zinc-200 rounded-lg">
+        <button onClick={() => setViewMonth(m => addMonths(m, 1))} className="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-slate-200 rounded-lg">
           <ChevronRight size={15} />
         </button>
       </div>
       <div className="grid grid-cols-7 gap-0.5 mb-1">
         {['S','M','T','W','T','F','S'].map((d, i) => (
-          <div key={i} className="text-center text-[10px] text-zinc-600 py-0.5">{d}</div>
+          <div key={i} className="text-center text-[10px] text-slate-600 py-0.5">{d}</div>
         ))}
       </div>
       <div className="grid grid-cols-7 gap-0.5">
@@ -1357,9 +1357,9 @@ function MultiDatePicker({ primaryDate, extraDates, onToggle }) {
             <button key={d} onClick={() => !isPrimary && onToggle(str)}
               disabled={isPrimary}
               className={`aspect-square flex items-center justify-center rounded-lg text-xs font-medium transition-colors ${
-                isPrimary ? 'bg-amber-400 text-zinc-950 cursor-default'
+                isPrimary ? 'bg-amber-400 text-slate-950 cursor-default'
                 : isExtra  ? 'bg-amber-400/20 text-amber-400 border border-amber-400/40'
-                : 'text-zinc-400 hover:bg-zinc-700 hover:text-zinc-200'
+                : 'text-slate-400 hover:bg-slate-700 hover:text-slate-200'
               }`}>
               {d}
             </button>
@@ -1371,7 +1371,7 @@ function MultiDatePicker({ primaryDate, extraDates, onToggle }) {
           +{extraDates.length} extra day{extraDates.length !== 1 ? 's' : ''} — creates {extraDates.length + 1} jobs
         </p>
       )}
-      <p className="text-[10px] text-zinc-600 text-center mt-1">Tap dates to repeat this job on multiple days</p>
+      <p className="text-[10px] text-slate-600 text-center mt-1">Tap dates to repeat this job on multiple days</p>
     </div>
   );
 }
@@ -1385,7 +1385,7 @@ function MediaGrid({ items, onDelete, userId, members = [] }) {
   return (
     <div className="space-y-2">
       {items.map(item => (
-        <div key={item.id} className="bg-zinc-800 border border-zinc-700 rounded-xl overflow-hidden">
+        <div key={item.id} className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
           {item.type === 'photo' && item.url && (
             <img src={item.url} alt={item.caption || 'Job photo'} className="w-full max-h-64 object-cover" />
           )}
@@ -1396,12 +1396,12 @@ function MediaGrid({ items, onDelete, userId, members = [] }) {
             </div>
           )}
           <div className="flex items-center justify-between px-3 py-2">
-            <p className="text-[10px] text-zinc-600">
+            <p className="text-[10px] text-slate-600">
               {nameFor(item.uploaded_by)} · {item.created_at ? new Date(item.created_at).toLocaleDateString() : ''}
             </p>
             {onDelete && (
               <button onClick={() => onDelete(item)}
-                className="w-7 h-7 flex items-center justify-center text-zinc-600 hover:text-red-400 hover:bg-red-400/10 rounded-lg ml-2 shrink-0">
+                className="w-7 h-7 flex items-center justify-center text-slate-600 hover:text-red-400 hover:bg-red-400/10 rounded-lg ml-2 shrink-0">
                 <Trash2 size={13} />
               </button>
             )}

@@ -4,6 +4,13 @@
 
 :root {
   color-scheme: dark;
+  --bg:        #0A0F1E;
+  --surface:   #111827;
+  --s2:        #1A2540;
+  --s3:        #253156;
+  --border:    #1E2D4A;
+  --brand:     #8B5CF6;
+  --brand-dim: #6D28D9;
 }
 
 * {
@@ -18,8 +25,8 @@ html, body, #root {
 }
 
 body {
-  background-color: #09090b;
-  color: #fafafa;
+  background-color: var(--bg);
+  color: #f1f5f9;
   font-family: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   overscroll-behavior: none;
@@ -29,11 +36,9 @@ body {
   font-family: 'JetBrains Mono', ui-monospace, monospace;
 }
 
-/* Safe area insets for iOS */
 .pb-safe {
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
-
 .pt-safe {
   padding-top: env(safe-area-inset-top, 0px);
 }
@@ -46,70 +51,65 @@ body {
   overscroll-behavior-y: contain;
 }
 
-/* Custom scrollbar for dark theme */
-.scroll-area::-webkit-scrollbar {
-  width: 3px;
-}
-.scroll-area::-webkit-scrollbar-track {
-  background: transparent;
-}
+.scroll-area::-webkit-scrollbar { width: 3px; }
+.scroll-area::-webkit-scrollbar-track { background: transparent; }
 .scroll-area::-webkit-scrollbar-thumb {
-  background: #3f3f46;
+  background: var(--s3);
   border-radius: 2px;
 }
 
 /* Segmented control */
 .segmented {
   display: flex;
-  background: #27272a;
-  border-radius: 8px;
-  padding: 2px;
+  background: var(--s2);
+  border-radius: 10px;
+  padding: 3px;
   gap: 2px;
 }
 .segmented button {
   flex: 1;
   padding: 6px 8px;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 13px;
   font-weight: 500;
   transition: background 0.15s, color 0.15s;
-  color: #a1a1aa;
+  color: #64748b;
   min-height: 36px;
 }
 .segmented button.active {
-  background: #3f3f46;
-  color: #fafafa;
+  background: var(--brand);
+  color: #fff;
 }
 
 /* Bottom sheet overlay */
 .sheet-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.6);
+  background: rgba(0,0,0,0.7);
   z-index: 50;
-  backdrop-filter: blur(2px);
+  backdrop-filter: blur(4px);
 }
 
-/* Pulse animation for active timer dot */
+/* Timer dot pulse */
 @keyframes timer-pulse {
   0%, 100% { opacity: 1; }
-  50% { opacity: 0.3; }
+  50%       { opacity: 0.3; }
 }
 .timer-pulse {
   animation: timer-pulse 1.5s ease-in-out infinite;
 }
 
-/* Punch-in button ambient glow */
+/* Brand glow pulse for punch-in button */
 @keyframes punch-glow {
-  0%, 100% { box-shadow: 0 4px 18px rgba(251,191,36,0.18), 0 0 0 0 rgba(251,191,36,0); }
-  50%       { box-shadow: 0 6px 28px rgba(251,191,36,0.38), 0 0 0 5px rgba(251,191,36,0.06); }
+  0%, 100% { box-shadow: 0 4px 24px rgba(139,92,246,0.25), 0 0 0 0 rgba(139,92,246,0); }
+  50%       { box-shadow: 0 8px 36px rgba(139,92,246,0.45), 0 0 0 6px rgba(139,92,246,0.08); }
 }
 .punch-btn {
   animation: punch-glow 3s ease-in-out infinite;
 }
 .punch-btn:active {
   animation: none;
-  box-shadow: 0 2px 8px rgba(251,191,36,0.15);
+  box-shadow: 0 2px 10px rgba(139,92,246,0.2);
 }
 
 /* Invoice preview white card */
@@ -119,9 +119,9 @@ body {
   font-family: 'DM Sans', sans-serif;
 }
 
-/* Checkbox custom */
+/* Checkbox */
 input[type="checkbox"] {
-  accent-color: #f59e0b;
+  accent-color: var(--brand);
   width: 18px;
   height: 18px;
   cursor: pointer;
@@ -133,11 +133,9 @@ input[type="number"]::-webkit-outer-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
-input[type="number"] {
-  -moz-appearance: textfield;
-}
+input[type="number"] { -moz-appearance: textfield; }
 
-/* ── Confirm modal pop-in ──────────────────────────────────── */
+/* Confirm modal pop-in */
 @keyframes confirm-pop {
   from { opacity: 0; transform: scale(0.88); }
   to   { opacity: 1; transform: scale(1); }
@@ -146,57 +144,59 @@ input[type="number"] {
   animation: confirm-pop 0.18s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
-/* ── Toast animations ──────────────────────────────────────── */
+/* Toast animations */
 @keyframes toast-in {
-  from {
-    opacity: 0;
-    transform: translateY(-10px) scale(0.97);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
+  from { opacity: 0; transform: translateY(-10px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
 }
-
 @keyframes toast-progress {
   from { width: 100%; }
   to   { width: 0%; }
 }
-
 .toast-enter {
   animation: toast-in 0.22s cubic-bezier(0.34, 1.4, 0.64, 1) both;
 }
 
-/* ── Bottom sheet animations ───────────────────────────────── */
+/* Bottom sheet animations */
 @keyframes sheet-slide-up {
   from { transform: translateY(100%); }
   to   { transform: translateY(0); }
 }
-
 @keyframes sheet-slide-down {
   from { transform: translateY(0); }
   to   { transform: translateY(100%); }
 }
+@keyframes sheet-fade-in  { from { opacity: 0; } to { opacity: 1; } }
+@keyframes sheet-fade-out { from { opacity: 1; } to { opacity: 0; } }
 
-@keyframes sheet-fade-in {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+.sheet-open          { animation: sheet-slide-up   0.32s cubic-bezier(0.32, 0.72, 0, 1) both; }
+.sheet-close         { animation: sheet-slide-down 0.24s ease-in both; }
+.sheet-backdrop-open { animation: sheet-fade-in    0.25s ease both; }
+.sheet-backdrop-close{ animation: sheet-fade-out   0.22s ease both; }
+
+/* Brand gradient text */
+.brand-text {
+  background: linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
-@keyframes sheet-fade-out {
-  from { opacity: 1; }
-  to   { opacity: 0; }
+/* Glass card */
+.glass {
+  background: rgba(17, 24, 39, 0.8);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(139, 92, 246, 0.12);
 }
 
-.sheet-open {
-  animation: sheet-slide-up 0.32s cubic-bezier(0.32, 0.72, 0, 1) both;
-}
-.sheet-close {
-  animation: sheet-slide-down 0.24s ease-in both;
-}
-.sheet-backdrop-open {
-  animation: sheet-fade-in 0.25s ease both;
-}
-.sheet-backdrop-close {
-  animation: sheet-fade-out 0.22s ease both;
+/* Pill nav active indicator */
+.nav-pill {
+  position: absolute;
+  bottom: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 9999px;
+  background: var(--brand);
 }

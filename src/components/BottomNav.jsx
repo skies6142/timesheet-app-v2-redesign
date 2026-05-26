@@ -14,8 +14,15 @@ export default function BottomNav() {
 
   return (
     <div
-      className="fixed bottom-0 left-0 right-0 z-40 flex items-stretch bg-zinc-950 border-t border-zinc-800"
-      style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+      className="fixed bottom-0 left-0 right-0 z-40 flex items-stretch"
+      style={{
+        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+        background: 'rgba(10,15,30,0.92)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        borderTop: '1px solid rgba(139,92,246,0.1)',
+        height: 'calc(60px + env(safe-area-inset-bottom, 0px))',
+      }}
     >
       {TABS.map(({ id, label, Icon }) => {
         const active = activeTab === id;
@@ -23,17 +30,30 @@ export default function BottomNav() {
           <button
             key={id}
             onClick={() => setActiveTab(id)}
-            className="flex-1 flex flex-col items-center justify-center gap-0.5 min-h-[56px] transition-colors"
-            style={{ minHeight: 56 }}
+            className="flex-1 flex flex-col items-center justify-center gap-1 relative transition-all"
+            style={{ minHeight: 60 }}
           >
-            <Icon
-              size={22}
-              className={active ? 'text-amber-400' : 'text-zinc-500'}
-              strokeWidth={active ? 2.2 : 1.8}
-            />
+            {active && (
+              <div
+                className="absolute top-0 left-1/2 -translate-x-1/2 h-0.5 w-8 rounded-full"
+                style={{ background: 'linear-gradient(90deg, #8B5CF6, #A78BFA)' }}
+              />
+            )}
+            <div
+              className="flex items-center justify-center w-9 h-7 rounded-xl transition-all"
+              style={active ? {
+                background: 'rgba(139,92,246,0.15)',
+              } : {}}
+            >
+              <Icon
+                size={20}
+                strokeWidth={active ? 2.2 : 1.8}
+                style={{ color: active ? '#A78BFA' : '#475569' }}
+              />
+            </div>
             <span
-              className="text-[10px] uppercase tracking-widest font-medium"
-              style={{ color: active ? '#f59e0b' : '#71717a', letterSpacing: '0.08em' }}
+              className="text-[10px] font-semibold tracking-wider uppercase transition-colors"
+              style={{ color: active ? '#A78BFA' : '#334155', letterSpacing: '0.07em' }}
             >
               {label}
             </span>

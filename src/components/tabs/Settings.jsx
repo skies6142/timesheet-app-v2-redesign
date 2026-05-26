@@ -253,7 +253,7 @@ export default function SettingsTab() {
   };
 
   if (!form) {
-    return <div className="flex items-center justify-center h-full text-zinc-500 text-sm">Loading…</div>;
+    return <div className="flex items-center justify-center h-full text-slate-500 text-sm">Loading…</div>;
   }
 
   const profiles = form.jobProfiles || [];
@@ -294,15 +294,15 @@ export default function SettingsTab() {
 
       {/* Job Profiles */}
       <div>
-        <p className="text-xs text-zinc-500 uppercase tracking-widest mb-3 font-medium">Job Profiles</p>
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
+        <p className="text-xs text-slate-500 uppercase tracking-widest mb-3 font-medium">Job Profiles</p>
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
           {profiles.length === 0 ? (
-            <p className="text-sm text-zinc-500 px-4 py-4 text-center">No profiles yet — add one below</p>
+            <p className="text-sm text-slate-500 px-4 py-4 text-center">No profiles yet — add one below</p>
           ) : (
             profiles.map((profile, idx) => (
               <div
                 key={profile.id}
-                className={`px-4 py-3 flex items-center gap-3 ${idx < profiles.length - 1 ? 'border-b border-zinc-800' : ''}`}
+                className={`px-4 py-3 flex items-center gap-3 ${idx < profiles.length - 1 ? 'border-b border-slate-800' : ''}`}
               >
                 {/* Default star — auto-saves on tap */}
                 <button
@@ -313,28 +313,28 @@ export default function SettingsTab() {
                   <Star
                     size={17}
                     className={form.defaultProfileId === profile.id
-                      ? 'text-amber-400 fill-amber-400'
-                      : 'text-zinc-600 hover:text-zinc-400'}
+                      ? 'text-violet-400 fill-violet-400'
+                      : 'text-slate-600 hover:text-slate-400'}
                   />
                 </button>
 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <p className="text-sm font-semibold text-zinc-200 truncate">{profile.name}</p>
+                    <p className="text-sm font-semibold text-slate-200 truncate">{profile.name}</p>
                     {form.defaultProfileId === profile.id && (
-                      <span className="text-[9px] font-bold bg-amber-400/15 text-amber-400 px-1.5 py-0.5 rounded uppercase tracking-wide shrink-0">Default</span>
+                      <span className="text-[9px] font-bold bg-violet-400/15 text-violet-400 px-1.5 py-0.5 rounded uppercase tracking-wide shrink-0">Default</span>
                     )}
                   </div>
-                  <p className="text-xs text-zinc-500 mt-0.5">
+                  <p className="text-xs text-slate-500 mt-0.5">
                     {[profile.clientName, profile.projectName].filter(Boolean).join(' · ')}
-                    {profile.hourlyRate > 0 && <span className="text-zinc-600"> · ${profile.hourlyRate}/hr</span>}
+                    {profile.hourlyRate > 0 && <span className="text-slate-600"> · ${profile.hourlyRate}/hr</span>}
                   </p>
                 </div>
 
                 <div className="flex items-center gap-1 shrink-0">
                   <button
                     onClick={() => openEditProfile(profile)}
-                    className="text-xs text-zinc-400 hover:text-zinc-200 px-2 py-1.5 min-h-[36px] transition-colors"
+                    className="text-xs text-slate-400 hover:text-slate-200 px-2 py-1.5 min-h-[36px] transition-colors"
                   >
                     Edit
                   </button>
@@ -350,17 +350,17 @@ export default function SettingsTab() {
               </div>
             ))
           )}
-          <div className={profiles.length > 0 ? 'border-t border-zinc-800' : ''}>
+          <div className={profiles.length > 0 ? 'border-t border-slate-800' : ''}>
             <button
               onClick={openAddProfile}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 text-sm text-amber-400 hover:bg-zinc-800/60 min-h-[48px] transition-colors"
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 text-sm text-violet-400 hover:bg-slate-800/60 min-h-[48px] transition-colors"
             >
               <Plus size={15} />
               Add Profile
             </button>
           </div>
         </div>
-        <p className="text-xs text-zinc-600 mt-2 px-1">
+        <p className="text-xs text-slate-600 mt-2 px-1">
           Tap ★ to set default — saves immediately. Used when punching in and adding entries.
         </p>
       </div>
@@ -380,8 +380,8 @@ export default function SettingsTab() {
         </Field>
         <label className="flex items-center justify-between py-2">
           <div>
-            <p className="text-sm font-medium text-zinc-300">GST Registered</p>
-            <p className="text-xs text-zinc-500 mt-0.5">Adds 10% GST to invoices</p>
+            <p className="text-sm font-medium text-slate-300">GST Registered</p>
+            <p className="text-xs text-slate-500 mt-0.5">Adds 10% GST to invoices</p>
           </div>
           <Toggle value={form.gstRegistered || false} onChange={(v) => set('gstRegistered', v)} />
         </label>
@@ -402,7 +402,7 @@ export default function SettingsTab() {
             onChange={(e) => set('paymentNotes', e.target.value)}
             rows={3}
             placeholder="Payment instructions shown on invoices…"
-            className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-zinc-50 text-sm placeholder-zinc-600 focus:outline-none focus:border-amber-400 transition-colors resize-none"
+            className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-slate-50 text-sm placeholder-slate-600 focus:outline-none focus:border-violet-500 transition-colors resize-none"
           />
         </Field>
       </Section>
@@ -427,7 +427,7 @@ export default function SettingsTab() {
       <button
         onClick={handleSave}
         disabled={saving}
-        className="w-full bg-amber-400 hover:bg-amber-300 disabled:opacity-60 text-zinc-950 font-bold rounded-xl py-3.5 min-h-[52px] transition-colors"
+        className="w-full bg-gradient-to-r from-violet-600 to-violet-800 hover:from-violet-500 hover:to-violet-700 disabled:opacity-60 text-white font-bold rounded-xl py-3.5 min-h-[52px] transition-colors"
       >
         {saving ? 'Saving…' : 'Save Settings'}
       </button>
@@ -436,12 +436,12 @@ export default function SettingsTab() {
       <Section title="Data">
         <button
           onClick={handleExport}
-          className="w-full flex items-center justify-center gap-2 bg-zinc-800 border border-zinc-700 hover:bg-zinc-700 text-zinc-200 rounded-xl py-3.5 min-h-[52px] text-sm font-medium transition-colors"
+          className="w-full flex items-center justify-center gap-2 bg-slate-800 border border-slate-700 hover:bg-slate-700 text-slate-200 rounded-xl py-3.5 min-h-[52px] text-sm font-medium transition-colors"
         >
           <Download size={16} />
           Export all data as JSON
         </button>
-        <label className="w-full flex items-center justify-center gap-2 bg-zinc-800 border border-zinc-700 hover:bg-zinc-700 text-zinc-200 rounded-xl py-3.5 min-h-[52px] text-sm font-medium transition-colors cursor-pointer">
+        <label className="w-full flex items-center justify-center gap-2 bg-slate-800 border border-slate-700 hover:bg-slate-700 text-slate-200 rounded-xl py-3.5 min-h-[52px] text-sm font-medium transition-colors cursor-pointer">
           <Upload size={16} />
           Import from JSON
           <input type="file" accept=".json" onChange={handleImport} className="hidden" />
@@ -458,47 +458,47 @@ export default function SettingsTab() {
       {/* Testing tools */}
       <div>
         <div className="flex items-center gap-2 mb-3">
-          <FlaskConical size={13} className="text-zinc-500" />
-          <p className="text-xs text-zinc-500 uppercase tracking-widest font-medium">Testing</p>
+          <FlaskConical size={13} className="text-slate-500" />
+          <p className="text-xs text-slate-500 uppercase tracking-widest font-medium">Testing</p>
         </div>
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
           <button
             onClick={handlePopulateEntries}
             disabled={populating}
-            className="w-full flex items-center justify-center gap-2 px-4 py-3.5 text-sm text-zinc-300 hover:bg-zinc-800/60 disabled:opacity-50 min-h-[52px] transition-colors border-b border-zinc-800"
+            className="w-full flex items-center justify-center gap-2 px-4 py-3.5 text-sm text-slate-300 hover:bg-slate-800/60 disabled:opacity-50 min-h-[52px] transition-colors border-b border-slate-800"
           >
             <Plus size={15} className="text-emerald-400" />
             {populating ? 'Populating…' : 'Populate 3 weeks of sample entries'}
           </button>
           <button
             onClick={handleClearEntries}
-            className="w-full flex items-center justify-center gap-2 px-4 py-3.5 text-sm text-zinc-400 hover:bg-zinc-800/60 hover:text-red-400 min-h-[52px] transition-colors"
+            className="w-full flex items-center justify-center gap-2 px-4 py-3.5 text-sm text-slate-400 hover:bg-slate-800/60 hover:text-red-400 min-h-[52px] transition-colors"
           >
             <Trash2 size={15} />
             Clear entries only (keeps settings)
           </button>
         </div>
-        <p className="text-xs text-zinc-600 mt-2 px-1">Uses your default profile's rate and client.</p>
+        <p className="text-xs text-slate-600 mt-2 px-1">Uses your default profile's rate and client.</p>
       </div>
 
       {/* Clear data dialog */}
       {showClearDialog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
-          <div className="bg-zinc-900 border border-red-400/30 rounded-2xl p-6 w-full max-w-sm">
+          <div className="bg-slate-900 border border-red-400/30 rounded-2xl p-6 w-full max-w-sm">
             <h3 className="text-base font-bold text-red-400 mb-2">Clear All Data</h3>
-            <p className="text-sm text-zinc-400 mb-4">
-              This will permanently delete everything including settings. Type <strong className="text-zinc-200">DELETE</strong> to confirm.
+            <p className="text-sm text-slate-400 mb-4">
+              This will permanently delete everything including settings. Type <strong className="text-slate-200">DELETE</strong> to confirm.
             </p>
             <input
               type="text"
               value={clearConfirm}
               onChange={(e) => setClearConfirm(e.target.value)}
               placeholder='Type "DELETE" to confirm'
-              className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-zinc-50 text-sm mb-4 focus:outline-none focus:border-red-400 min-h-[48px]"
+              className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-slate-50 text-sm mb-4 focus:outline-none focus:border-red-400 min-h-[48px]"
             />
             <div className="flex gap-3">
               <button onClick={() => { setShowClearDialog(false); setClearConfirm(''); }}
-                className="flex-1 border border-zinc-700 text-zinc-400 rounded-xl py-3 min-h-[48px] text-sm">
+                className="flex-1 border border-slate-700 text-slate-400 rounded-xl py-3 min-h-[48px] text-sm">
                 Cancel
               </button>
               <button
@@ -550,7 +550,7 @@ function ProfileForm({ profile, onSave, onClose }) {
           value={form.name}
           onChange={(e) => set('name', e.target.value)}
           placeholder="e.g. Smith Constructions — Labour"
-          className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-zinc-50 placeholder-zinc-600 text-sm focus:outline-none focus:border-amber-400 min-h-[48px]"
+          className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-slate-50 placeholder-slate-600 text-sm focus:outline-none focus:border-violet-500 min-h-[48px]"
         />
       </Field>
       <Field label="Client Name">
@@ -559,7 +559,7 @@ function ProfileForm({ profile, onSave, onClose }) {
           value={form.clientName}
           onChange={(e) => set('clientName', e.target.value)}
           placeholder="e.g. Smith Constructions"
-          className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-zinc-50 placeholder-zinc-600 text-sm focus:outline-none focus:border-amber-400 min-h-[48px]"
+          className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-slate-50 placeholder-slate-600 text-sm focus:outline-none focus:border-violet-500 min-h-[48px]"
         />
       </Field>
       <Field label="Client Address">
@@ -568,7 +568,7 @@ function ProfileForm({ profile, onSave, onClose }) {
           onChange={(e) => set('clientAddress', e.target.value)}
           placeholder={"18 Example St\nSydney NSW 2000"}
           rows={2}
-          className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-zinc-50 placeholder-zinc-600 text-sm focus:outline-none focus:border-amber-400 resize-none"
+          className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-slate-50 placeholder-slate-600 text-sm focus:outline-none focus:border-violet-500 resize-none"
         />
       </Field>
       <Field label="Project / Job">
@@ -577,7 +577,7 @@ function ProfileForm({ profile, onSave, onClose }) {
           value={form.projectName}
           onChange={(e) => set('projectName', e.target.value)}
           placeholder="e.g. General Labour"
-          className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-zinc-50 placeholder-zinc-600 text-sm focus:outline-none focus:border-amber-400 min-h-[48px]"
+          className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-slate-50 placeholder-slate-600 text-sm focus:outline-none focus:border-violet-500 min-h-[48px]"
         />
       </Field>
       <Field label="Default Entry Description">
@@ -586,31 +586,31 @@ function ProfileForm({ profile, onSave, onClose }) {
           value={form.defaultDescription || ''}
           onChange={(e) => set('defaultDescription', e.target.value)}
           placeholder="e.g. General Labour, Painting, Landscaping…"
-          className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-zinc-50 placeholder-zinc-600 text-sm focus:outline-none focus:border-amber-400 min-h-[48px]"
+          className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-slate-50 placeholder-slate-600 text-sm focus:outline-none focus:border-violet-500 min-h-[48px]"
         />
       </Field>
       <Field label="Hourly Rate (AUD)">
         <div className="relative">
-          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 font-mono">$</span>
+          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-mono">$</span>
           <input
             type="number"
             value={form.hourlyRate}
             onChange={(e) => set('hourlyRate', e.target.value)}
             placeholder="37"
-            className="w-full bg-zinc-800 border border-zinc-700 rounded-xl pl-8 pr-4 py-3 text-zinc-50 placeholder-zinc-600 text-sm focus:outline-none focus:border-amber-400 min-h-[48px]"
+            className="w-full bg-slate-800 border border-slate-700 rounded-xl pl-8 pr-4 py-3 text-slate-50 placeholder-slate-600 text-sm focus:outline-none focus:border-violet-500 min-h-[48px]"
           />
         </div>
       </Field>
       <div className="pt-2 space-y-3">
         <button
           onClick={handleSave}
-          className="w-full bg-amber-400 hover:bg-amber-300 text-zinc-950 font-bold rounded-xl py-3.5 min-h-[52px] transition-colors"
+          className="w-full bg-gradient-to-r from-violet-600 to-violet-800 hover:from-violet-500 hover:to-violet-700 text-white font-bold rounded-xl py-3.5 min-h-[52px] transition-colors"
         >
           Save Profile
         </button>
         <button
           onClick={onClose}
-          className="w-full text-zinc-400 hover:text-zinc-200 py-2 min-h-[44px] text-sm transition-colors"
+          className="w-full text-slate-400 hover:text-slate-200 py-2 min-h-[44px] text-sm transition-colors"
         >
           Cancel
         </button>
@@ -622,8 +622,8 @@ function ProfileForm({ profile, onSave, onClose }) {
 function Section({ title, children }) {
   return (
     <div>
-      <p className="text-xs text-zinc-500 uppercase tracking-widest mb-3 font-medium">{title}</p>
-      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 space-y-4">
+      <p className="text-xs text-slate-500 uppercase tracking-widest mb-3 font-medium">{title}</p>
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-4">
         {children}
       </div>
     </div>
@@ -633,7 +633,7 @@ function Section({ title, children }) {
 function Field({ label, children }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-zinc-400 mb-1.5">{label}</label>
+      <label className="block text-sm font-medium text-slate-400 mb-1.5">{label}</label>
       {children}
     </div>
   );
@@ -646,7 +646,7 @@ function Input({ value, onChange, placeholder, type = 'text', className = '', di
       value={display !== undefined ? display : value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
-      className={`w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-zinc-50 placeholder-zinc-600 text-sm focus:outline-none focus:border-amber-400 transition-colors min-h-[48px] ${className}`}
+      className={`w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-slate-50 placeholder-slate-600 text-sm focus:outline-none focus:border-violet-500 transition-colors min-h-[48px] ${className}`}
     />
   );
 }
@@ -658,7 +658,7 @@ function Select({ value, onChange, options, labelKey, valueKey }) {
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full appearance-none bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-zinc-50 text-sm focus:outline-none focus:border-amber-400 transition-colors min-h-[48px] pr-10"
+        className="w-full appearance-none bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-slate-50 text-sm focus:outline-none focus:border-violet-500 transition-colors min-h-[48px] pr-10"
       >
         {options.map((opt) => {
           const v = isObj ? opt[valueKey || 'value'] : opt;
@@ -666,7 +666,7 @@ function Select({ value, onChange, options, labelKey, valueKey }) {
           return <option key={v} value={v}>{l}</option>;
         })}
       </select>
-      <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none" />
+      <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
     </div>
   );
 }
@@ -675,7 +675,7 @@ function Toggle({ value, onChange }) {
   return (
     <div
       onClick={() => onChange(!value)}
-      className={`relative w-11 h-6 rounded-full transition-colors cursor-pointer ${value ? 'bg-amber-400' : 'bg-zinc-700'}`}
+      className={`relative w-11 h-6 rounded-full transition-colors cursor-pointer ${value ? 'bg-violet-600' : 'bg-slate-700'}`}
     >
       <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white transition-transform shadow ${value ? 'translate-x-5' : 'translate-x-0.5'}`} />
     </div>

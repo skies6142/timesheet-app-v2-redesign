@@ -56,19 +56,19 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onSu
     return (
       <div className="fixed inset-0 z-[60] flex items-end justify-center">
         <div className="absolute inset-0 bg-black/65 backdrop-blur-sm" onClick={handleClose} />
-        <div className="relative z-10 bg-zinc-900 rounded-t-2xl w-full max-w-lg px-6 py-8 text-center"
+        <div className="relative z-10 bg-slate-900 rounded-t-2xl w-full max-w-lg px-6 py-8 text-center"
           style={{ paddingBottom: 'env(safe-area-inset-bottom, 24px)' }}>
           <div className="w-14 h-14 rounded-full bg-amber-400/10 border border-amber-400/20 flex items-center justify-center mx-auto mb-4">
             <span className="text-2xl">📧</span>
           </div>
-          <h2 className="text-lg font-bold text-zinc-50 mb-2">Check your email</h2>
-          <p className="text-sm text-zinc-400 mb-6">
-            We sent a confirmation link to <span className="text-zinc-200">{email}</span>.
+          <h2 className="text-lg font-bold text-slate-50 mb-2">Check your email</h2>
+          <p className="text-sm text-slate-400 mb-6">
+            We sent a confirmation link to <span className="text-slate-200">{email}</span>.
             Click it to activate your account, then come back and sign in.
           </p>
           <button
             onClick={() => { setMode('login'); setNeedsConfirm(false); setPassword(''); }}
-            className="w-full bg-amber-400 text-zinc-950 font-bold rounded-2xl py-4"
+            className="w-full bg-amber-400 text-slate-950 font-bold rounded-2xl py-4"
           >
             Go to Sign In
           </button>
@@ -80,18 +80,18 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onSu
   return (
     <div className="fixed inset-0 z-[60] flex items-end justify-center">
       <div className="absolute inset-0 bg-black/65 backdrop-blur-sm" onClick={handleClose} />
-      <div className="relative z-10 bg-zinc-900 rounded-t-2xl w-full max-w-lg flex flex-col"
+      <div className="relative z-10 bg-slate-900 rounded-t-2xl w-full max-w-lg flex flex-col"
         style={{ paddingBottom: 'env(safe-area-inset-bottom, 16px)' }}>
         {/* Handle */}
         <div className="flex justify-center pt-3 pb-1">
-          <div className="w-10 h-1 rounded-full bg-zinc-700" />
+          <div className="w-10 h-1 rounded-full bg-slate-700" />
         </div>
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-3 border-b border-zinc-800">
-          <h2 className="text-base font-semibold text-zinc-50">
+        <div className="flex items-center justify-between px-5 py-3 border-b border-slate-800">
+          <h2 className="text-base font-semibold text-slate-50">
             {mode === 'login' ? 'Sign In' : 'Create Account'}
           </h2>
-          <button onClick={handleClose} className="w-9 h-9 flex items-center justify-center rounded-full text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800">
+          <button onClick={handleClose} className="w-9 h-9 flex items-center justify-center rounded-full text-slate-400 hover:text-slate-200 hover:bg-slate-800">
             <X size={18} />
           </button>
         </div>
@@ -99,7 +99,7 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onSu
         <form onSubmit={handleSubmit} className="px-5 py-5 space-y-4">
           {mode === 'signup' && (
             <div>
-              <label className="block text-xs text-zinc-500 uppercase tracking-widest mb-1.5">Your Name</label>
+              <label className="block text-xs text-slate-500 uppercase tracking-widest mb-1.5">Your Name</label>
               <input
                 type="text"
                 value={name}
@@ -107,13 +107,13 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onSu
                 placeholder="Jordan Smith"
                 autoComplete="name"
                 required
-                className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-amber-400/50"
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-400/50"
               />
             </div>
           )}
 
           <div>
-            <label className="block text-xs text-zinc-500 uppercase tracking-widest mb-1.5">Email</label>
+            <label className="block text-xs text-slate-500 uppercase tracking-widest mb-1.5">Email</label>
             <input
               type="email"
               value={email}
@@ -121,12 +121,12 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onSu
               placeholder="you@example.com"
               autoComplete="email"
               required
-              className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-amber-400/50"
+              className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-400/50"
             />
           </div>
 
           <div>
-            <label className="block text-xs text-zinc-500 uppercase tracking-widest mb-1.5">Password</label>
+            <label className="block text-xs text-slate-500 uppercase tracking-widest mb-1.5">Password</label>
             <div className="relative">
               <input
                 type={showPw ? 'text' : 'password'}
@@ -136,12 +136,12 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onSu
                 autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
                 required
                 minLength={6}
-                className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 pr-12 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-amber-400/50"
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 pr-12 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-400/50"
               />
               <button
                 type="button"
                 onClick={() => setShowPw(p => !p)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 p-1"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 p-1"
               >
                 {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
@@ -155,7 +155,7 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onSu
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-amber-400 hover:bg-amber-300 disabled:opacity-50 text-zinc-950 font-bold rounded-2xl py-4 text-sm"
+            className="w-full bg-amber-400 hover:bg-amber-300 disabled:opacity-50 text-slate-950 font-bold rounded-2xl py-4 text-sm"
           >
             {loading ? 'Please wait…' : mode === 'login' ? 'Sign In' : 'Create Account'}
           </button>
@@ -163,7 +163,7 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onSu
           <button
             type="button"
             onClick={() => { setMode(m => m === 'login' ? 'signup' : 'login'); setError(''); }}
-            className="w-full text-center text-sm text-zinc-500 hover:text-zinc-300 py-2"
+            className="w-full text-center text-sm text-slate-500 hover:text-slate-300 py-2"
           >
             {mode === 'login' ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
           </button>

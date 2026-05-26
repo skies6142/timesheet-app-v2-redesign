@@ -87,15 +87,15 @@ export default function SetupModal({ onComplete }) {
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 px-4">
-      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
         <div className="p-6">
           {/* Header */}
           <div className="text-center mb-6">
-            <div className="w-14 h-14 bg-amber-400/10 rounded-2xl flex items-center justify-center mx-auto mb-3">
+            <div className="w-14 h-14 bg-violet-500/10 rounded-2xl flex items-center justify-center mx-auto mb-3">
               <span className="text-3xl">⏱</span>
             </div>
-            <h1 className="text-xl font-bold text-zinc-50">Welcome to TimeSheet</h1>
-            <p className="text-sm text-zinc-400 mt-1">Let's get you set up in 30 seconds</p>
+            <h1 className="text-xl font-bold text-slate-50">Welcome to TimeSheet</h1>
+            <p className="text-sm text-slate-400 mt-1">Let's get you set up in 30 seconds</p>
           </div>
 
           {/* Fields */}
@@ -133,8 +133,8 @@ export default function SetupModal({ onComplete }) {
               error={errors.defaultHourlyRate}
             />
 
-            <div className="border-t border-zinc-800 pt-4">
-              <p className="text-xs text-zinc-500 mb-3 uppercase tracking-widest">Bank Details (optional)</p>
+            <div className="border-t border-slate-800 pt-4">
+              <p className="text-xs text-slate-500 mb-3 uppercase tracking-widest">Bank Details (optional)</p>
               <div className="space-y-3">
                 <Field
                   label="Bank Name"
@@ -163,7 +163,7 @@ export default function SetupModal({ onComplete }) {
           <button
             onClick={handleSubmit}
             disabled={saving}
-            className="mt-6 w-full bg-amber-400 hover:bg-amber-300 disabled:opacity-60 text-zinc-950 font-bold rounded-xl py-3.5 text-base transition-colors min-h-[52px]"
+            className="mt-6 w-full bg-gradient-to-r from-violet-600 to-violet-800 hover:from-violet-500 hover:to-violet-700 disabled:opacity-60 text-white font-bold rounded-xl py-3.5 text-base transition-colors min-h-[52px]"
           >
             {saving ? 'Setting up…' : 'Get Started →'}
           </button>
@@ -176,18 +176,18 @@ export default function SetupModal({ onComplete }) {
 function Field({ label, required, value, onChange, placeholder, error, hint, type = 'text' }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-zinc-300 mb-1.5">
-        {label}{required && <span className="text-amber-400 ml-0.5">*</span>}
+      <label className="block text-sm font-medium text-slate-300 mb-1.5">
+        {label}{required && <span className="text-violet-400 ml-0.5">*</span>}
       </label>
       <input
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className={`w-full bg-zinc-800 border ${error ? 'border-red-400' : 'border-zinc-700'} rounded-xl px-4 py-3 text-zinc-50 placeholder-zinc-600 text-sm focus:outline-none focus:border-amber-400 transition-colors min-h-[48px]`}
+        className={`w-full bg-slate-800 border ${error ? 'border-red-400' : 'border-slate-700'} rounded-xl px-4 py-3 text-slate-50 placeholder-slate-600 text-sm focus:outline-none focus:border-violet-500 transition-colors min-h-[48px]`}
       />
       {error && <p className="text-xs text-red-400 mt-1">{error}</p>}
-      {hint && !error && <p className="text-xs text-zinc-500 mt-1">{hint}</p>}
+      {hint && !error && <p className="text-xs text-slate-500 mt-1">{hint}</p>}
     </div>
   );
 }

@@ -17,27 +17,29 @@ export default function WorkTab() {
 
   return (
     <div className="h-full flex flex-col">
-      <div className="shrink-0 px-4 pt-3 pb-2 border-b border-zinc-800">
+      <div className="shrink-0 px-4 pt-3 pb-2 border-b border-slate-800">
         <div className="flex items-center gap-2">
           <div className="segmented flex-1">
             <button onClick={() => setSub('log')} className={sub === 'log' ? 'active' : ''}>Log</button>
             <button onClick={() => setSub('invoices')} className={sub === 'invoices' ? 'active' : ''}>Invoices</button>
           </div>
           {sub === 'log' && (
-            <div className="flex rounded-xl overflow-hidden border border-zinc-700">
+            <div className="flex rounded-xl overflow-hidden border border-slate-700">
               <button
                 onClick={() => setView('list')}
-                className={`w-9 h-9 flex items-center justify-center transition-colors ${
-                  logView === 'list' ? 'bg-amber-400 text-zinc-950' : 'text-zinc-500 hover:text-zinc-300'
+                className={`w-9 h-9 flex items-center justify-center transition-all ${
+                  logView === 'list' ? 'text-white' : 'text-slate-500 hover:text-slate-300'
                 }`}
+                style={logView === 'list' ? { background: 'linear-gradient(135deg, #8B5CF6, #6D28D9)' } : {}}
               >
                 <LayoutList size={15} />
               </button>
               <button
                 onClick={() => setView('calendar')}
-                className={`w-9 h-9 flex items-center justify-center border-l border-zinc-700 transition-colors ${
-                  logView === 'calendar' ? 'bg-amber-400 text-zinc-950' : 'text-zinc-500 hover:text-zinc-300'
+                className={`w-9 h-9 flex items-center justify-center border-l border-slate-700 transition-all ${
+                  logView === 'calendar' ? 'text-white' : 'text-slate-500 hover:text-slate-300'
                 }`}
+                style={logView === 'calendar' ? { background: 'linear-gradient(135deg, #8B5CF6, #6D28D9)' } : {}}
               >
                 <CalendarDays size={15} />
               </button>

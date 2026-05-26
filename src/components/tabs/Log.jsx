@@ -118,7 +118,7 @@ export default function LogTab() {
           <button
             onClick={() => setShowFilter(true)}
             className={`w-10 h-10 flex items-center justify-center rounded-xl border transition-colors min-h-[44px] ${
-              filterStatus !== 'all' || filterProject ? 'border-amber-400 text-amber-400' : 'border-zinc-700 text-zinc-400'
+              filterStatus !== 'all' || filterProject ? 'border-violet-500 text-violet-400' : 'border-slate-700 text-slate-400'
             }`}
           >
             <SlidersHorizontal size={18} />
@@ -128,36 +128,36 @@ export default function LogTab() {
         {/* Navigation + period label */}
         {period !== 'custom' && (
           <div className="flex items-center gap-2">
-            <button onClick={() => navigate(-1)} className="w-9 h-9 flex items-center justify-center rounded-xl border border-zinc-700 text-zinc-400 min-h-[44px]">‹</button>
-            <span className="flex-1 text-center text-sm font-medium text-zinc-300">{periodLabel()}</span>
-            <button onClick={() => navigate(1)} className="w-9 h-9 flex items-center justify-center rounded-xl border border-zinc-700 text-zinc-400 min-h-[44px]">›</button>
+            <button onClick={() => navigate(-1)} className="w-9 h-9 flex items-center justify-center rounded-xl border border-slate-700 text-slate-400 min-h-[44px]">‹</button>
+            <span className="flex-1 text-center text-sm font-medium text-slate-300">{periodLabel()}</span>
+            <button onClick={() => navigate(1)} className="w-9 h-9 flex items-center justify-center rounded-xl border border-slate-700 text-slate-400 min-h-[44px]">›</button>
           </div>
         )}
 
         {period === 'custom' && (
           <div className="flex gap-2">
             <input type="date" value={customStart} onChange={(e) => setCustomStart(e.target.value)}
-              className="flex-1 bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2 text-sm text-zinc-50 min-h-[44px] focus:outline-none focus:border-amber-400" />
-            <span className="text-zinc-500 flex items-center">–</span>
+              className="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-50 min-h-[44px] focus:outline-none focus:border-amber-400" />
+            <span className="text-slate-500 flex items-center">–</span>
             <input type="date" value={customEnd} onChange={(e) => setCustomEnd(e.target.value)}
-              className="flex-1 bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2 text-sm text-zinc-50 min-h-[44px] focus:outline-none focus:border-amber-400" />
+              className="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-50 min-h-[44px] focus:outline-none focus:border-amber-400" />
           </div>
         )}
       </div>
 
       {/* Summary bar */}
-      <div className="shrink-0 mx-4 bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-2.5 flex justify-between items-center mb-2">
+      <div className="shrink-0 mx-4 bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 flex justify-between items-center mb-2">
         <div className="text-center">
-          <p className="font-mono text-base font-semibold text-zinc-50">{decimalToHHMM(totalHours)}</p>
-          <p className="text-[10px] text-zinc-500 uppercase tracking-widest">Hours</p>
+          <p className="font-mono text-base font-semibold text-slate-50">{decimalToHHMM(totalHours)}</p>
+          <p className="text-[10px] text-slate-500 uppercase tracking-widest">Hours</p>
         </div>
         <div className="text-center">
           <p className="font-mono text-base font-semibold text-amber-400">{formatCurrency(totalEarnings)}</p>
-          <p className="text-[10px] text-zinc-500 uppercase tracking-widest">Earnings</p>
+          <p className="text-[10px] text-slate-500 uppercase tracking-widest">Earnings</p>
         </div>
         <div className="text-center">
-          <p className="font-mono text-base font-semibold text-zinc-50">{entries.length}</p>
-          <p className="text-[10px] text-zinc-500 uppercase tracking-widest">Entries</p>
+          <p className="font-mono text-base font-semibold text-slate-50">{entries.length}</p>
+          <p className="text-[10px] text-slate-500 uppercase tracking-widest">Entries</p>
         </div>
       </div>
 
@@ -165,7 +165,7 @@ export default function LogTab() {
       <div className="flex-1 scroll-area px-4 pb-4">
         {sortedDates.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-zinc-500 text-sm">No entries for this period</p>
+            <p className="text-slate-500 text-sm">No entries for this period</p>
           </div>
         ) : (
           sortedDates.map((date) => {
@@ -175,15 +175,15 @@ export default function LogTab() {
             return (
               <div key={date} className="mb-4">
                 <div className="flex justify-between items-center py-2 mb-1">
-                  <p className="text-xs font-semibold text-zinc-400 uppercase tracking-widest">
+                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest">
                     {formatDateDisplay(date)}
                   </p>
                   <div className="flex gap-3">
-                    <span className="font-mono text-xs text-zinc-500">{decimalToHHMM(dayHours)}</span>
-                    <span className="font-mono text-xs text-zinc-400">{formatCurrency(dayEarnings)}</span>
+                    <span className="font-mono text-xs text-slate-500">{decimalToHHMM(dayHours)}</span>
+                    <span className="font-mono text-xs text-slate-400">{formatCurrency(dayEarnings)}</span>
                   </div>
                 </div>
-                <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
+                <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
                   {dayEntries.map((entry, idx) => (
                     <EntryRow
                       key={entry.key}
@@ -201,7 +201,7 @@ export default function LogTab() {
 
         <button
           onClick={() => setShowAdd(true)}
-          className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-zinc-700 hover:border-amber-400/50 text-zinc-500 hover:text-amber-400 rounded-2xl py-4 min-h-[56px] transition-colors mt-2"
+          className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-slate-700 hover:border-violet-500/50 text-slate-500 hover:text-violet-400 rounded-2xl py-4 min-h-[56px] transition-colors mt-2"
         >
           <Plus size={18} />
           Add Entry
@@ -213,7 +213,7 @@ export default function LogTab() {
       <BottomSheet isOpen={showFilter} onClose={() => setShowFilter(false)} title="Filter">
         <div className="px-5 py-4 space-y-5">
           <div>
-            <p className="text-sm font-medium text-zinc-400 mb-2">Payment Status</p>
+            <p className="text-sm font-medium text-slate-400 mb-2">Payment Status</p>
             <div className="segmented">
               {[
                 { value: 'all', label: 'All' },
@@ -229,18 +229,18 @@ export default function LogTab() {
             </div>
           </div>
           <div>
-            <p className="text-sm font-medium text-zinc-400 mb-2">Project</p>
+            <p className="text-sm font-medium text-slate-400 mb-2">Project</p>
             <input
               type="text"
               value={filterProject}
               onChange={(e) => setFilterProject(e.target.value)}
               placeholder="Filter by project name"
-              className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-zinc-50 text-sm min-h-[48px] focus:outline-none focus:border-amber-400"
+              className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-slate-50 text-sm min-h-[48px] focus:outline-none focus:border-amber-400"
             />
           </div>
           <button
             onClick={() => { setFilterStatus('all'); setFilterProject(''); setShowFilter(false); }}
-            className="w-full border border-zinc-700 text-zinc-400 rounded-xl py-3 min-h-[48px] text-sm"
+            className="w-full border border-slate-700 text-slate-400 rounded-xl py-3 min-h-[48px] text-sm"
           >
             Clear Filters
           </button>
@@ -278,7 +278,7 @@ const SWIPE_REVEAL = 80;
 
 function EntryRow({ entry, last, onView, onDelete }) {
   const dotColor = { unpaid: 'bg-amber-400', invoiced: 'bg-blue-400', paid_cash: 'bg-emerald-400', paid_invoice: 'bg-emerald-400' };
-  const sColor = { unpaid: 'text-zinc-500', invoiced: 'text-blue-400', paid_cash: 'text-emerald-400', paid_invoice: 'text-emerald-400' };
+  const sColor = { unpaid: 'text-slate-500', invoiced: 'text-blue-400', paid_cash: 'text-emerald-400', paid_invoice: 'text-emerald-400' };
 
   const [offset, setOffset] = useState(0);
   const touchRef = useRef(null); // { startX, startY, activated }
@@ -313,7 +313,7 @@ function EntryRow({ entry, last, onView, onDelete }) {
   };
 
   return (
-    <div className={`relative overflow-hidden bg-zinc-900 ${!last ? 'border-b border-zinc-800' : ''}`}>
+    <div className={`relative overflow-hidden bg-slate-900 ${!last ? 'border-b border-slate-800' : ''}`}>
       {/* Delete button revealed on swipe */}
       <button
         onClick={onDelete}
@@ -336,19 +336,19 @@ function EntryRow({ entry, last, onView, onDelete }) {
       >
         <button
           onClick={handleRowClick}
-          className="w-full text-left px-4 py-3 bg-zinc-900 hover:bg-zinc-800/60 active:bg-zinc-800/70 transition-colors min-h-[64px]"
+          className="w-full text-left px-4 py-3 bg-slate-900 hover:bg-slate-800/60 active:bg-slate-800/70 transition-colors min-h-[64px]"
         >
           <div className="flex justify-between items-start gap-2">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5">
-                <span className="font-mono text-xs text-zinc-400">{entry.timeIn} – {entry.timeOut}</span>
+                <span className="font-mono text-xs text-slate-400">{entry.timeIn} – {entry.timeOut}</span>
               </div>
-              <p className="text-sm text-zinc-200 truncate mt-0.5">
+              <p className="text-sm text-slate-200 truncate mt-0.5">
                 {entry.description || entry.projectName || 'Labour'}
               </p>
               <div className="flex items-center gap-1.5 mt-1">
-                <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dotColor[entry.status] || 'bg-zinc-600'}`} />
-                <span className={`text-[10px] font-semibold uppercase tracking-wider ${sColor[entry.status] || 'text-zinc-500'}`}>
+                <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dotColor[entry.status] || 'bg-slate-600'}`} />
+                <span className={`text-[10px] font-semibold uppercase tracking-wider ${sColor[entry.status] || 'text-slate-500'}`}>
                   {(entry.status === 'invoiced' || entry.status === 'paid_invoice') && entry.invoiceNumber
                     ? `${entry.status === 'paid_invoice' ? 'Paid' : 'Invoiced'} ${entry.invoiceNumber}`
                     : statusLabel(entry.status)
@@ -357,8 +357,8 @@ function EntryRow({ entry, last, onView, onDelete }) {
               </div>
             </div>
             <div className="text-right shrink-0">
-              <p className="font-mono text-sm font-medium text-zinc-50">{formatCurrency(entry.earnings)}</p>
-              <p className="font-mono text-xs text-zinc-500">{decimalToHHMM(entry.workingHours)}</p>
+              <p className="font-mono text-sm font-medium text-slate-50">{formatCurrency(entry.earnings)}</p>
+              <p className="font-mono text-xs text-slate-500">{decimalToHHMM(entry.workingHours)}</p>
             </div>
           </div>
         </button>
@@ -375,81 +375,81 @@ function EntryDetailSheet({ entry, isOpen, onClose, onEdit, onDelete }) {
     <BottomSheet isOpen={isOpen} onClose={onClose} title="Entry Details">
       <div className="px-5 py-4 space-y-3">
         {/* Time */}
-        <div className="bg-zinc-800 border border-zinc-700 rounded-2xl divide-y divide-zinc-700/60">
+        <div className="bg-slate-800 border border-slate-700 rounded-2xl divide-y divide-slate-700/60">
           <div className="flex justify-between px-4 py-3">
-            <span className="text-xs text-zinc-500">Date</span>
-            <span className="text-sm font-medium text-zinc-200">{format(parseISO(entry.date), 'EEEE d MMMM yyyy')}</span>
+            <span className="text-xs text-slate-500">Date</span>
+            <span className="text-sm font-medium text-slate-200">{format(parseISO(entry.date), 'EEEE d MMMM yyyy')}</span>
           </div>
           <div className="flex justify-between px-4 py-3">
-            <span className="text-xs text-zinc-500">Time</span>
-            <span className="text-sm font-mono text-zinc-200">{entry.timeIn} – {entry.timeOut}</span>
+            <span className="text-xs text-slate-500">Time</span>
+            <span className="text-sm font-mono text-slate-200">{entry.timeIn} – {entry.timeOut}</span>
           </div>
           {entry.breakMinutes > 0 && (
             <div className="flex justify-between px-4 py-3">
-              <span className="text-xs text-zinc-500">Break</span>
-              <span className="text-sm font-mono text-zinc-200">{entry.breakMinutes} min</span>
+              <span className="text-xs text-slate-500">Break</span>
+              <span className="text-sm font-mono text-slate-200">{entry.breakMinutes} min</span>
             </div>
           )}
           <div className="flex justify-between px-4 py-3">
-            <span className="text-xs text-zinc-500">Working hours</span>
-            <span className="text-sm font-mono font-semibold text-zinc-100">{decimalToHHMM(entry.workingHours)}</span>
+            <span className="text-xs text-slate-500">Working hours</span>
+            <span className="text-sm font-mono font-semibold text-slate-100">{decimalToHHMM(entry.workingHours)}</span>
           </div>
         </div>
 
         {/* Work details */}
         {(entry.clientName || entry.projectName || entry.description) && (
-          <div className="bg-zinc-800 border border-zinc-700 rounded-2xl divide-y divide-zinc-700/60">
+          <div className="bg-slate-800 border border-slate-700 rounded-2xl divide-y divide-slate-700/60">
             {entry.clientName && (
               <div className="flex justify-between px-4 py-3">
-                <span className="text-xs text-zinc-500">Client</span>
-                <span className="text-sm font-medium text-zinc-200 text-right max-w-[60%]">{entry.clientName}</span>
+                <span className="text-xs text-slate-500">Client</span>
+                <span className="text-sm font-medium text-slate-200 text-right max-w-[60%]">{entry.clientName}</span>
               </div>
             )}
             {entry.projectName && (
               <div className="flex justify-between px-4 py-3">
-                <span className="text-xs text-zinc-500">Project</span>
-                <span className="text-sm font-medium text-zinc-200 text-right max-w-[60%]">{entry.projectName}</span>
+                <span className="text-xs text-slate-500">Project</span>
+                <span className="text-sm font-medium text-slate-200 text-right max-w-[60%]">{entry.projectName}</span>
               </div>
             )}
             {entry.description && (
               <div className="flex justify-between px-4 py-3">
-                <span className="text-xs text-zinc-500">Description</span>
-                <span className="text-sm font-medium text-zinc-200 text-right max-w-[60%]">{entry.description}</span>
+                <span className="text-xs text-slate-500">Description</span>
+                <span className="text-sm font-medium text-slate-200 text-right max-w-[60%]">{entry.description}</span>
               </div>
             )}
           </div>
         )}
 
         {/* Financials */}
-        <div className="bg-zinc-800 border border-zinc-700 rounded-2xl divide-y divide-zinc-700/60">
+        <div className="bg-slate-800 border border-slate-700 rounded-2xl divide-y divide-slate-700/60">
           {entry.hourlyRate > 0 && (
             <div className="flex justify-between px-4 py-3">
-              <span className="text-xs text-zinc-500">Rate</span>
-              <span className="text-sm font-mono text-zinc-200">${entry.hourlyRate}/hr</span>
+              <span className="text-xs text-slate-500">Rate</span>
+              <span className="text-sm font-mono text-slate-200">${entry.hourlyRate}/hr</span>
             </div>
           )}
           <div className="flex justify-between px-4 py-3">
-            <span className="text-sm font-bold text-zinc-100">Earnings</span>
+            <span className="text-sm font-bold text-slate-100">Earnings</span>
             <span className="text-lg font-mono font-bold text-amber-400">{formatCurrency(entry.earnings)}</span>
           </div>
         </div>
 
         {/* Status */}
-        <div className="bg-zinc-800 border border-zinc-700 rounded-2xl px-4 py-3 flex items-center gap-3">
-          <div className={`w-2 h-2 rounded-full shrink-0 ${dotBg[entry.status] || 'bg-zinc-500'}`} />
+        <div className="bg-slate-800 border border-slate-700 rounded-2xl px-4 py-3 flex items-center gap-3">
+          <div className={`w-2 h-2 rounded-full shrink-0 ${dotBg[entry.status] || 'bg-slate-500'}`} />
           <div>
-            <p className="text-sm font-medium text-zinc-200">{statusLabel(entry.status)}</p>
+            <p className="text-sm font-medium text-slate-200">{statusLabel(entry.status)}</p>
             {(entry.status === 'invoiced' || entry.status === 'paid_invoice') && entry.invoiceNumber && (
-              <p className="text-xs text-zinc-500">{entry.invoiceNumber}</p>
+              <p className="text-xs text-slate-500">{entry.invoiceNumber}</p>
             )}
           </div>
         </div>
 
         {/* Notes */}
         {entry.notes && (
-          <div className="bg-zinc-800 border border-zinc-700 rounded-2xl p-4">
-            <p className="text-xs text-zinc-500 uppercase tracking-widest mb-2">Notes</p>
-            <p className="text-sm text-zinc-300 whitespace-pre-wrap leading-relaxed">{entry.notes}</p>
+          <div className="bg-slate-800 border border-slate-700 rounded-2xl p-4">
+            <p className="text-xs text-slate-500 uppercase tracking-widest mb-2">Notes</p>
+            <p className="text-sm text-slate-300 whitespace-pre-wrap leading-relaxed">{entry.notes}</p>
           </div>
         )}
 
@@ -460,7 +460,7 @@ function EntryDetailSheet({ entry, isOpen, onClose, onEdit, onDelete }) {
             Delete
           </button>
           <button onClick={onEdit}
-            className="flex-1 bg-amber-400 hover:bg-amber-300 text-zinc-950 font-bold rounded-xl py-3 min-h-[48px] text-sm transition-colors">
+            className="flex-1 bg-gradient-to-r from-violet-600 to-violet-800 hover:from-violet-500 hover:to-violet-700 text-white font-bold rounded-xl py-3 min-h-[48px] text-sm transition-colors">
             Edit Entry
           </button>
         </div>

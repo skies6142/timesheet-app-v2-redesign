@@ -19,7 +19,7 @@ const STATUS_COLORS = {
   scheduled:   { dot: 'bg-amber-400',   badge: 'bg-amber-400/15 text-amber-400'   },
   in_progress: { dot: 'bg-blue-400',    badge: 'bg-blue-400/15 text-blue-400'     },
   completed:   { dot: 'bg-emerald-400', badge: 'bg-emerald-400/15 text-emerald-400' },
-  cancelled:   { dot: 'bg-zinc-600',    badge: 'bg-zinc-800 text-zinc-500'         },
+  cancelled:   { dot: 'bg-slate-600',    badge: 'bg-slate-800 text-slate-500'         },
 };
 
 // ── Main tab ─────────────────────────────────────────────────
@@ -181,21 +181,21 @@ export default function OrgTab() {
             <Building2 size={28} className="text-amber-400" />
           </div>
           <div className="text-center">
-            <h2 className="text-xl font-bold text-zinc-50 mb-2">Team & Organisation</h2>
-            <p className="text-sm text-zinc-400 leading-relaxed">
+            <h2 className="text-xl font-bold text-slate-50 mb-2">Team & Organisation</h2>
+            <p className="text-sm text-slate-400 leading-relaxed">
               Create or join an organisation to share your work calendar, delegate jobs, and manage invoices with your team.
             </p>
           </div>
           <div className="w-full space-y-3">
             <button
               onClick={() => { setAuthMode('login'); setShowAuth(true); }}
-              className="w-full bg-amber-400 hover:bg-amber-300 text-zinc-950 font-bold rounded-2xl py-4"
+              className="w-full bg-gradient-to-r from-violet-600 to-violet-800 hover:from-violet-500 hover:to-violet-700 text-white font-bold rounded-2xl py-4"
             >
               Sign In
             </button>
             <button
               onClick={() => { setAuthMode('signup'); setShowAuth(true); }}
-              className="w-full bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-200 font-semibold rounded-2xl py-4"
+              className="w-full bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-semibold rounded-2xl py-4"
             >
               Create Account
             </button>
@@ -216,50 +216,50 @@ export default function OrgTab() {
     return (
       <div className="scroll-area h-full px-4 py-6 space-y-4">
         <div className="text-center mb-1">
-          <h2 className="text-lg font-bold text-zinc-50">No Organisation Yet</h2>
-          <p className="text-sm text-zinc-500 mt-1">Start your own or join an existing one</p>
+          <h2 className="text-lg font-bold text-slate-50">No Organisation Yet</h2>
+          <p className="text-sm text-slate-500 mt-1">Start your own or join an existing one</p>
         </div>
 
         {/* Create org */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 space-y-3">
-          <p className="text-xs font-semibold text-zinc-400 uppercase tracking-widest">Start an Organisation</p>
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3">
+          <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest">Start an Organisation</p>
           <input
             value={createName}
             onChange={e => setCreateName(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && handleCreateOrg()}
             placeholder="Organisation name"
-            className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-amber-400/50"
+            className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-violet-500/50"
           />
           <button
             onClick={handleCreateOrg}
             disabled={!createName.trim() || createLoading}
-            className="w-full bg-amber-400 hover:bg-amber-300 disabled:opacity-40 text-zinc-950 font-bold rounded-xl py-3"
+            className="w-full bg-gradient-to-r from-violet-600 to-violet-800 hover:from-violet-500 hover:to-violet-700 disabled:opacity-40 text-white font-bold rounded-xl py-3"
           >
             {createLoading ? 'Creating…' : 'Create Organisation'}
           </button>
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="flex-1 h-px bg-zinc-800" />
-          <span className="text-xs text-zinc-600">or</span>
-          <div className="flex-1 h-px bg-zinc-800" />
+          <div className="flex-1 h-px bg-slate-800" />
+          <span className="text-xs text-slate-600">or</span>
+          <div className="flex-1 h-px bg-slate-800" />
         </div>
 
         {/* Join org */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 space-y-3">
-          <p className="text-xs font-semibold text-zinc-400 uppercase tracking-widest">Join an Organisation</p>
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3">
+          <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest">Join an Organisation</p>
           <input
             value={joinCode}
             onChange={e => setJoinCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6))}
             placeholder="6-digit invite code"
-            className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-amber-400/50 font-mono tracking-[0.25em] uppercase"
+            className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-violet-500/50 font-mono tracking-[0.25em] uppercase"
             maxLength={6}
           />
           <div className="flex gap-2">
             <select
               value={joinRole}
               onChange={e => setJoinRole(e.target.value)}
-              className="flex-1 bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-3 text-sm text-zinc-100 focus:outline-none focus:border-amber-400/50"
+              className="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-3 py-3 text-sm text-slate-100 focus:outline-none focus:border-violet-500/50"
             >
               <option value="employee">Employee</option>
               <option value="subcontractor">Subcontractor</option>
@@ -267,7 +267,7 @@ export default function OrgTab() {
             <button
               onClick={handleJoinOrg}
               disabled={joinCode.length !== 6 || joinLoading}
-              className="flex-1 bg-zinc-700 hover:bg-zinc-600 disabled:opacity-40 text-zinc-100 font-semibold rounded-xl py-3"
+              className="flex-1 bg-slate-700 hover:bg-slate-600 disabled:opacity-40 text-slate-100 font-semibold rounded-xl py-3"
             >
               {joinLoading ? 'Joining…' : 'Join'}
             </button>
@@ -293,7 +293,7 @@ export default function OrgTab() {
       <OrgHeader org={orgData.org} role={orgData.role} memberCount={orgData.members.length} addToast={addToast} />
 
       {/* View tabs */}
-      <div className="px-4 py-2 border-b border-zinc-800 shrink-0">
+      <div className="px-4 py-2 border-b border-slate-800 shrink-0">
         <div className="segmented">
           {views.map(v => (
             <button key={v.id} onClick={() => setActiveView(v.id)} className={activeView === v.id ? 'active' : ''}>
@@ -379,20 +379,20 @@ function OrgHeader({ org, role, memberCount, addToast }) {
   };
 
   return (
-    <div className="px-4 pt-3 pb-2 border-b border-zinc-800 shrink-0">
+    <div className="px-4 pt-3 pb-2 border-b border-slate-800 shrink-0">
       <div className="flex items-center justify-between">
         <div>
-          <p className="font-bold text-zinc-50">{org.name}</p>
-          <p className="text-xs text-zinc-500 capitalize">{role} · {memberCount} member{memberCount !== 1 ? 's' : ''}</p>
+          <p className="font-bold text-slate-50">{org.name}</p>
+          <p className="text-xs text-slate-500 capitalize">{role} · {memberCount} member{memberCount !== 1 ? 's' : ''}</p>
         </div>
         {(role === 'owner' || role === 'admin') && (
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5 bg-zinc-800 border border-zinc-700 rounded-lg px-2.5 py-1.5">
-              <span className="font-mono text-xs font-bold text-zinc-200 tracking-[0.25em]">{org.invite_code}</span>
+            <div className="flex items-center gap-1.5 bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1.5">
+              <span className="font-mono text-xs font-bold text-slate-200 tracking-[0.25em]">{org.invite_code}</span>
             </div>
             <button
               onClick={share}
-              className="w-9 h-9 flex items-center justify-center rounded-lg bg-zinc-800 border border-zinc-700 text-zinc-400 hover:text-amber-400 hover:border-amber-400/30"
+              className="w-9 h-9 flex items-center justify-center rounded-lg bg-slate-800 border border-slate-700 text-slate-400 hover:text-amber-400 hover:border-amber-400/30"
             >
               {copied ? <Check size={16} className="text-emerald-400" /> : <Share2 size={16} />}
             </button>
@@ -561,26 +561,26 @@ function OrgCalendarView({ orgId, isOwner, isAdmin, members, onOpenJob }) {
         <div className="flex items-center justify-between gap-2">
           <button
             onClick={() => setViewDate(d => subMonths(d, 1))}
-            className="w-10 h-10 flex items-center justify-center rounded-xl border border-zinc-700 text-zinc-400 text-xl min-h-[44px]"
+            className="w-10 h-10 flex items-center justify-center rounded-xl border border-slate-700 text-slate-400 text-xl min-h-[44px]"
           >
             ‹
           </button>
-          <p className="font-semibold text-zinc-50 flex-1 text-center">{format(viewDate, 'MMMM yyyy')}</p>
+          <p className="font-semibold text-slate-50 flex-1 text-center">{format(viewDate, 'MMMM yyyy')}</p>
           <div className="flex items-center gap-1">
             <button
               onClick={() => setViewDate(d => addMonths(d, 1))}
-              className="w-10 h-10 flex items-center justify-center rounded-xl border border-zinc-700 text-zinc-400 text-xl min-h-[44px]"
+              className="w-10 h-10 flex items-center justify-center rounded-xl border border-slate-700 text-slate-400 text-xl min-h-[44px]"
             >
               ›
             </button>
             {/* Calendar / List toggle */}
-            <div className="flex rounded-xl overflow-hidden border border-zinc-700 ml-1">
+            <div className="flex rounded-xl overflow-hidden border border-slate-700 ml-1">
               <button onClick={() => persistCalView('grid')}
-                className={`w-9 h-9 flex items-center justify-center transition-colors ${calView === 'grid' ? 'bg-amber-400 text-zinc-950' : 'text-zinc-500 hover:text-zinc-300'}`}>
+                className={`w-9 h-9 flex items-center justify-center transition-colors ${calView === 'grid' ? 'text-white' : 'text-slate-500 hover:text-slate-300'}`}>
                 <CalendarDays size={15} />
               </button>
               <button onClick={() => persistCalView('list')}
-                className={`w-9 h-9 flex items-center justify-center border-l border-zinc-700 transition-colors ${calView === 'list' ? 'bg-amber-400 text-zinc-950' : 'text-zinc-500 hover:text-zinc-300'}`}>
+                className={`w-9 h-9 flex items-center justify-center border-l border-slate-700 transition-colors ${calView === 'list' ? 'text-white' : 'text-slate-500 hover:text-slate-300'}`}>
                 <LayoutList size={15} />
               </button>
             </div>
@@ -599,7 +599,7 @@ function OrgCalendarView({ orgId, isOwner, isAdmin, members, onOpenJob }) {
           <div className="px-2 pt-2 space-y-2">
             {listItems.length === 0 ? (
               <div className="text-center py-10">
-                <p className="text-zinc-500 text-sm">No jobs this month</p>
+                <p className="text-slate-500 text-sm">No jobs this month</p>
               </div>
             ) : (
               listItems.map(item => {
@@ -619,7 +619,7 @@ function OrgCalendarView({ orgId, isOwner, isAdmin, members, onOpenJob }) {
                   : format(parseISO(firstDate), 'EEE d MMM');
                 return (
                   <div key={isSeries ? item.series_id : job.id}
-                    className="bg-zinc-900 rounded-xl overflow-hidden flex border"
+                    className="bg-slate-900 rounded-xl overflow-hidden flex border"
                     style={{
                       borderColor: job.status === 'completed' ? '#34d39940'
                         : assignedToMe ? jobHex + '50' : '#27272a',
@@ -630,17 +630,17 @@ function OrgCalendarView({ orgId, isOwner, isAdmin, members, onOpenJob }) {
                     <div className="flex-1 min-w-0">
                       <button
                         onClick={() => onOpenJob(job, firstDate)}
-                        className="w-full text-left px-4 py-3 hover:bg-zinc-800/50 active:bg-zinc-800 transition-colors"
+                        className="w-full text-left px-4 py-3 hover:bg-slate-800/50 active:bg-slate-800 transition-colors"
                       >
                         <div className="flex items-start gap-3">
                           <span className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${sc.dot}`} />
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold text-zinc-100 leading-snug">{job.title}</p>
-                            <p className="text-xs text-zinc-500 mt-0.5">
+                            <p className="text-sm font-semibold text-slate-100 leading-snug">{job.title}</p>
+                            <p className="text-xs text-slate-500 mt-0.5">
                               {dateLabel}
                               {(isToday || containsToday) && <span className="ml-1.5 font-semibold" style={{ color: jobHex }}>Today</span>}
                             </p>
-                            {job.location && <p className="text-xs text-zinc-500 mt-0.5 truncate">📍 {job.location}</p>}
+                            {job.location && <p className="text-xs text-slate-500 mt-0.5 truncate">📍 {job.location}</p>}
                           </div>
                           <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${sc.badge} capitalize`}>
                             {job.status === 'completed' ? '✓ Done' : job.status.replace('_', ' ')}
@@ -662,24 +662,24 @@ function OrgCalendarView({ orgId, isOwner, isAdmin, members, onOpenJob }) {
                                   className={`w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-bold border-2 transition-colors ${
                                     p.status === 'in'      ? 'bg-emerald-500/15 border-emerald-500 text-emerald-400'
                                     : p.status === 'done'  ? 'bg-blue-500/15 border-blue-500 text-blue-400'
-                                    : 'bg-zinc-700 border-zinc-500 text-zinc-300'}`}>
+                                    : 'bg-slate-700 border-slate-500 text-slate-300'}`}>
                                   {p.initial}
                                 </div>
                               ))}
                             </div>
-                            <span className="text-[10px] text-zinc-500">
+                            <span className="text-[10px] text-slate-500">
                               {inCount > 0 && <span className="text-emerald-400 font-semibold">{inCount} in</span>}
-                              {inCount > 0 && (doneCount + pendingCount) > 0 && <span className="text-zinc-700"> · </span>}
+                              {inCount > 0 && (doneCount + pendingCount) > 0 && <span className="text-slate-700"> · </span>}
                               {doneCount > 0 && <span className="text-blue-400 font-semibold">{doneCount} done</span>}
-                              {doneCount > 0 && pendingCount > 0 && <span className="text-zinc-700"> · </span>}
-                              {pendingCount > 0 && <span className="text-zinc-600">{pendingCount} pending</span>}
+                              {doneCount > 0 && pendingCount > 0 && <span className="text-slate-700"> · </span>}
+                              {pendingCount > 0 && <span className="text-slate-600">{pendingCount} pending</span>}
                             </span>
                           </div>
                         );
                       })()}
 
                       {!isSeries && (canSeeAll || assignedToMe) && (
-                        <div className="flex gap-1.5 px-4 pb-3 border-t border-zinc-800/50 pt-2">
+                        <div className="flex gap-1.5 px-4 pb-3 border-t border-slate-800/50 pt-2">
                           {job.status === 'scheduled' && (
                             <button onClick={() => handleQuickStatus(job.id, 'in_progress')} disabled={isUpdating}
                               className="flex-1 text-xs text-blue-400 bg-blue-400/10 border border-blue-400/20 rounded-lg py-2 font-semibold disabled:opacity-50">
@@ -694,7 +694,7 @@ function OrgCalendarView({ orgId, isOwner, isAdmin, members, onOpenJob }) {
                           )}
                           {canSeeAll && job.status !== 'cancelled' && job.status !== 'completed' && (
                             <button onClick={() => handleQuickStatus(job.id, 'cancelled')} disabled={isUpdating}
-                              className="flex-1 text-xs text-zinc-500 bg-zinc-700/50 border border-zinc-600 rounded-lg py-2 font-semibold disabled:opacity-50">
+                              className="flex-1 text-xs text-slate-500 bg-slate-700/50 border border-slate-600 rounded-lg py-2 font-semibold disabled:opacity-50">
                               {isUpdating ? '…' : 'Cancel'}
                             </button>
                           )}
@@ -714,7 +714,7 @@ function OrgCalendarView({ orgId, isOwner, isAdmin, members, onOpenJob }) {
             {canSeeAll && (
               <button
                 onClick={() => onOpenJob(null, today)}
-                className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-zinc-700 hover:border-amber-400/40 text-zinc-500 hover:text-amber-400 rounded-xl py-3 text-sm font-medium transition-colors mt-2"
+                className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-slate-700 hover:border-amber-400/40 text-slate-500 hover:text-amber-400 rounded-xl py-3 text-sm font-medium transition-colors mt-2"
               >
                 <Plus size={16} />
                 Add job
@@ -728,7 +728,7 @@ function OrgCalendarView({ orgId, isOwner, isAdmin, members, onOpenJob }) {
             {/* Day headers */}
             <div className="grid grid-cols-7 mb-1">
               {['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(d => (
-                <div key={d} className="text-center text-[10px] text-zinc-600 uppercase tracking-widest py-1">{d}</div>
+                <div key={d} className="text-center text-[10px] text-slate-600 uppercase tracking-widest py-1">{d}</div>
               ))}
             </div>
             {rows.map((row, rowIdx) => (
@@ -747,8 +747,8 @@ function OrgCalendarView({ orgId, isOwner, isAdmin, members, onOpenJob }) {
                     <button key={date} onClick={() => openDay(date)}
                       className={`aspect-square rounded-xl flex flex-col items-center justify-start p-1 transition-colors min-h-[44px] ${
                         isAssigned ? 'hover:opacity-90'
-                        : dayJobs.length > 0 ? 'bg-zinc-900 hover:bg-zinc-800'
-                        : 'hover:bg-zinc-900/40'
+                        : dayJobs.length > 0 ? 'bg-slate-900 hover:bg-slate-800'
+                        : 'hover:bg-slate-900/40'
                       }`}
                       style={{
                         border: isToday
@@ -759,19 +759,19 @@ function OrgCalendarView({ orgId, isOwner, isAdmin, members, onOpenJob }) {
                         backgroundColor: isAssigned ? `${myJobHex}26` : undefined,
                       }}
                     >
-                      <span className={`text-xs font-medium ${isToday ? 'text-zinc-200 font-bold' : isAssigned ? 'text-zinc-100 font-semibold' : 'text-zinc-300'}`}>{dayNum}</span>
+                      <span className={`text-xs font-medium ${isToday ? 'text-slate-200 font-bold' : isAssigned ? 'text-slate-100 font-semibold' : 'text-slate-300'}`}>{dayNum}</span>
                       {dayJobs.length > 0 && (
                         <>
                           {isAssigned && <span className="text-[9px] font-extrabold leading-tight tracking-wider" style={{ color: myJobHex }}>YOU</span>}
                           <div className="flex gap-0.5 mt-auto flex-wrap justify-center">
                             {dayJobs.slice(0, 3).map(j => (
                               j.status === 'completed'
-                                ? <span key={j.id} className="w-1.5 h-1.5 rounded-full ring-1 ring-emerald-400 ring-offset-[1px] ring-offset-zinc-900"
+                                ? <span key={j.id} className="w-1.5 h-1.5 rounded-full ring-1 ring-emerald-400 ring-offset-[1px] ring-offset-slate-900"
                                     style={{ backgroundColor: jobColorHex(j.color) + '60' }} />
                                 : <span key={j.id} className="w-1.5 h-1.5 rounded-full"
                                     style={{ backgroundColor: jobColorHex(j.color) }} />
                             ))}
-                            {dayJobs.length > 3 && <span className="text-[8px] text-zinc-600 leading-tight">+{dayJobs.length - 3}</span>}
+                            {dayJobs.length > 3 && <span className="text-[8px] text-slate-600 leading-tight">+{dayJobs.length - 3}</span>}
                           </div>
                         </>
                       )}
@@ -783,24 +783,24 @@ function OrgCalendarView({ orgId, isOwner, isAdmin, members, onOpenJob }) {
             {/* Legend */}
             <div className="flex items-center gap-3 px-2 pb-2 flex-wrap">
               <div className="flex items-center gap-1.5">
-                <div className="w-3 h-3 rounded-sm border border-zinc-500" />
-                <span className="text-[10px] text-zinc-500">Today</span>
+                <div className="w-3 h-3 rounded-sm border border-slate-500" />
+                <span className="text-[10px] text-slate-500">Today</span>
               </div>
               {canSeeAll && (
                 <div className="flex items-center gap-1.5">
-                  <div className="w-3 h-3 rounded-sm bg-zinc-900 border border-zinc-700" />
-                  <span className="text-[10px] text-zinc-500">Has jobs</span>
+                  <div className="w-3 h-3 rounded-sm bg-slate-900 border border-slate-700" />
+                  <span className="text-[10px] text-slate-500">Has jobs</span>
                 </div>
               )}
               <div className="flex items-center gap-1.5">
                 <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#60a5fa26', border: '2px solid #60a5fab3' }} />
-                <span className="text-[10px] text-zinc-500">{canSeeAll ? 'Assigned' : 'Your jobs'}</span>
+                <span className="text-[10px] text-slate-500">{canSeeAll ? 'Assigned' : 'Your jobs'}</span>
               </div>
               <div className="flex items-center gap-3 ml-auto flex-wrap">
                 {Object.entries(STATUS_COLORS).map(([k, v]) => (
                   <div key={k} className="flex items-center gap-1">
                     <span className={`w-2 h-2 rounded-full ${v.dot}`} />
-                    <span className="text-[10px] text-zinc-600 capitalize">{k.replace('_', ' ')}</span>
+                    <span className="text-[10px] text-slate-600 capitalize">{k.replace('_', ' ')}</span>
                   </div>
                 ))}
               </div>
@@ -818,27 +818,27 @@ function OrgCalendarView({ orgId, isOwner, isAdmin, members, onOpenJob }) {
       >
         <div className="px-4 py-3 space-y-2">
           {selectedDayJobs.length === 0 ? (
-            <p className="text-center text-zinc-500 py-6 text-sm">No jobs scheduled for this day</p>
+            <p className="text-center text-slate-500 py-6 text-sm">No jobs scheduled for this day</p>
           ) : (
             selectedDayJobs.map(job => {
               const sc = STATUS_COLORS[job.status] || STATUS_COLORS.scheduled;
               const isUpdating = updatingJobId === job.id;
               const jobHex = jobColorHex(job.color);
               return (
-                <div key={job.id} className="bg-zinc-800 border border-zinc-700 rounded-xl overflow-hidden flex">
+                <div key={job.id} className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden flex">
                   {/* Color stripe */}
                   <div className="w-1 shrink-0 rounded-l-xl" style={{ backgroundColor: jobHex }} />
                   <div className="flex-1 min-w-0">
                   <button
                     onClick={() => { setShowDaySheet(false); onOpenJob(job, selectedDate); }}
-                    className="w-full text-left px-4 py-3 hover:bg-zinc-700/30 active:bg-zinc-700/50 transition-colors"
+                    className="w-full text-left px-4 py-3 hover:bg-slate-700/30 active:bg-slate-700/50 transition-colors"
                   >
                     <div className="flex items-start gap-3">
                       <span className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${sc.dot}`} />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-zinc-100">{job.title}</p>
+                        <p className="text-sm font-semibold text-slate-100">{job.title}</p>
                         {job.location && (
-                          <p className="text-xs text-zinc-500 mt-0.5">📍 {job.location}</p>
+                          <p className="text-xs text-slate-500 mt-0.5">📍 {job.location}</p>
                         )}
                       </div>
                       <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${sc.badge} capitalize`}>
@@ -861,24 +861,24 @@ function OrgCalendarView({ orgId, isOwner, isAdmin, members, onOpenJob }) {
                               className={`w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-bold border-2 ${
                                 p.status === 'in'      ? 'bg-emerald-500/15 border-emerald-500 text-emerald-400'
                                 : p.status === 'done'  ? 'bg-blue-500/15 border-blue-500 text-blue-400'
-                                : 'bg-zinc-700 border-zinc-500 text-zinc-300'}`}>
+                                : 'bg-slate-700 border-slate-500 text-slate-300'}`}>
                               {p.initial}
                             </div>
                           ))}
                         </div>
                         <span className="text-[10px]">
                           {inCount > 0 && <span className="text-emerald-400 font-semibold">{inCount} in</span>}
-                          {inCount > 0 && (doneCount + pendingCount) > 0 && <span className="text-zinc-700"> · </span>}
+                          {inCount > 0 && (doneCount + pendingCount) > 0 && <span className="text-slate-700"> · </span>}
                           {doneCount > 0 && <span className="text-blue-400 font-semibold">{doneCount} done</span>}
-                          {doneCount > 0 && pendingCount > 0 && <span className="text-zinc-700"> · </span>}
-                          {pendingCount > 0 && <span className="text-zinc-600">{pendingCount} pending</span>}
+                          {doneCount > 0 && pendingCount > 0 && <span className="text-slate-700"> · </span>}
+                          {pendingCount > 0 && <span className="text-slate-600">{pendingCount} pending</span>}
                         </span>
                       </div>
                     );
                   })()}
 
                   {(canSeeAll || job.job_assignments?.some(a => a.user_id === user?.id)) && (
-                    <div className="flex gap-1.5 px-4 pb-3 border-t border-zinc-700/40 pt-2">
+                    <div className="flex gap-1.5 px-4 pb-3 border-t border-slate-700/40 pt-2">
                       {job.status === 'scheduled' && (
                         <button onClick={() => handleQuickStatus(job.id, 'in_progress')} disabled={isUpdating}
                           className="flex-1 text-xs text-blue-400 bg-blue-400/10 border border-blue-400/20 rounded-lg py-2 font-semibold hover:bg-blue-400/15 disabled:opacity-50 transition-colors">
@@ -893,7 +893,7 @@ function OrgCalendarView({ orgId, isOwner, isAdmin, members, onOpenJob }) {
                       )}
                       {canSeeAll && job.status !== 'cancelled' && job.status !== 'completed' && (
                         <button onClick={() => handleQuickStatus(job.id, 'cancelled')} disabled={isUpdating}
-                          className="flex-1 text-xs text-zinc-500 bg-zinc-700/50 border border-zinc-600 rounded-lg py-2 font-semibold hover:bg-zinc-700 disabled:opacity-50 transition-colors">
+                          className="flex-1 text-xs text-slate-500 bg-slate-700/50 border border-slate-600 rounded-lg py-2 font-semibold hover:bg-slate-700 disabled:opacity-50 transition-colors">
                           {isUpdating ? '…' : 'Cancel'}
                         </button>
                       )}
@@ -914,7 +914,7 @@ function OrgCalendarView({ orgId, isOwner, isAdmin, members, onOpenJob }) {
           {canSeeAll && (
             <button
               onClick={() => { setShowDaySheet(false); onOpenJob(null, selectedDate); }}
-              className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-zinc-700 hover:border-amber-400/40 text-zinc-500 hover:text-amber-400 rounded-xl py-3 min-h-[48px] text-sm font-medium transition-colors"
+              className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-slate-700 hover:border-amber-400/40 text-slate-500 hover:text-amber-400 rounded-xl py-3 min-h-[48px] text-sm font-medium transition-colors"
             >
               <Plus size={16} />
               Add job for {selectedDate ? format(parseISO(selectedDate), 'd MMM') : 'this day'}
@@ -931,13 +931,13 @@ function OrgCalendarView({ orgId, isOwner, isAdmin, members, onOpenJob }) {
 const ROLE_STYLES = {
   owner:         { badge: 'bg-amber-400/15 text-amber-400',   avatar: 'bg-amber-400/20 border-amber-400/30 text-amber-400'  },
   admin:         { badge: 'bg-teal-400/15 text-teal-400',     avatar: 'bg-teal-400/15 border-teal-400/20 text-teal-400'     },
-  employee:      { badge: 'bg-zinc-800 text-zinc-400',        avatar: 'bg-zinc-800 border-zinc-700 text-zinc-400'           },
+  employee:      { badge: 'bg-slate-800 text-slate-400',        avatar: 'bg-slate-800 border-slate-700 text-slate-400'           },
   subcontractor: { badge: 'bg-blue-400/15 text-blue-400',     avatar: 'bg-blue-400/15 border-blue-400/20 text-blue-400'    },
 };
 
 const ASSIGNABLE_ROLES = [
   { value: 'admin',         label: 'Admin',         style: 'bg-teal-400/15 text-teal-300 border-teal-400/30'   },
-  { value: 'employee',      label: 'Employee',      style: 'bg-zinc-800 text-zinc-300 border-zinc-700'         },
+  { value: 'employee',      label: 'Employee',      style: 'bg-slate-800 text-slate-300 border-slate-700'         },
   { value: 'subcontractor', label: 'Subcontractor', style: 'bg-blue-400/15 text-blue-300 border-blue-400/30'  },
 ];
 
@@ -1000,36 +1000,36 @@ function MembersView({ org, members, onRefresh, addToast, isOwner }) {
   return (
     <div className="scroll-area h-full px-4 py-4 space-y-4">
       {/* Invite card */}
-      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 space-y-3">
-        <p className="text-xs font-semibold text-zinc-400 uppercase tracking-widest">Invite to Organisation</p>
-        <div className="bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 flex items-center justify-between">
-          <span className="font-mono text-xl font-bold text-zinc-50 tracking-[0.3em]">{org.invite_code}</span>
-          <button onClick={copyCode} className="text-zinc-500 hover:text-zinc-300 p-1">
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3">
+        <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest">Invite to Organisation</p>
+        <div className="bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 flex items-center justify-between">
+          <span className="font-mono text-xl font-bold text-slate-50 tracking-[0.3em]">{org.invite_code}</span>
+          <button onClick={copyCode} className="text-slate-500 hover:text-slate-300 p-1">
             {copied ? <Check size={16} className="text-emerald-400" /> : <Copy size={16} />}
           </button>
         </div>
         <button
           onClick={share}
-          className="w-full flex items-center justify-center gap-2 bg-amber-400 hover:bg-amber-300 text-zinc-950 font-bold rounded-xl py-3"
+          className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-violet-600 to-violet-800 hover:from-violet-500 hover:to-violet-700 text-white font-bold rounded-xl py-3"
         >
           <Share2 size={16} />
           Share Invite Link
         </button>
-        <p className="text-[11px] text-zinc-600 text-center">
+        <p className="text-[11px] text-slate-600 text-center">
           Share the code or link — new members choose their role when joining
         </p>
       </div>
 
       {/* Members list */}
-      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
-        <div className="px-4 py-3 border-b border-zinc-800">
-          <p className="text-xs font-semibold text-zinc-400 uppercase tracking-widest">
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
+        <div className="px-4 py-3 border-b border-slate-800">
+          <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest">
             {members.length} Member{members.length !== 1 ? 's' : ''}
           </p>
-          <p className="text-[10px] text-zinc-600 mt-0.5">Tap ⋯ to change role or remove a member</p>
+          <p className="text-[10px] text-slate-600 mt-0.5">Tap ⋯ to change role or remove a member</p>
         </div>
         {members.length === 0 && (
-          <p className="text-sm text-zinc-500 text-center py-6">No members yet — share your invite code</p>
+          <p className="text-sm text-slate-500 text-center py-6">No members yet — share your invite code</p>
         )}
         {members.map(m => {
           const name      = m.display_name || m.profiles?.display_name || 'Unknown';
@@ -1041,7 +1041,7 @@ function MembersView({ org, members, onRefresh, addToast, isOwner }) {
           const removing  = confirmRemove === m.user_id;
 
           return (
-            <div key={m.id} className="border-b border-zinc-800/50 last:border-0">
+            <div key={m.id} className="border-b border-slate-800/50 last:border-0">
               {/* Member row */}
               <div className="flex items-center gap-3 px-4 py-3">
                 <div className={`w-10 h-10 rounded-2xl border flex items-center justify-center shrink-0 ${roleStyle.avatar}`}>
@@ -1052,13 +1052,13 @@ function MembersView({ org, members, onRefresh, addToast, isOwner }) {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <p className="text-sm font-semibold text-zinc-100 truncate">{name}</p>
+                    <p className="text-sm font-semibold text-slate-100 truncate">{name}</p>
                     <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-md capitalize shrink-0 ${roleStyle.badge}`}>
                       {m.role}
                     </span>
                   </div>
-                  {email && <p className="text-xs text-zinc-500 truncate mt-0.5">{email}</p>}
-                  <p className="text-[10px] text-zinc-600 mt-0.5">
+                  {email && <p className="text-xs text-slate-500 truncate mt-0.5">{email}</p>}
+                  <p className="text-[10px] text-slate-600 mt-0.5">
                     Joined {(() => { try { return format(new Date(m.joined_at), 'd MMM yyyy'); } catch { return ''; } })()}
                   </p>
                 </div>
@@ -1066,7 +1066,7 @@ function MembersView({ org, members, onRefresh, addToast, isOwner }) {
                   <button
                     onClick={() => { setOpenMenu(menuOpen ? null : m.user_id); setConfirmRemove(null); }}
                     disabled={isWorking}
-                    className="w-9 h-9 flex items-center justify-center rounded-xl text-zinc-500 hover:bg-zinc-800 hover:text-zinc-200 transition-colors shrink-0 disabled:opacity-40"
+                    className="w-9 h-9 flex items-center justify-center rounded-xl text-slate-500 hover:bg-slate-800 hover:text-slate-200 transition-colors shrink-0 disabled:opacity-40"
                   >
                     <MoreVertical size={17} />
                   </button>
@@ -1075,8 +1075,8 @@ function MembersView({ org, members, onRefresh, addToast, isOwner }) {
 
               {/* Inline role menu */}
               {menuOpen && !removing && (
-                <div className="px-4 pb-3 space-y-2 border-t border-zinc-800/60 pt-2.5">
-                  <p className="text-[10px] text-zinc-600 uppercase tracking-widest">Change role</p>
+                <div className="px-4 pb-3 space-y-2 border-t border-slate-800/60 pt-2.5">
+                  <p className="text-[10px] text-slate-600 uppercase tracking-widest">Change role</p>
                   <div className="flex gap-2">
                     {ASSIGNABLE_ROLES.map(r => (
                       <button key={r.value}
@@ -1084,7 +1084,7 @@ function MembersView({ org, members, onRefresh, addToast, isOwner }) {
                         className={`flex-1 py-2 rounded-xl text-xs font-semibold border transition-colors ${
                           m.role === r.value
                             ? r.style + ' ring-1 ring-current/40'
-                            : 'bg-zinc-800/50 text-zinc-500 border-zinc-700 hover:text-zinc-200 hover:bg-zinc-800'
+                            : 'bg-slate-800/50 text-slate-500 border-slate-700 hover:text-slate-200 hover:bg-slate-800'
                         }`}
                       >
                         {r.label}
@@ -1100,7 +1100,7 @@ function MembersView({ org, members, onRefresh, addToast, isOwner }) {
                     </button>
                     <button
                       onClick={() => setOpenMenu(null)}
-                      className="w-9 flex items-center justify-center rounded-xl text-zinc-600 hover:bg-zinc-800 border border-zinc-800 transition-colors"
+                      className="w-9 flex items-center justify-center rounded-xl text-slate-600 hover:bg-slate-800 border border-slate-800 transition-colors"
                     >
                       <X size={14} />
                     </button>
@@ -1115,7 +1115,7 @@ function MembersView({ org, members, onRefresh, addToast, isOwner }) {
                   <div className="flex gap-2">
                     <button
                       onClick={() => { setConfirmRemove(null); setOpenMenu(null); }}
-                      className="flex-1 py-2 rounded-xl text-xs font-semibold bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
+                      className="flex-1 py-2 rounded-xl text-xs font-semibold bg-slate-800 text-slate-400 hover:bg-slate-700"
                     >
                       Cancel
                     </button>
@@ -1187,7 +1187,7 @@ function InvoicesView({ orgId, isOwner, onSubmit, addToast }) {
         {!isOwner && (
           <button
             onClick={onSubmit}
-            className="w-full flex items-center justify-center gap-2 bg-amber-400 hover:bg-amber-300 text-zinc-950 font-bold rounded-2xl py-4"
+            className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-violet-600 to-violet-800 hover:from-violet-500 hover:to-violet-700 text-white font-bold rounded-2xl py-4"
           >
             <Plus size={18} />
             Submit Invoice to Organisation
@@ -1200,8 +1200,8 @@ function InvoicesView({ orgId, isOwner, onSubmit, addToast }) {
           </div>
         ) : submissions.length === 0 ? (
           <div className="text-center py-10">
-            <p className="text-zinc-500 text-sm">No invoices yet</p>
-            {!isOwner && <p className="text-zinc-600 text-xs mt-1">Submit your time to get paid</p>}
+            <p className="text-slate-500 text-sm">No invoices yet</p>
+            {!isOwner && <p className="text-slate-600 text-xs mt-1">Submit your time to get paid</p>}
           </div>
         ) : (
           submissions.map(s => {
@@ -1211,17 +1211,17 @@ function InvoicesView({ orgId, isOwner, onSubmit, addToast }) {
               <button
                 key={s.id}
                 onClick={() => setDetailSub(s)}
-                className="w-full text-left bg-zinc-900 border border-zinc-800 rounded-2xl p-4 hover:border-zinc-700 transition-colors active:bg-zinc-800/50"
+                className="w-full text-left bg-slate-900 border border-slate-800 rounded-2xl p-4 hover:border-slate-700 transition-colors active:bg-slate-800/50"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     {isOwner && (
                       <p className="text-xs font-semibold text-amber-400 mb-0.5 truncate">{s.display_name}</p>
                     )}
-                    <p className="font-semibold text-zinc-100 text-sm truncate">
+                    <p className="font-semibold text-slate-100 text-sm truncate">
                       {inv.invoiceNumber ? `${inv.invoiceNumber} · ` : ''}{inv.description || 'Invoice'}
                     </p>
-                    <p className="text-xs text-zinc-500 mt-0.5">
+                    <p className="text-xs text-slate-500 mt-0.5">
                       {(() => { try { return format(new Date(s.submitted_at), 'd MMM yyyy'); } catch { return ''; } })()}
                       {inv.periodFrom && inv.periodTo && (() => {
                         try {
@@ -1230,14 +1230,14 @@ function InvoicesView({ orgId, isOwner, onSubmit, addToast }) {
                       })()}
                     </p>
                     {inv.hours > 0 && (
-                      <p className="text-xs text-zinc-600 mt-0.5">
+                      <p className="text-xs text-slate-600 mt-0.5">
                         {decimalToHHMM(inv.hours)} · {inv.entries?.length || 0} {inv.entries?.length !== 1 ? 'entries' : 'entry'}
                       </p>
                     )}
                   </div>
                   <div className="text-right shrink-0">
                     <p className="font-mono text-xl font-bold text-amber-400">{formatCurrency(total)}</p>
-                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${STATUS_STYLE[s.status] || 'bg-zinc-800 text-zinc-400'} capitalize`}>
+                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${STATUS_STYLE[s.status] || 'bg-slate-800 text-slate-400'} capitalize`}>
                       {s.status}
                     </span>
                   </div>
@@ -1329,26 +1329,26 @@ function InvoiceDetailSheet({ submission, isOwner, updatingId, onStatus, onClose
   return (
     <div className="fixed inset-0 z-[55] flex flex-col justify-end">
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 bg-zinc-900 rounded-t-2xl flex flex-col"
+      <div className="relative z-10 bg-slate-900 rounded-t-2xl flex flex-col"
         style={{ maxHeight: '95vh', paddingBottom: 'env(safe-area-inset-bottom, 16px)' }}>
         {/* Handle */}
         <div className="flex justify-center pt-3 pb-1 shrink-0">
-          <div className="w-10 h-1 rounded-full bg-zinc-700" />
+          <div className="w-10 h-1 rounded-full bg-slate-700" />
         </div>
 
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-3 border-b border-zinc-800 shrink-0">
+        <div className="flex items-center justify-between px-5 py-3 border-b border-slate-800 shrink-0">
           <div>
-            <p className="text-base font-bold text-zinc-50">
+            <p className="text-base font-bold text-slate-50">
               {inv.invoiceNumber || 'Invoice'}
             </p>
-            <p className="text-xs text-zinc-500">
+            <p className="text-xs text-slate-500">
               {safeDate(submission.submitted_at, 'd MMM yyyy')}
               {submission.display_name && ` · ${submission.display_name}`}
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <span className={`text-xs font-semibold px-3 py-1 rounded-full capitalize ${statusStyle[submission.status] || 'bg-zinc-800 text-zinc-400'}`}>
+            <span className={`text-xs font-semibold px-3 py-1 rounded-full capitalize ${statusStyle[submission.status] || 'bg-slate-800 text-slate-400'}`}>
               {submission.status}
             </span>
             <button
@@ -1357,12 +1357,12 @@ function InvoiceDetailSheet({ submission, isOwner, updatingId, onStatus, onClose
                 downloadInvoicePDF(invoice, ps);
               }}
               title="Download PDF"
-              className="w-9 h-9 flex items-center justify-center rounded-full text-zinc-400 hover:bg-zinc-800 hover:text-amber-400 transition-colors"
+              className="w-9 h-9 flex items-center justify-center rounded-full text-slate-400 hover:bg-slate-800 hover:text-amber-400 transition-colors"
             >
               <Download size={18} />
             </button>
             <button onClick={onClose}
-              className="w-9 h-9 flex items-center justify-center rounded-full text-zinc-400 hover:bg-zinc-800">
+              className="w-9 h-9 flex items-center justify-center rounded-full text-slate-400 hover:bg-slate-800">
               <X size={18} />
             </button>
           </div>
@@ -1372,117 +1372,117 @@ function InvoiceDetailSheet({ submission, isOwner, updatingId, onStatus, onClose
 
           {/* Business info */}
           {(inv.businessName || abn) && (
-            <div className="bg-zinc-800 border border-zinc-700 rounded-2xl p-4">
-              <p className="text-xs text-zinc-500 uppercase tracking-widest mb-2">From</p>
-              {inv.businessName && <p className="text-sm font-bold text-zinc-50">{inv.businessName}</p>}
-              {displayAbn && <p className="text-xs text-zinc-400 mt-0.5">ABN: {displayAbn}</p>}
+            <div className="bg-slate-800 border border-slate-700 rounded-2xl p-4">
+              <p className="text-xs text-slate-500 uppercase tracking-widest mb-2">From</p>
+              {inv.businessName && <p className="text-sm font-bold text-slate-50">{inv.businessName}</p>}
+              {displayAbn && <p className="text-xs text-slate-400 mt-0.5">ABN: {displayAbn}</p>}
             </div>
           )}
 
           {/* Invoice summary */}
-          <div className="bg-zinc-800 border border-zinc-700 rounded-2xl divide-y divide-zinc-700/60">
+          <div className="bg-slate-800 border border-slate-700 rounded-2xl divide-y divide-slate-700/60">
             {inv.description && (
               <div className="flex justify-between px-4 py-3">
-                <span className="text-xs text-zinc-500">Description</span>
-                <span className="text-sm font-medium text-zinc-200 max-w-[60%] text-right">{inv.description}</span>
+                <span className="text-xs text-slate-500">Description</span>
+                <span className="text-sm font-medium text-slate-200 max-w-[60%] text-right">{inv.description}</span>
               </div>
             )}
             {inv.periodFrom && inv.periodTo && (
               <div className="flex justify-between px-4 py-3">
-                <span className="text-xs text-zinc-500">Period</span>
-                <span className="text-sm font-medium text-zinc-200">
+                <span className="text-xs text-slate-500">Period</span>
+                <span className="text-sm font-medium text-slate-200">
                   {safeDate(inv.periodFrom, 'd MMM')} – {safeDate(inv.periodTo, 'd MMM yyyy')}
                 </span>
               </div>
             )}
             {Number(inv.hours) > 0 && (
               <div className="flex justify-between px-4 py-3">
-                <span className="text-xs text-zinc-500">Total hours</span>
-                <span className="text-sm font-mono text-zinc-200">{decimalToHHMM(Number(inv.hours))}</span>
+                <span className="text-xs text-slate-500">Total hours</span>
+                <span className="text-sm font-mono text-slate-200">{decimalToHHMM(Number(inv.hours))}</span>
               </div>
             )}
             {inv.entries?.length > 0 && (
               <div className="flex justify-between px-4 py-3">
-                <span className="text-xs text-zinc-500">Entries</span>
-                <span className="text-sm font-medium text-zinc-200">{inv.entries.length}</span>
+                <span className="text-xs text-slate-500">Entries</span>
+                <span className="text-sm font-medium text-slate-200">{inv.entries.length}</span>
               </div>
             )}
             {gst > 0 && (
               <div className="flex justify-between px-4 py-3">
-                <span className="text-xs text-zinc-500">Subtotal</span>
-                <span className="text-sm font-mono text-zinc-200">{formatCurrency(subtotal)}</span>
+                <span className="text-xs text-slate-500">Subtotal</span>
+                <span className="text-sm font-mono text-slate-200">{formatCurrency(subtotal)}</span>
               </div>
             )}
             {gst > 0 && (
               <div className="flex justify-between px-4 py-3">
-                <span className="text-xs text-zinc-500">GST (10%)</span>
-                <span className="text-sm font-mono text-zinc-200">{formatCurrency(gst)}</span>
+                <span className="text-xs text-slate-500">GST (10%)</span>
+                <span className="text-sm font-mono text-slate-200">{formatCurrency(gst)}</span>
               </div>
             )}
             <div className="flex justify-between px-4 py-3">
-              <span className="text-sm font-bold text-zinc-100">Total</span>
+              <span className="text-sm font-bold text-slate-100">Total</span>
               <span className="text-xl font-mono font-bold text-amber-400">{formatCurrency(total)}</span>
             </div>
           </div>
 
           {/* Line items — tappable */}
           {inv.entries?.length > 0 && (
-            <div className="bg-zinc-800 border border-zinc-700 rounded-2xl overflow-hidden">
+            <div className="bg-slate-800 border border-slate-700 rounded-2xl overflow-hidden">
               <div className="flex items-center justify-between px-4 pt-3 pb-1">
-                <p className="text-xs text-zinc-500 uppercase tracking-widest">Time Entries</p>
-                <p className="text-[10px] text-zinc-600">Tap to expand</p>
+                <p className="text-xs text-slate-500 uppercase tracking-widest">Time Entries</p>
+                <p className="text-[10px] text-slate-600">Tap to expand</p>
               </div>
-              <div className="divide-y divide-zinc-700/50">
+              <div className="divide-y divide-slate-700/50">
                 {inv.entries.map((e, i) => (
                   <div key={i}>
                     <button
                       onClick={() => setExpandedEntry(expandedEntry === i ? null : i)}
-                      className="w-full text-left px-4 py-3 flex justify-between items-start gap-2 hover:bg-zinc-700/30 active:bg-zinc-700/50 transition-colors"
+                      className="w-full text-left px-4 py-3 flex justify-between items-start gap-2 hover:bg-slate-700/30 active:bg-slate-700/50 transition-colors"
                     >
                       <div className="flex items-start gap-2 flex-1 min-w-0">
-                        <ChevronRight size={13} className={`text-zinc-600 mt-0.5 shrink-0 transition-transform duration-150 ${expandedEntry === i ? 'rotate-90' : ''}`} />
+                        <ChevronRight size={13} className={`text-slate-600 mt-0.5 shrink-0 transition-transform duration-150 ${expandedEntry === i ? 'rotate-90' : ''}`} />
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-zinc-200 truncate">
+                          <p className="text-sm font-medium text-slate-200 truncate">
                             {e.description || e.clientName || 'Labour'}
                           </p>
-                          <p className="text-xs text-zinc-500 mt-0.5 font-mono">
+                          <p className="text-xs text-slate-500 mt-0.5 font-mono">
                             {safeDate(e.date, 'EEE d MMM')}
                             {e.timeIn && e.timeOut ? ` · ${e.timeIn}–${e.timeOut}` : ''}
                           </p>
                         </div>
                       </div>
                       <div className="text-right shrink-0">
-                        <p className="text-sm font-mono font-semibold text-zinc-100">{formatCurrency(Number(e.earnings) || 0)}</p>
-                        <p className="text-xs font-mono text-zinc-500">{decimalToHHMM(Number(e.workingHours))}</p>
+                        <p className="text-sm font-mono font-semibold text-slate-100">{formatCurrency(Number(e.earnings) || 0)}</p>
+                        <p className="text-xs font-mono text-slate-500">{decimalToHHMM(Number(e.workingHours))}</p>
                       </div>
                     </button>
                     {expandedEntry === i && (
-                      <div className="px-4 pb-3 pt-1 bg-zinc-700/20 border-t border-zinc-700/40 space-y-1.5">
+                      <div className="px-4 pb-3 pt-1 bg-slate-700/20 border-t border-slate-700/40 space-y-1.5">
                         <div className="grid grid-cols-2 gap-x-4 gap-y-2 pt-1">
                           {e.clientName && (
                             <div>
-                              <p className="text-[10px] text-zinc-500 uppercase tracking-wider">Client</p>
-                              <p className="text-xs text-zinc-300 mt-0.5">{e.clientName}</p>
+                              <p className="text-[10px] text-slate-500 uppercase tracking-wider">Client</p>
+                              <p className="text-xs text-slate-300 mt-0.5">{e.clientName}</p>
                             </div>
                           )}
                           {e.timeIn && e.timeOut && (
                             <div>
-                              <p className="text-[10px] text-zinc-500 uppercase tracking-wider">Clock</p>
-                              <p className="text-xs font-mono text-zinc-300 mt-0.5">{e.timeIn} – {e.timeOut}</p>
+                              <p className="text-[10px] text-slate-500 uppercase tracking-wider">Clock</p>
+                              <p className="text-xs font-mono text-slate-300 mt-0.5">{e.timeIn} – {e.timeOut}</p>
                             </div>
                           )}
                           {Number(e.hourlyRate) > 0 && (
                             <div>
-                              <p className="text-[10px] text-zinc-500 uppercase tracking-wider">Rate</p>
-                              <p className="text-xs font-mono text-zinc-300 mt-0.5">${e.hourlyRate}/hr</p>
+                              <p className="text-[10px] text-slate-500 uppercase tracking-wider">Rate</p>
+                              <p className="text-xs font-mono text-slate-300 mt-0.5">${e.hourlyRate}/hr</p>
                             </div>
                           )}
                           <div>
-                            <p className="text-[10px] text-zinc-500 uppercase tracking-wider">Worked</p>
-                            <p className="text-xs font-mono text-zinc-300 mt-0.5">{decimalToHHMM(Number(e.workingHours))}</p>
+                            <p className="text-[10px] text-slate-500 uppercase tracking-wider">Worked</p>
+                            <p className="text-xs font-mono text-slate-300 mt-0.5">{decimalToHHMM(Number(e.workingHours))}</p>
                           </div>
                           <div>
-                            <p className="text-[10px] text-zinc-500 uppercase tracking-wider">Earned</p>
+                            <p className="text-[10px] text-slate-500 uppercase tracking-wider">Earned</p>
                             <p className="text-xs font-mono font-semibold text-amber-400 mt-0.5">{formatCurrency(Number(e.earnings) || 0)}</p>
                           </div>
                         </div>
@@ -1496,24 +1496,24 @@ function InvoiceDetailSheet({ submission, isOwner, updatingId, onStatus, onClose
 
           {/* Bank details */}
           {(inv.bankName || inv.bsb || inv.accountNumber) && (
-            <div className="bg-zinc-800 border border-zinc-700 rounded-2xl divide-y divide-zinc-700/60">
-              <p className="text-xs text-zinc-500 uppercase tracking-widest px-4 pt-3 pb-1">Payment Details</p>
+            <div className="bg-slate-800 border border-slate-700 rounded-2xl divide-y divide-slate-700/60">
+              <p className="text-xs text-slate-500 uppercase tracking-widest px-4 pt-3 pb-1">Payment Details</p>
               {inv.bankName && (
                 <div className="flex justify-between px-4 py-3">
-                  <span className="text-xs text-zinc-500">Bank</span>
-                  <span className="text-sm font-medium text-zinc-200">{inv.bankName}</span>
+                  <span className="text-xs text-slate-500">Bank</span>
+                  <span className="text-sm font-medium text-slate-200">{inv.bankName}</span>
                 </div>
               )}
               {inv.bsb && (
                 <div className="flex justify-between px-4 py-3">
-                  <span className="text-xs text-zinc-500">BSB</span>
-                  <span className="text-sm font-mono text-zinc-200">{inv.bsb}</span>
+                  <span className="text-xs text-slate-500">BSB</span>
+                  <span className="text-sm font-mono text-slate-200">{inv.bsb}</span>
                 </div>
               )}
               {inv.accountNumber && (
                 <div className="flex justify-between px-4 py-3">
-                  <span className="text-xs text-zinc-500">Account</span>
-                  <span className="text-sm font-mono text-zinc-200">{inv.accountNumber}</span>
+                  <span className="text-xs text-slate-500">Account</span>
+                  <span className="text-sm font-mono text-slate-200">{inv.accountNumber}</span>
                 </div>
               )}
             </div>
@@ -1521,16 +1521,16 @@ function InvoiceDetailSheet({ submission, isOwner, updatingId, onStatus, onClose
 
           {/* Notes */}
           {inv.notes && (
-            <div className="bg-zinc-800 border border-zinc-700 rounded-2xl p-4">
-              <p className="text-xs text-zinc-500 uppercase tracking-widest mb-2">Notes</p>
-              <p className="text-sm text-zinc-300 whitespace-pre-wrap leading-relaxed">{inv.notes}</p>
+            <div className="bg-slate-800 border border-slate-700 rounded-2xl p-4">
+              <p className="text-xs text-slate-500 uppercase tracking-widest mb-2">Notes</p>
+              <p className="text-sm text-slate-300 whitespace-pre-wrap leading-relaxed">{inv.notes}</p>
             </div>
           )}
 
           {/* Status controls */}
           {isOwner && (
-            <div className="bg-zinc-800 border border-zinc-700 rounded-2xl p-4 space-y-3">
-              <p className="text-xs text-zinc-500 uppercase tracking-widest">Update Status</p>
+            <div className="bg-slate-800 border border-slate-700 rounded-2xl p-4 space-y-3">
+              <p className="text-xs text-slate-500 uppercase tracking-widest">Update Status</p>
               <div className="grid grid-cols-2 gap-2">
                 {submission.status !== 'approved' && submission.status !== 'paid' && (
                   <button onClick={() => onStatus(submission.id, 'approved')}
@@ -1556,7 +1556,7 @@ function InvoiceDetailSheet({ submission, isOwner, updatingId, onStatus, onClose
                 {submission.status !== 'pending' && (
                   <button onClick={() => onStatus(submission.id, 'pending')}
                     disabled={updatingId === submission.id}
-                    className="bg-zinc-700 text-zinc-400 border border-zinc-600 rounded-xl py-3 text-sm font-semibold hover:bg-zinc-600 disabled:opacity-50">
+                    className="bg-slate-700 text-slate-400 border border-slate-600 rounded-xl py-3 text-sm font-semibold hover:bg-slate-600 disabled:opacity-50">
                     Reset Pending
                   </button>
                 )}
@@ -1671,20 +1671,20 @@ function HoursReportView({ orgId, addToast }) {
   return (
     <div className="h-full flex flex-col">
       {/* Filter controls */}
-      <div className="shrink-0 px-4 pt-3 pb-2 border-b border-zinc-800 space-y-2">
+      <div className="shrink-0 px-4 pt-3 pb-2 border-b border-slate-800 space-y-2">
         <div className="flex gap-2">
           <div className="flex-1 relative">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none" />
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
             <input
               value={searchJob}
               onChange={e => setSearchJob(e.target.value)}
               placeholder="Search job, client, description…"
-              className="w-full bg-zinc-800 border border-zinc-700 rounded-xl pl-9 pr-4 py-2.5 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-amber-400/50 min-h-[44px]"
+              className="w-full bg-slate-800 border border-slate-700 rounded-xl pl-9 pr-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-violet-500/50 min-h-[44px]"
             />
           </div>
           <button
             onClick={() => setShowFilters(f => !f)}
-            className={`w-11 h-11 flex items-center justify-center rounded-xl border transition-colors ${hasFilters ? 'border-amber-400 text-amber-400' : 'border-zinc-700 text-zinc-400'}`}
+            className={`w-11 h-11 flex items-center justify-center rounded-xl border transition-colors ${hasFilters ? 'border-amber-400 text-amber-400' : 'border-slate-700 text-slate-400'}`}
           >
             <SlidersHorizontal size={18} />
           </button>
@@ -1695,7 +1695,7 @@ function HoursReportView({ orgId, addToast }) {
             <select
               value={filterWorker}
               onChange={e => setFilterWorker(e.target.value)}
-              className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-2.5 text-sm text-zinc-100 focus:outline-none focus:border-amber-400/50 min-h-[44px]"
+              className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-violet-500/50 min-h-[44px]"
             >
               <option value="all">All workers</option>
               {workers.map(w => <option key={w} value={w}>{w}</option>)}
@@ -1711,9 +1711,9 @@ function HoursReportView({ orgId, addToast }) {
 
             <div className="flex gap-2">
               <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
-                className="flex-1 bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2.5 text-sm text-zinc-50 focus:outline-none focus:border-amber-400/50 min-h-[44px]" />
+                className="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-50 focus:outline-none focus:border-violet-500/50 min-h-[44px]" />
               <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
-                className="flex-1 bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2.5 text-sm text-zinc-50 focus:outline-none focus:border-amber-400/50 min-h-[44px]" />
+                className="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-50 focus:outline-none focus:border-violet-500/50 min-h-[44px]" />
             </div>
             {hasFilters && (
               <button
@@ -1733,22 +1733,22 @@ function HoursReportView({ orgId, addToast }) {
       </div>
 
       {/* Summary bar */}
-      <div className="shrink-0 mx-4 my-2 bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2.5 flex justify-between items-center">
+      <div className="shrink-0 mx-4 my-2 bg-slate-900 border border-slate-800 rounded-xl px-3 py-2.5 flex justify-between items-center">
         <div className="text-center">
-          <p className="font-mono text-base font-semibold text-zinc-50">{decimalToHHMM(totalHours)}</p>
-          <p className="text-[10px] text-zinc-500 uppercase tracking-widest">Hours</p>
+          <p className="font-mono text-base font-semibold text-slate-50">{decimalToHHMM(totalHours)}</p>
+          <p className="text-[10px] text-slate-500 uppercase tracking-widest">Hours</p>
         </div>
         <div className="text-center">
           <p className="font-mono text-base font-semibold text-amber-400">{formatCurrency(totalEarnings)}</p>
-          <p className="text-[10px] text-zinc-500 uppercase tracking-widest">Cost</p>
+          <p className="text-[10px] text-slate-500 uppercase tracking-widest">Cost</p>
         </div>
         <div className="text-center">
-          <p className="font-mono text-base font-semibold text-zinc-50">{uniqueDays}</p>
-          <p className="text-[10px] text-zinc-500 uppercase tracking-widest">Days</p>
+          <p className="font-mono text-base font-semibold text-slate-50">{uniqueDays}</p>
+          <p className="text-[10px] text-slate-500 uppercase tracking-widest">Days</p>
         </div>
         <div className="text-center">
-          <p className="font-mono text-base font-semibold text-zinc-50">{filtered.length}</p>
-          <p className="text-[10px] text-zinc-500 uppercase tracking-widest">Entries</p>
+          <p className="font-mono text-base font-semibold text-slate-50">{filtered.length}</p>
+          <p className="text-[10px] text-slate-500 uppercase tracking-widest">Entries</p>
         </div>
       </div>
 
@@ -1760,10 +1760,10 @@ function HoursReportView({ orgId, addToast }) {
           </div>
         ) : grouped.length === 0 ? (
           <div className="text-center py-12 space-y-1">
-            <p className="text-zinc-400 font-medium text-sm">No data{hasFilters ? ' matching filters' : ''}</p>
+            <p className="text-slate-400 font-medium text-sm">No data{hasFilters ? ' matching filters' : ''}</p>
             {submissions.length === 0
-              ? <p className="text-zinc-600 text-xs">Workers need to submit invoices before data appears here</p>
-              : <p className="text-zinc-600 text-xs">Try adjusting or clearing your filters</p>
+              ? <p className="text-slate-600 text-xs">Workers need to submit invoices before data appears here</p>
+              : <p className="text-slate-600 text-xs">Try adjusting or clearing your filters</p>
             }
           </div>
         ) : (
@@ -1802,36 +1802,36 @@ function ReportGroup({ group, groupBy }) {
   const INV_STATUS_DOT = { pending: 'bg-amber-400', approved: 'bg-blue-400', paid: 'bg-emerald-400', rejected: 'bg-red-400' };
 
   return (
-    <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
+    <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
       {/* Header row */}
       <div className="px-4 py-3 flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
-          <p className="font-semibold text-zinc-100 text-sm truncate">{group.name}</p>
+          <p className="font-semibold text-slate-100 text-sm truncate">{group.name}</p>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-0.5">
-            <span className="text-xs text-zinc-500">{group.uniqueDays} day{group.uniqueDays !== 1 ? 's' : ''}</span>
-            <span className="text-xs text-zinc-500">{group.entries.length} {group.entries.length !== 1 ? 'entries' : 'entry'}</span>
-            {group.dateRange && <span className="text-xs text-zinc-600">{group.dateRange}</span>}
-            {group.avgRate > 0 && <span className="text-xs text-zinc-600">avg ${group.avgRate.toFixed(0)}/hr</span>}
+            <span className="text-xs text-slate-500">{group.uniqueDays} day{group.uniqueDays !== 1 ? 's' : ''}</span>
+            <span className="text-xs text-slate-500">{group.entries.length} {group.entries.length !== 1 ? 'entries' : 'entry'}</span>
+            {group.dateRange && <span className="text-xs text-slate-600">{group.dateRange}</span>}
+            {group.avgRate > 0 && <span className="text-xs text-slate-600">avg ${group.avgRate.toFixed(0)}/hr</span>}
           </div>
         </div>
         <div className="text-right shrink-0">
-          <p className="font-mono text-sm font-bold text-zinc-100">{decimalToHHMM(group.totalHours)}</p>
+          <p className="font-mono text-sm font-bold text-slate-100">{decimalToHHMM(group.totalHours)}</p>
           <p className="font-mono text-xs text-amber-400">{formatCurrency(group.totalEarnings)}</p>
         </div>
       </div>
 
       {/* Expand toggle */}
-      <div className="flex border-t border-zinc-800">
+      <div className="flex border-t border-slate-800">
         <button
           onClick={() => setMode(m => m === 'summary' ? null : 'summary')}
-          className={`flex-1 py-2 text-xs font-medium transition-colors ${mode === 'summary' ? 'text-amber-400 bg-zinc-800/60' : 'text-zinc-500 hover:text-zinc-300'}`}
+          className={`flex-1 py-2 text-xs font-medium transition-colors ${mode === 'summary' ? 'text-amber-400 bg-slate-800/60' : 'text-slate-500 hover:text-slate-300'}`}
         >
           {groupBy === 'job' ? 'By Worker' : 'By Job'} ({subGroups.length})
         </button>
-        <div className="w-px bg-zinc-800" />
+        <div className="w-px bg-slate-800" />
         <button
           onClick={() => setMode(m => m === 'entries' ? null : 'entries')}
-          className={`flex-1 py-2 text-xs font-medium transition-colors ${mode === 'entries' ? 'text-amber-400 bg-zinc-800/60' : 'text-zinc-500 hover:text-zinc-300'}`}
+          className={`flex-1 py-2 text-xs font-medium transition-colors ${mode === 'entries' ? 'text-amber-400 bg-slate-800/60' : 'text-slate-500 hover:text-slate-300'}`}
         >
           All Entries ({group.entries.length})
         </button>
@@ -1839,16 +1839,16 @@ function ReportGroup({ group, groupBy }) {
 
       {/* Summary sub-groups */}
       {mode === 'summary' && (
-        <div className="border-t border-zinc-800 divide-y divide-zinc-800/50">
+        <div className="border-t border-slate-800 divide-y divide-slate-800/50">
           {subGroups.map(sg => (
             <div key={sg.name} className="px-4 py-2.5 flex items-center justify-between">
               <div className="flex-1 min-w-0">
-                <p className="text-sm text-zinc-300 truncate">{sg.name}</p>
-                <p className="text-xs text-zinc-600">{sg.count} {sg.count !== 1 ? 'entries' : 'entry'}</p>
+                <p className="text-sm text-slate-300 truncate">{sg.name}</p>
+                <p className="text-xs text-slate-600">{sg.count} {sg.count !== 1 ? 'entries' : 'entry'}</p>
               </div>
               <div className="text-right ml-3 shrink-0">
-                <p className="font-mono text-sm font-medium text-zinc-200">{decimalToHHMM(sg.hours)}</p>
-                <p className="font-mono text-xs text-zinc-500">{formatCurrency(sg.earnings)}</p>
+                <p className="font-mono text-sm font-medium text-slate-200">{decimalToHHMM(sg.hours)}</p>
+                <p className="font-mono text-xs text-slate-500">{formatCurrency(sg.earnings)}</p>
               </div>
             </div>
           ))}
@@ -1857,28 +1857,28 @@ function ReportGroup({ group, groupBy }) {
 
       {/* Individual entries */}
       {mode === 'entries' && (
-        <div className="border-t border-zinc-800 divide-y divide-zinc-800/50">
+        <div className="border-t border-slate-800 divide-y divide-slate-800/50">
           {sortedEntries.map((e, i) => (
             <div key={i} className="px-4 py-2.5 flex items-start gap-2">
-              <div className={`w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 ${INV_STATUS_DOT[e.submissionStatus] || 'bg-zinc-600'}`} />
+              <div className={`w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 ${INV_STATUS_DOT[e.submissionStatus] || 'bg-slate-600'}`} />
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold text-zinc-200 truncate">
+                <p className="text-xs font-semibold text-slate-200 truncate">
                   {groupBy === 'job' ? e.workerName : (e.clientName || 'Unspecified')}
                 </p>
-                <p className="text-xs text-zinc-500 mt-0.5">
+                <p className="text-xs text-slate-500 mt-0.5">
                   {safeDate(e.date)}
                   {e.timeIn && e.timeOut ? ` · ${e.timeIn}–${e.timeOut}` : ''}
                   {e.description ? ` · ${e.description}` : ''}
                 </p>
                 {e.invoiceNumber && (
-                  <p className="text-[10px] text-zinc-600 mt-0.5">{e.invoiceNumber} · {e.submissionStatus}</p>
+                  <p className="text-[10px] text-slate-600 mt-0.5">{e.invoiceNumber} · {e.submissionStatus}</p>
                 )}
               </div>
               <div className="text-right shrink-0">
-                <p className="font-mono text-xs font-semibold text-zinc-200">{formatCurrency(Number(e.earnings) || 0)}</p>
-                <p className="font-mono text-[10px] text-zinc-500">{decimalToHHMM(Number(e.workingHours))}</p>
+                <p className="font-mono text-xs font-semibold text-slate-200">{formatCurrency(Number(e.earnings) || 0)}</p>
+                <p className="font-mono text-[10px] text-slate-500">{decimalToHHMM(Number(e.workingHours))}</p>
                 {Number(e.hourlyRate) > 0 && (
-                  <p className="text-[10px] text-zinc-600">${e.hourlyRate}/hr</p>
+                  <p className="text-[10px] text-slate-600">${e.hourlyRate}/hr</p>
                 )}
               </div>
             </div>
@@ -1901,17 +1901,17 @@ function MemberPicker({ members, selected, onChange }) {
         return (
           <button key={m.user_id} onClick={() => toggle(m.user_id)}
             className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl border text-xs transition-colors ${
-              on ? 'bg-amber-400/10 border-amber-400/30 text-amber-300' : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-zinc-600'
+              on ? 'bg-amber-400/10 border-amber-400/30 text-amber-300' : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-600'
             }`}>
-            <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${on ? 'border-amber-400 bg-amber-400' : 'border-zinc-600'}`}>
-              {on && <Check size={9} className="text-zinc-950" strokeWidth={3} />}
+            <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${on ? 'border-violet-500 bg-violet-600' : 'border-slate-600'}`}>
+              {on && <Check size={9} className="text-slate-950" strokeWidth={3} />}
             </div>
             <span className="truncate">{name}</span>
-            <span className="text-[10px] text-zinc-600 capitalize ml-auto shrink-0">{m.role}</span>
+            <span className="text-[10px] text-slate-600 capitalize ml-auto shrink-0">{m.role}</span>
           </button>
         );
       })}
-      {members.length === 0 && <p className="text-xs text-zinc-600 py-1">No other members yet</p>}
+      {members.length === 0 && <p className="text-xs text-slate-600 py-1">No other members yet</p>}
     </div>
   );
 }
@@ -2177,7 +2177,7 @@ function NotesView({ orgId, isOwner, isAdmin, members = [], addToast }) {
         <div className="flex-1 scroll-area px-4 py-4 space-y-2">
           <button
             onClick={openNew}
-            className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-zinc-700 hover:border-amber-400/50 text-zinc-500 hover:text-amber-400 rounded-2xl py-4 min-h-[52px] transition-colors"
+            className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-slate-700 hover:border-amber-400/50 text-slate-500 hover:text-amber-400 rounded-2xl py-4 min-h-[52px] transition-colors"
           >
             <Plus size={18} />
             New Note
@@ -2189,11 +2189,11 @@ function NotesView({ orgId, isOwner, isAdmin, members = [], addToast }) {
             </div>
           ) : notes.length === 0 ? (
             <div className="text-center py-10">
-              <div className="w-12 h-12 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center mx-auto mb-3">
-                <StickyNote size={22} className="text-zinc-600" />
+              <div className="w-12 h-12 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center mx-auto mb-3">
+                <StickyNote size={22} className="text-slate-600" />
               </div>
-              <p className="text-zinc-500 text-sm">No notes yet</p>
-              <p className="text-zinc-600 text-xs mt-1">Shared with everyone in the organisation</p>
+              <p className="text-slate-500 text-sm">No notes yet</p>
+              <p className="text-slate-600 text-xs mt-1">Shared with everyone in the organisation</p>
             </div>
           ) : (
             notes.map(note => {
@@ -2205,16 +2205,16 @@ function NotesView({ orgId, isOwner, isAdmin, members = [], addToast }) {
                 <button
                   key={note.id}
                   onClick={() => openEdit(note)}
-                  className="w-full text-left bg-zinc-900 border border-zinc-800 rounded-2xl p-4 hover:border-zinc-700 active:bg-zinc-800/50 transition-colors"
+                  className="w-full text-left bg-slate-900 border border-slate-800 rounded-2xl p-4 hover:border-slate-700 active:bg-slate-800/50 transition-colors"
                 >
                   <div className="flex items-start justify-between gap-3 mb-1.5">
-                    <p className="font-semibold text-zinc-100 text-sm">{note.title}</p>
+                    <p className="font-semibold text-slate-100 text-sm">{note.title}</p>
                     <div className="flex items-center gap-1.5 shrink-0">
                       {items.length > 0 && (
                         <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
                           doneCount === items.length
                             ? 'bg-emerald-400/15 text-emerald-400'
-                            : 'bg-zinc-800 text-zinc-400'
+                            : 'bg-slate-800 text-slate-400'
                         }`}>
                           {doneCount}/{items.length}
                         </span>
@@ -2228,31 +2228,31 @@ function NotesView({ orgId, isOwner, isAdmin, members = [], addToast }) {
                     </div>
                   </div>
                   {noteText ? (
-                    <p className="text-xs text-zinc-500 leading-relaxed line-clamp-2 mb-1.5">{noteText}</p>
+                    <p className="text-xs text-slate-500 leading-relaxed line-clamp-2 mb-1.5">{noteText}</p>
                   ) : null}
                   {previewItems.length > 0 && (
                     <div className="space-y-1">
                       {previewItems.map(item => (
                         <div key={item.id} className="flex items-center gap-2">
                           <div className={`w-3 h-3 rounded-full shrink-0 flex items-center justify-center ${
-                            item.checked ? 'bg-amber-400' : 'border border-zinc-600'
+                            item.checked ? 'bg-amber-400' : 'border border-slate-600'
                           }`}>
-                            {item.checked && <Check size={7} className="text-zinc-950" strokeWidth={3} />}
+                            {item.checked && <Check size={7} className="text-slate-950" strokeWidth={3} />}
                           </div>
-                          <p className={`text-xs truncate ${item.checked ? 'text-zinc-600 line-through' : 'text-zinc-400'}`}>
+                          <p className={`text-xs truncate ${item.checked ? 'text-slate-600 line-through' : 'text-slate-400'}`}>
                             {item.text}
                           </p>
                         </div>
                       ))}
                       {items.length > 3 && (
-                        <p className="text-[10px] text-zinc-600 pl-5">+{items.length - 3} more</p>
+                        <p className="text-[10px] text-slate-600 pl-5">+{items.length - 3} more</p>
                       )}
                     </div>
                   )}
                   {!noteText && items.length === 0 && (
-                    <p className="text-xs text-zinc-600 italic">Empty note</p>
+                    <p className="text-xs text-slate-600 italic">Empty note</p>
                   )}
-                  <p className="text-[10px] text-zinc-600 mt-2">
+                  <p className="text-[10px] text-slate-600 mt-2">
                     {note.updated_by_name ? `Edited by ${note.updated_by_name} · ` : ''}{safeDate(note.updated_at)}
                   </p>
                 </button>
@@ -2269,7 +2269,7 @@ function NotesView({ orgId, isOwner, isAdmin, members = [], addToast }) {
           <div className="absolute inset-0 bg-black/65 backdrop-blur-sm" onClick={() => setEditNote(null)} />
           <div
             ref={sheetRef}
-            className="relative z-10 bg-zinc-900 rounded-t-2xl flex flex-col"
+            className="relative z-10 bg-slate-900 rounded-t-2xl flex flex-col"
             style={{ maxHeight: '93vh', paddingBottom: 'env(safe-area-inset-bottom, 16px)' }}
           >
             {/* Handle — drag down to dismiss */}
@@ -2279,17 +2279,17 @@ function NotesView({ orgId, isOwner, isAdmin, members = [], addToast }) {
               onTouchMove={handleSheetTouchMove}
               onTouchEnd={handleSheetTouchEnd}
             >
-              <div className="w-10 h-1 rounded-full bg-zinc-700" />
+              <div className="w-10 h-1 rounded-full bg-slate-700" />
             </div>
 
             {/* Header */}
-            <div className="flex items-center gap-3 px-5 py-3 border-b border-zinc-800 shrink-0">
+            <div className="flex items-center gap-3 px-5 py-3 border-b border-slate-800 shrink-0">
               <input
                 value={editTitle}
                 onChange={e => canEdit && setEditTitle(e.target.value)}
                 readOnly={!canEdit}
                 placeholder="Note title…"
-                className={`flex-1 bg-transparent text-base font-semibold placeholder-zinc-500 focus:outline-none ${canEdit ? 'text-zinc-50' : 'text-zinc-400'}`}
+                className={`flex-1 bg-transparent text-base font-semibold placeholder-slate-500 focus:outline-none ${canEdit ? 'text-slate-50' : 'text-slate-400'}`}
               />
               <div className="flex items-center gap-1.5 shrink-0">
                 {editNote !== 'new' && (isOwner || isAdmin) && !confirmDelete && (
@@ -2299,7 +2299,7 @@ function NotesView({ orgId, isOwner, isAdmin, members = [], addToast }) {
                   </button>
                 )}
                 <button onClick={() => setEditNote(null)}
-                  className="w-9 h-9 flex items-center justify-center rounded-full text-zinc-400 hover:bg-zinc-800">
+                  className="w-9 h-9 flex items-center justify-center rounded-full text-slate-400 hover:bg-slate-800">
                   <X size={18} />
                 </button>
               </div>
@@ -2309,7 +2309,7 @@ function NotesView({ orgId, isOwner, isAdmin, members = [], addToast }) {
             {confirmDelete && (
               <div className="px-5 py-3 bg-red-950/40 border-b border-red-900/50 shrink-0 flex items-center gap-3">
                 <p className="flex-1 text-sm text-red-300">Delete this note?</p>
-                <button onClick={() => setConfirmDelete(false)} className="px-3 py-1.5 text-xs text-zinc-400 bg-zinc-800 rounded-lg">Cancel</button>
+                <button onClick={() => setConfirmDelete(false)} className="px-3 py-1.5 text-xs text-slate-400 bg-slate-800 rounded-lg">Cancel</button>
                 <button onClick={handleDelete} disabled={deleting} className="px-3 py-1.5 text-xs text-white bg-red-500 hover:bg-red-400 rounded-lg font-semibold disabled:opacity-50">
                   {deleting ? '…' : 'Delete'}
                 </button>
@@ -2318,8 +2318,8 @@ function NotesView({ orgId, isOwner, isAdmin, members = [], addToast }) {
 
             {/* Last-edited info */}
             {editNote !== 'new' && editNote.updated_by_name && (
-              <div className="px-5 py-1.5 border-b border-zinc-800/50 shrink-0">
-                <p className="text-[10px] text-zinc-600">
+              <div className="px-5 py-1.5 border-b border-slate-800/50 shrink-0">
+                <p className="text-[10px] text-slate-600">
                   Last edited by {editNote.updated_by_name} · {safeDate(editNote.updated_at)}
                 </p>
               </div>
@@ -2342,15 +2342,15 @@ function NotesView({ orgId, isOwner, isAdmin, members = [], addToast }) {
                   placeholder={canEdit ? 'Add notes, context, instructions…' : ''}
                   autoFocus={editNote === 'new'}
                   style={{ minHeight: '4.5rem' }}
-                  className={`w-full bg-transparent text-sm placeholder-zinc-600 focus:outline-none resize-none leading-relaxed overflow-hidden ${canEdit ? 'text-zinc-200' : 'text-zinc-400'}`}
+                  className={`w-full bg-transparent text-sm placeholder-slate-600 focus:outline-none resize-none leading-relaxed overflow-hidden ${canEdit ? 'text-slate-200' : 'text-slate-400'}`}
                 />
               </div>
 
               {/* Divider */}
               <div className="flex items-center gap-3 px-5 py-1">
-                <div className="flex-1 h-px bg-zinc-800" />
-                <span className="text-[10px] text-zinc-600 uppercase tracking-widest">Checklist</span>
-                <div className="flex-1 h-px bg-zinc-800" />
+                <div className="flex-1 h-px bg-slate-800" />
+                <span className="text-[10px] text-slate-600 uppercase tracking-widest">Checklist</span>
+                <div className="flex-1 h-px bg-slate-800" />
               </div>
 
               {/* Checklist items */}
@@ -2374,20 +2374,20 @@ function NotesView({ orgId, isOwner, isAdmin, members = [], addToast }) {
                       )}
                       <div
                         data-ci={idx}
-                        className={`flex items-start gap-3 py-2 border-b border-zinc-800/40 last:border-0 rounded-lg transition-opacity ${isDragging ? 'opacity-30' : 'opacity-100'}`}
+                        className={`flex items-start gap-3 py-2 border-b border-slate-800/40 last:border-0 rounded-lg transition-opacity ${isDragging ? 'opacity-30' : 'opacity-100'}`}
                       >
                         {canEdit && (
-                          <span data-dh className="shrink-0 mt-1 touch-none cursor-grab active:cursor-grabbing text-zinc-600 hover:text-zinc-400 select-none">
+                          <span data-dh className="shrink-0 mt-1 touch-none cursor-grab active:cursor-grabbing text-slate-600 hover:text-slate-400 select-none">
                             <GripVertical size={13} />
                           </span>
                         )}
                         <button onClick={() => handleToggleItem(idx)} disabled={!canEdit} className="shrink-0 mt-0.5">
                           {item.checked ? (
                             <div className="w-6 h-6 rounded-full bg-amber-400 flex items-center justify-center shadow-sm shadow-amber-400/25">
-                              <Check size={13} className="text-zinc-950" strokeWidth={3} />
+                              <Check size={13} className="text-slate-950" strokeWidth={3} />
                             </div>
                           ) : (
-                            <div className={`w-6 h-6 rounded-full border-2 border-zinc-600 transition-colors ${canEdit ? 'hover:border-zinc-400 active:border-amber-400/70' : 'opacity-50'}`} />
+                            <div className={`w-6 h-6 rounded-full border-2 border-slate-600 transition-colors ${canEdit ? 'hover:border-slate-400 active:border-amber-400/70' : 'opacity-50'}`} />
                           )}
                         </button>
                         {canEdit ? (
@@ -2406,17 +2406,17 @@ function NotesView({ orgId, isOwner, isAdmin, members = [], addToast }) {
                             placeholder="Item…"
                             rows={1}
                             style={{ minHeight: '1.5rem' }}
-                            className={`flex-1 bg-transparent text-sm focus:outline-none placeholder-zinc-600 resize-none overflow-hidden leading-normal ${
-                              item.checked ? 'text-zinc-500 line-through' : 'text-zinc-100'
+                            className={`flex-1 bg-transparent text-sm focus:outline-none placeholder-slate-600 resize-none overflow-hidden leading-normal ${
+                              item.checked ? 'text-slate-500 line-through' : 'text-slate-100'
                             }`}
                           />
                         ) : (
-                          <p className={`flex-1 text-sm leading-normal break-words ${item.checked ? 'text-zinc-500 line-through' : 'text-zinc-100'}`}>{item.text}</p>
+                          <p className={`flex-1 text-sm leading-normal break-words ${item.checked ? 'text-slate-500 line-through' : 'text-slate-100'}`}>{item.text}</p>
                         )}
                         {canEdit && (
                           <button
                             onClick={() => handleDeleteItem(idx)}
-                            className="w-7 h-7 flex items-center justify-center text-zinc-700 hover:text-red-400 active:text-red-400 rounded-lg transition-colors shrink-0 mt-0.5"
+                            className="w-7 h-7 flex items-center justify-center text-slate-700 hover:text-red-400 active:text-red-400 rounded-lg transition-colors shrink-0 mt-0.5"
                           >
                             <X size={14} />
                           </button>
@@ -2434,9 +2434,9 @@ function NotesView({ orgId, isOwner, isAdmin, members = [], addToast }) {
                 {canEdit && (
                   <button
                     onClick={handleAddItem}
-                    className="flex items-center gap-3 py-2.5 text-zinc-600 hover:text-amber-400 active:text-amber-400 transition-colors w-full text-left"
+                    className="flex items-center gap-3 py-2.5 text-slate-600 hover:text-amber-400 active:text-amber-400 transition-colors w-full text-left"
                   >
-                    <div className="w-6 h-6 rounded-full border-2 border-dashed border-zinc-700 hover:border-amber-400/40 flex items-center justify-center shrink-0">
+                    <div className="w-6 h-6 rounded-full border-2 border-dashed border-slate-700 hover:border-amber-400/40 flex items-center justify-center shrink-0">
                       <Plus size={11} />
                     </div>
                     <span className="text-sm">Add checklist item</span>
@@ -2447,20 +2447,20 @@ function NotesView({ orgId, isOwner, isAdmin, members = [], addToast }) {
 
             {/* Permissions (owner/admin only) */}
             {(isOwner || isAdmin) && (
-              <div className="px-5 pt-3 pb-2 border-t border-zinc-800 space-y-4 shrink-0">
-                <p className="text-[10px] text-zinc-600 uppercase tracking-widest font-medium">Permissions</p>
+              <div className="px-5 pt-3 pb-2 border-t border-slate-800 space-y-4 shrink-0">
+                <p className="text-[10px] text-slate-600 uppercase tracking-widest font-medium">Permissions</p>
 
                 {/* Visible to */}
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-xs text-zinc-400">
+                    <div className="flex items-center gap-2 text-xs text-slate-400">
                       <Eye size={13} />
                       <span>Visible to</span>
                     </div>
-                    <div className="flex rounded-lg overflow-hidden border border-zinc-700">
+                    <div className="flex rounded-lg overflow-hidden border border-slate-700">
                       {['everyone', 'admins_only', 'selected'].map((v, i) => (
                         <button key={v} onClick={() => setEditVisibility(v)}
-                          className={`px-2.5 py-1.5 text-xs font-medium transition-colors ${i > 0 ? 'border-l border-zinc-700' : ''} ${editVisibility === v ? 'bg-amber-400 text-zinc-950' : 'text-zinc-400 hover:text-zinc-200'}`}>
+                          className={`px-2.5 py-1.5 text-xs font-medium transition-colors ${i > 0 ? 'border-l border-slate-700' : ''} ${editVisibility === v ? 'bg-violet-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}>
                           {v === 'everyone' ? 'All' : v === 'admins_only' ? 'Admins' : 'Choose'}
                         </button>
                       ))}
@@ -2478,14 +2478,14 @@ function NotesView({ orgId, isOwner, isAdmin, members = [], addToast }) {
                 {/* Editable by */}
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-xs text-zinc-400">
+                    <div className="flex items-center gap-2 text-xs text-slate-400">
                       <Pencil size={13} />
                       <span>Editable by</span>
                     </div>
-                    <div className="flex rounded-lg overflow-hidden border border-zinc-700">
+                    <div className="flex rounded-lg overflow-hidden border border-slate-700">
                       {['everyone', 'admins_only', 'selected'].map((v, i) => (
                         <button key={v} onClick={() => setEditEditable(v)}
-                          className={`px-2.5 py-1.5 text-xs font-medium transition-colors ${i > 0 ? 'border-l border-zinc-700' : ''} ${editEditable === v ? 'bg-amber-400 text-zinc-950' : 'text-zinc-400 hover:text-zinc-200'}`}>
+                          className={`px-2.5 py-1.5 text-xs font-medium transition-colors ${i > 0 ? 'border-l border-slate-700' : ''} ${editEditable === v ? 'bg-violet-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}>
                           {v === 'everyone' ? 'All' : v === 'admins_only' ? 'Admins' : 'Choose'}
                         </button>
                       ))}
@@ -2503,17 +2503,17 @@ function NotesView({ orgId, isOwner, isAdmin, members = [], addToast }) {
             )}
 
             {/* Footer */}
-            <div className="px-5 py-4 border-t border-zinc-800 shrink-0">
+            <div className="px-5 py-4 border-t border-slate-800 shrink-0">
               {canEdit ? (
                 <button
                   onClick={handleSave}
                   disabled={saving}
-                  className="w-full bg-amber-400 hover:bg-amber-300 disabled:opacity-50 text-zinc-950 font-bold rounded-2xl py-4 transition-colors"
+                  className="w-full bg-gradient-to-r from-violet-600 to-violet-800 hover:from-violet-500 hover:to-violet-700 disabled:opacity-50 text-white font-bold rounded-2xl py-4 transition-colors"
                 >
                   {saving ? 'Saving…' : 'Save Note'}
                 </button>
               ) : (
-                <div className="w-full flex items-center justify-center gap-2 py-3 text-zinc-600 text-sm">
+                <div className="w-full flex items-center justify-center gap-2 py-3 text-slate-600 text-sm">
                   <Lock size={14} />
                   <span>View only</span>
                 </div>

@@ -246,45 +246,45 @@ export default function TimerTab() {
         >
           <Bell size={16} className="text-amber-400 shrink-0" />
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-zinc-200">Enable timer notifications</p>
-            <p className="text-xs text-zinc-500 mt-0.5">See a live timer in your notification shade while clocked in</p>
+            <p className="text-sm font-semibold text-slate-200">Enable timer notifications</p>
+            <p className="text-xs text-slate-500 mt-0.5">See a live timer in your notification shade while clocked in</p>
           </div>
-          <ChevronRight size={14} className="text-zinc-600 shrink-0" />
+          <ChevronRight size={14} className="text-slate-600 shrink-0" />
         </button>
       )}
       {notifPerm === 'denied' && (
-        <div className="flex items-center gap-3 bg-zinc-900 border border-zinc-800 rounded-2xl px-4 py-3">
-          <BellOff size={15} className="text-zinc-600 shrink-0" />
-          <p className="text-xs text-zinc-500">Notifications blocked — enable in your browser/phone settings to get a live timer in your notification shade.</p>
+        <div className="flex items-center gap-3 bg-slate-900 border border-slate-800 rounded-2xl px-4 py-3">
+          <BellOff size={15} className="text-slate-600 shrink-0" />
+          <p className="text-xs text-slate-500">Notifications blocked — enable in your browser/phone settings to get a live timer in your notification shade.</p>
         </div>
       )}
 
       {/* ── Timer Card ─────────────────────────────────────────── */}
       {timer ? (
         /* Active state */
-        <div className="bg-zinc-900 rounded-2xl overflow-hidden" style={{ border: '1px solid rgb(251 191 36 / 0.25)', borderTop: '2px solid rgb(251 191 36 / 0.6)' }}>
+        <div className="bg-slate-900 rounded-2xl overflow-hidden" style={{ border: '1px solid rgb(251 191 36 / 0.25)', borderTop: '2px solid rgb(251 191 36 / 0.6)' }}>
           <div className="px-5 pt-4 pb-5">
             {/* Header row */}
             <div className="flex items-center justify-between mb-5">
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-red-500 timer-pulse" />
-                <span className="text-xs font-semibold text-zinc-400 uppercase tracking-widest">Recording</span>
+                <span className="text-xs font-semibold text-slate-400 uppercase tracking-widest">Recording</span>
               </div>
-              <span className="text-xs text-zinc-500 font-mono">Started {timer.clockInTime}</span>
+              <span className="text-xs text-slate-500 font-mono">Started {timer.clockInTime}</span>
             </div>
 
             {/* Elapsed */}
             <div className="text-center mb-5">
-              <div className="font-mono text-[56px] font-bold text-zinc-50 tracking-tight leading-none tabular-nums">
+              <div className="font-mono text-[56px] font-bold text-slate-50 tracking-tight leading-none tabular-nums">
                 {elapsed}
               </div>
               {(timer.clientName || timer.projectName) && (
                 <div className="mt-3 space-y-0.5">
                   {timer.clientName && (
-                    <p className="text-zinc-200 text-sm font-semibold">{timer.clientName}</p>
+                    <p className="text-slate-200 text-sm font-semibold">{timer.clientName}</p>
                   )}
                   {timer.projectName && (
-                    <p className="text-zinc-500 text-xs">{timer.projectName}</p>
+                    <p className="text-slate-500 text-xs">{timer.projectName}</p>
                   )}
                 </div>
               )}
@@ -316,21 +316,22 @@ export default function TimerTab() {
         </div>
       ) : (
         /* Idle state */
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5">
           {/* Profile selector */}
           {profiles.length > 1 && (
             <div className="mb-4">
-              <p className="text-[10px] text-zinc-500 uppercase tracking-widest mb-2 font-semibold">Job Profile</p>
+              <p className="text-[10px] text-slate-500 uppercase tracking-widest mb-2 font-semibold">Job Profile</p>
               <div className="flex flex-wrap gap-2">
                 {profiles.map((p) => (
                   <button
                     key={p.id}
                     onClick={() => setSelectedProfileId(p.id)}
-                    className={`px-3 py-1.5 rounded-xl text-sm font-medium transition-colors ${
+                    className={`px-3 py-1.5 rounded-xl text-sm font-medium transition-all ${
                       effectiveProfileId === p.id
-                        ? 'bg-amber-400 text-zinc-950'
-                        : 'bg-zinc-800 text-zinc-300 border border-zinc-700 hover:border-zinc-600'
+                        ? 'text-white border border-violet-500/50'
+                        : 'bg-slate-800 text-slate-300 border border-slate-700 hover:border-slate-600'
                     }`}
+                    style={effectiveProfileId === p.id ? { background: 'linear-gradient(135deg, #8B5CF6, #6D28D9)' } : {}}
                   >
                     {p.name}
                   </button>
@@ -343,9 +344,9 @@ export default function TimerTab() {
           {selectedProfile && (selectedProfile.clientName || selectedProfile.projectName) && (
             <div className="flex items-center justify-between mb-4 px-1">
               <div className="min-w-0">
-                <p className="text-sm text-zinc-300 font-medium truncate">
+                <p className="text-sm text-slate-300 font-medium truncate">
                   {selectedProfile.clientName}
-                  {selectedProfile.clientName && selectedProfile.projectName && <span className="text-zinc-600"> · </span>}
+                  {selectedProfile.clientName && selectedProfile.projectName && <span className="text-slate-600"> · </span>}
                   {selectedProfile.projectName}
                 </p>
               </div>
@@ -359,27 +360,28 @@ export default function TimerTab() {
           <button
             onClick={handlePunchIn}
             disabled={jobPickerLoading}
-            className="punch-btn w-full bg-amber-400 hover:bg-amber-300 active:scale-[0.98] disabled:opacity-70 text-zinc-950 font-bold rounded-2xl transition-transform duration-100"
+            className="punch-btn w-full active:scale-[0.98] disabled:opacity-70 text-white font-bold rounded-2xl transition-transform duration-100 overflow-hidden"
+            style={{ background: 'linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%)' }}
           >
-            <div className="flex flex-col items-center py-6 gap-1">
+            <div className="flex flex-col items-center py-7 gap-1.5">
               <div className="flex items-center gap-3">
                 {jobPickerLoading
-                  ? <div className="w-6 h-6 rounded-full border-2 border-zinc-950/30 border-t-zinc-950 animate-spin" />
-                  : <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  ? <div className="w-6 h-6 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                  : <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                       <circle cx="12" cy="12" r="10"/>
                       <polyline points="12 6 12 12 16 14"/>
                     </svg>
                 }
-                <span className="text-[22px] tracking-widest font-extrabold">PUNCH IN</span>
+                <span className="text-[24px] tracking-widest font-extrabold">PUNCH IN</span>
               </div>
-              <span className="font-mono text-sm text-zinc-950/50 font-medium">{liveTime}</span>
+              <span className="font-mono text-sm text-white/50 font-medium">{liveTime}</span>
             </div>
           </button>
         </div>
       )}
 
       {/* ── Today ──────────────────────────────────────────────── */}
-      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4">
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4">
         <div className="flex items-center gap-4">
           {/* Ring progress */}
           <div className="relative w-14 h-14 shrink-0">
@@ -399,33 +401,33 @@ export default function TimerTab() {
           </div>
 
           <div className="flex-1 min-w-0">
-            <p className="text-[10px] text-zinc-500 uppercase tracking-widest mb-0.5 font-semibold">
+            <p className="text-[10px] text-slate-500 uppercase tracking-widest mb-0.5 font-semibold">
               Today · {format(new Date(), 'EEE d MMM')}
             </p>
-            <p className="font-mono text-2xl font-bold text-zinc-50">{decimalToHHMM(todayHours)}</p>
-            <p className="text-xs text-zinc-500 mt-0.5">{decimalToHHMM(todayHours)} of {target}h target</p>
+            <p className="font-mono text-2xl font-bold text-slate-50">{decimalToHHMM(todayHours)}</p>
+            <p className="text-xs text-slate-500 mt-0.5">{decimalToHHMM(todayHours)} of {target}h target</p>
           </div>
 
           <div className="text-right shrink-0">
-            <p className="text-[10px] text-zinc-500 uppercase tracking-widest mb-0.5 font-semibold">Earned</p>
+            <p className="text-[10px] text-slate-500 uppercase tracking-widest mb-0.5 font-semibold">Earned</p>
             <p className="font-mono text-2xl font-bold text-amber-400">{formatCurrency(todayEarnings)}</p>
           </div>
         </div>
       </div>
 
       {/* ── Week / Month ───────────────────────────────────────── */}
-      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4">
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4">
         <div className="flex items-center justify-between mb-3">
-          <p className="text-[10px] text-zinc-500 uppercase tracking-widest font-semibold">
+          <p className="text-[10px] text-slate-500 uppercase tracking-widest font-semibold">
             {statPeriod === 'week' ? weekLabel : format(new Date(), 'MMMM yyyy')}
           </p>
-          <div className="flex rounded-lg bg-zinc-800 p-0.5">
+          <div className="flex rounded-lg bg-slate-800 p-0.5">
             {(['week', 'month']).map((p) => (
               <button
                 key={p}
                 onClick={() => setStatPeriod(p)}
                 className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-colors ${
-                  statPeriod === p ? 'bg-zinc-700 text-zinc-100' : 'text-zinc-500 hover:text-zinc-300'
+                  statPeriod === p ? 'bg-slate-700 text-slate-100' : 'text-slate-500 hover:text-slate-300'
                 }`}
               >
                 {p.charAt(0).toUpperCase() + p.slice(1)}
@@ -434,43 +436,43 @@ export default function TimerTab() {
           </div>
         </div>
         <div className="flex justify-between items-start mb-3">
-          <p className="font-mono text-2xl font-bold text-zinc-50">
+          <p className="font-mono text-2xl font-bold text-slate-50">
             {decimalToHHMM(statPeriod === 'week' ? weekHours : monthHours)}
           </p>
           <div className="text-right">
-            <p className="text-[10px] text-zinc-500 uppercase tracking-widest mb-0.5 font-semibold">Total Earned</p>
+            <p className="text-[10px] text-slate-500 uppercase tracking-widest mb-0.5 font-semibold">Total Earned</p>
             <p className="font-mono text-2xl font-bold text-amber-400">
               {formatCurrency(statPeriod === 'week' ? weekEarnings : monthEarnings)}
             </p>
           </div>
         </div>
-        <div className="grid grid-cols-3 gap-1 pt-3 border-t border-zinc-800">
+        <div className="grid grid-cols-3 gap-1 pt-3 border-t border-slate-800">
           <div className="text-center">
-            <p className="font-mono text-sm font-semibold text-zinc-400">
+            <p className="font-mono text-sm font-semibold text-slate-400">
               {formatCurrency(statPeriod === 'week' ? weekUnpaid : monthUnpaid)}
             </p>
-            <p className="text-[9px] text-zinc-600 uppercase tracking-widest mt-0.5 font-semibold">Unpaid</p>
+            <p className="text-[9px] text-slate-600 uppercase tracking-widest mt-0.5 font-semibold">Unpaid</p>
           </div>
-          <div className="text-center border-x border-zinc-800">
+          <div className="text-center border-x border-slate-800">
             <p className="font-mono text-sm font-semibold text-blue-400">
               {formatCurrency(statPeriod === 'week' ? weekInvoiced : monthInvoiced)}
             </p>
-            <p className="text-[9px] text-zinc-600 uppercase tracking-widest mt-0.5 font-semibold">Invoiced</p>
+            <p className="text-[9px] text-slate-600 uppercase tracking-widest mt-0.5 font-semibold">Invoiced</p>
           </div>
           <div className="text-center">
             <p className="font-mono text-sm font-semibold text-emerald-400">
               {formatCurrency(statPeriod === 'week' ? weekPaid : monthPaid)}
             </p>
-            <p className="text-[9px] text-zinc-600 uppercase tracking-widest mt-0.5 font-semibold">Paid</p>
+            <p className="text-[9px] text-slate-600 uppercase tracking-widest mt-0.5 font-semibold">Paid</p>
           </div>
         </div>
       </div>
 
       {/* ── Recent Entries ─────────────────────────────────────── */}
       {recentEntries.length > 0 && (
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
-          <div className="flex justify-between items-center px-4 py-3 border-b border-zinc-800">
-            <p className="text-xs font-semibold text-zinc-400 uppercase tracking-widest">Recent Entries</p>
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
+          <div className="flex justify-between items-center px-4 py-3 border-b border-slate-800">
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest">Recent Entries</p>
             <button
               onClick={() => setActiveTab('log')}
               className="flex items-center gap-1 text-xs text-amber-400 hover:text-amber-300 transition-colors min-h-[36px]"
@@ -487,7 +489,7 @@ export default function TimerTab() {
       {/* ── Add Manual Entry ───────────────────────────────────── */}
       <button
         onClick={() => setShowAddEntry(true)}
-        className="w-full flex items-center justify-center gap-2 border border-dashed border-zinc-700 hover:border-amber-400/40 text-zinc-500 hover:text-amber-400 rounded-2xl py-4 min-h-[52px] transition-colors text-sm font-medium"
+        className="w-full flex items-center justify-center gap-2 border border-dashed border-slate-700 hover:border-amber-400/40 text-slate-500 hover:text-amber-400 rounded-2xl py-4 min-h-[52px] transition-colors text-sm font-medium"
       >
         <Plus size={16} />
         Add Manual Entry
@@ -513,37 +515,37 @@ export default function TimerTab() {
       {showJobPicker && (
         <div className="fixed inset-0 z-50 flex flex-col justify-end" style={{ background: 'rgba(0,0,0,0.75)' }}
           onClick={() => setShowJobPicker(false)}>
-          <div className="bg-zinc-900 rounded-t-3xl border-t border-zinc-800 pb-safe"
+          <div className="bg-slate-900 rounded-t-3xl border-t border-slate-800 pb-safe"
             onClick={e => e.stopPropagation()}>
             {/* Handle */}
             <div className="flex justify-center pt-3 pb-1">
-              <div className="w-10 h-1 rounded-full bg-zinc-700" />
+              <div className="w-10 h-1 rounded-full bg-slate-700" />
             </div>
             <div className="px-5 pt-3 pb-5 space-y-3">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-semibold text-zinc-50 text-lg">Which job are you on?</p>
-                  <p className="text-xs text-zinc-500 mt-0.5">Tap to log your attendance for this job</p>
+                  <p className="font-semibold text-slate-50 text-lg">Which job are you on?</p>
+                  <p className="text-xs text-slate-500 mt-0.5">Tap to log your attendance for this job</p>
                 </div>
                 <button onClick={() => setShowJobPicker(false)}
-                  className="w-9 h-9 flex items-center justify-center rounded-full text-zinc-500 hover:bg-zinc-800">
+                  className="w-9 h-9 flex items-center justify-center rounded-full text-slate-500 hover:bg-slate-800">
                   <X size={18} />
                 </button>
               </div>
               {jobPickerOptions.map(job => (
                 <button key={job.id} onClick={() => handleJobPicked(job.id, job)}
-                  className="w-full flex items-center gap-3 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-2xl px-4 py-3.5 transition-colors text-left">
+                  className="w-full flex items-center gap-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-2xl px-4 py-3.5 transition-colors text-left">
                   <div className="w-3 h-3 rounded-full shrink-0"
                     style={{ background: JOB_COLOR_HEX[job.color] || '#f59e0b' }} />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-zinc-100">{job.title}</p>
-                    {job.location && <p className="text-xs text-zinc-500 truncate mt-0.5">📍 {job.location}</p>}
+                    <p className="text-sm font-semibold text-slate-100">{job.title}</p>
+                    {job.location && <p className="text-xs text-slate-500 truncate mt-0.5">📍 {job.location}</p>}
                   </div>
-                  <Briefcase size={15} className="text-zinc-600 shrink-0" />
+                  <Briefcase size={15} className="text-slate-600 shrink-0" />
                 </button>
               ))}
               <button onClick={() => handleJobPicked(null, null)}
-                className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-zinc-700 hover:border-zinc-500 text-zinc-400 hover:text-zinc-200 rounded-2xl py-3.5 transition-colors text-sm font-medium">
+                className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-slate-700 hover:border-slate-500 text-slate-400 hover:text-slate-200 rounded-2xl py-3.5 transition-colors text-sm font-medium">
                 Other Work / No specific job
               </button>
             </div>
@@ -565,23 +567,23 @@ function RecentEntryRow({ entry, onClick }) {
   return (
     <button
       onClick={onClick}
-      className="w-full flex items-center gap-3 px-4 py-3 border-b border-zinc-800/50 last:border-0 hover:bg-zinc-800/40 active:bg-zinc-800/70 transition-colors text-left"
+      className="w-full flex items-center gap-3 px-4 py-3 border-b border-slate-800/50 last:border-0 hover:bg-slate-800/40 active:bg-slate-800/70 transition-colors text-left"
     >
-      <span className={`w-2 h-2 rounded-full shrink-0 ${STATUS_COLORS[entry.status] || 'bg-zinc-600'}`} />
+      <span className={`w-2 h-2 rounded-full shrink-0 ${STATUS_COLORS[entry.status] || 'bg-slate-600'}`} />
       <div className="flex-1 min-w-0">
-        <p className="text-sm text-zinc-200 font-medium truncate">
+        <p className="text-sm text-slate-200 font-medium truncate">
           {entry.description || entry.projectName || entry.clientName || 'Labour'}
         </p>
-        <p className="font-mono text-xs text-zinc-500 mt-0.5">
+        <p className="font-mono text-xs text-slate-500 mt-0.5">
           {entry.timeIn} – {entry.timeOut}
           {entry.clientName && !entry.description && entry.projectName && (
-            <span className="text-zinc-600"> · {entry.clientName}</span>
+            <span className="text-slate-600"> · {entry.clientName}</span>
           )}
         </p>
       </div>
       <div className="text-right shrink-0">
-        <p className="font-mono text-sm font-semibold text-zinc-100">{formatCurrency(entry.earnings)}</p>
-        <p className="font-mono text-xs text-zinc-500">{decimalToHHMM(entry.workingHours)}</p>
+        <p className="font-mono text-sm font-semibold text-slate-100">{formatCurrency(entry.earnings)}</p>
+        <p className="font-mono text-xs text-slate-500">{decimalToHHMM(entry.workingHours)}</p>
       </div>
     </button>
   );

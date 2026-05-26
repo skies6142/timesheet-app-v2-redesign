@@ -143,10 +143,10 @@ export default function StatisticsTab() {
     if (!active || !payload?.length) return null;
     const d = payload[0]?.payload;
     return (
-      <div className="bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2 text-xs">
-        <p className="text-zinc-300 font-medium mb-1">{d?.date}</p>
+      <div className="bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs">
+        <p className="text-slate-300 font-medium mb-1">{d?.date}</p>
         <p className="font-mono text-amber-400">{decimalToHHMM(d?.hours || 0)} hrs</p>
-        <p className="font-mono text-zinc-300">{formatCurrency(d?.earnings || 0)}</p>
+        <p className="font-mono text-slate-300">{formatCurrency(d?.earnings || 0)}</p>
       </div>
     );
   };
@@ -171,13 +171,13 @@ export default function StatisticsTab() {
       </div>
 
       {/* Earnings breakdown */}
-      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4">
-        <p className="text-xs text-zinc-500 uppercase tracking-widest mb-3">Earnings Breakdown</p>
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4">
+        <p className="text-xs text-slate-500 uppercase tracking-widest mb-3">Earnings Breakdown</p>
         {total > 0 ? (
           <>
             <div className="flex rounded-full overflow-hidden h-4 gap-0.5 mb-3">
               {unpaidPct > 0 && (
-                <div className="bg-zinc-600 transition-all" style={{ width: `${unpaidPct}%` }} />
+                <div className="bg-slate-600 transition-all" style={{ width: `${unpaidPct}%` }} />
               )}
               {invoicedPct > 0 && (
                 <div className="bg-blue-400 transition-all" style={{ width: `${invoicedPct}%` }} />
@@ -188,25 +188,25 @@ export default function StatisticsTab() {
             </div>
             <div className="grid grid-cols-3 gap-2 text-center">
               {[
-                { label: 'Unpaid', value: breakdown.unpaid, color: 'text-zinc-400' },
+                { label: 'Unpaid', value: breakdown.unpaid, color: 'text-slate-400' },
                 { label: 'Invoiced', value: breakdown.invoiced, color: 'text-blue-400' },
                 { label: 'Paid', value: breakdown.paid, color: 'text-emerald-400' },
               ].map(({ label, value, color }) => (
                 <div key={label}>
                   <p className={`font-mono text-sm font-semibold ${color}`}>{formatCurrency(value)}</p>
-                  <p className="text-[10px] text-zinc-600 uppercase tracking-widest mt-0.5">{label}</p>
+                  <p className="text-[10px] text-slate-600 uppercase tracking-widest mt-0.5">{label}</p>
                 </div>
               ))}
             </div>
           </>
         ) : (
-          <p className="text-center text-zinc-600 text-sm py-2">No earnings this {period}</p>
+          <p className="text-center text-slate-600 text-sm py-2">No earnings this {period}</p>
         )}
       </div>
 
       {/* Hours chart */}
-      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4">
-        <p className="text-xs text-zinc-500 uppercase tracking-widest mb-4">Hours Worked</p>
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4">
+        <p className="text-xs text-slate-500 uppercase tracking-widest mb-4">Hours Worked</p>
         {chartData.some((d) => d.hours > 0) ? (
           <div style={{ height: 180 }}>
             <ResponsiveContainer width="100%" height="100%">
@@ -229,13 +229,13 @@ export default function StatisticsTab() {
             </ResponsiveContainer>
           </div>
         ) : (
-          <p className="text-center text-zinc-600 text-sm py-8">No hours this {period}</p>
+          <p className="text-center text-slate-600 text-sm py-8">No hours this {period}</p>
         )}
       </div>
 
       {/* Work patterns */}
-      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 space-y-3">
-        <p className="text-xs text-zinc-500 uppercase tracking-widest">Work Patterns</p>
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3">
+        <p className="text-xs text-slate-500 uppercase tracking-widest">Work Patterns</p>
         <PatternRow label="Best Day of Week" value={patterns.bestDay} />
         <PatternRow label="Longest Session" value={decimalToHHMM(patterns.longestSession)} />
         <PatternRow label="Current Streak" value={`${patterns.streak} day${patterns.streak !== 1 ? 's' : ''}`} />
@@ -248,9 +248,9 @@ export default function StatisticsTab() {
 
 function StatCard({ label, value, mono, accent }) {
   return (
-    <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-3.5">
-      <p className="text-[10px] text-zinc-500 uppercase tracking-widest mb-1">{label}</p>
-      <p className={`text-xl font-semibold ${mono ? 'font-mono' : ''} ${accent ? 'text-amber-400' : 'text-zinc-50'}`}>
+    <div className="bg-slate-900 border border-slate-800 rounded-xl p-3.5">
+      <p className="text-[10px] text-slate-500 uppercase tracking-widest mb-1">{label}</p>
+      <p className={`text-xl font-semibold ${mono ? 'font-mono' : ''} ${accent ? 'text-amber-400' : 'text-slate-50'}`}>
         {value}
       </p>
     </div>
@@ -260,8 +260,8 @@ function StatCard({ label, value, mono, accent }) {
 function PatternRow({ label, value }) {
   return (
     <div className="flex justify-between items-center">
-      <span className="text-sm text-zinc-400">{label}</span>
-      <span className="font-mono text-sm font-medium text-zinc-200">{value}</span>
+      <span className="text-sm text-slate-400">{label}</span>
+      <span className="font-mono text-sm font-medium text-slate-200">{value}</span>
     </div>
   );
 }
