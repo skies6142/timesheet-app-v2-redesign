@@ -1,0 +1,48 @@
+<svg viewBox="0 0 620 210" xmlns="http://www.w3.org/2000/svg" width="620" height="210">
+  <defs>
+    <clipPath id="squareClip">
+      <rect x="45" y="28" width="110" height="154" rx="26"/>
+    </clipPath>
+  </defs>
+
+  <!-- Background -->
+  <rect width="620" height="210" fill="#09090B" rx="20"/>
+
+  <!-- Ambient glow -->
+  <ellipse cx="100" cy="105" rx="58" ry="58" fill="#FBBF24" opacity="0.07"/>
+
+  <!-- Amber rounded square shadow -->
+  <rect x="45" y="28" width="110" height="154" rx="26" fill="#FBBF24" opacity="0.12" transform="translate(4,5)"/>
+
+  <!-- Amber rounded square -->
+  <rect x="45" y="28" width="110" height="154" rx="26" fill="#FBBF24"/>
+
+  <!-- Inner highlight -->
+  <rect x="45" y="28" width="110" height="40" rx="26" fill="white" opacity="0.06" clip-path="url(#squareClip)"/>
+
+  <!-- Clipboard clip at top -->
+  <rect x="87" y="20" width="36" height="18" rx="7" fill="#FBBF24"/>
+  <rect x="93" y="15" width="24" height="13" rx="5" fill="#09090B"/>
+  <rect x="93" y="21" width="24" height="7" rx="0" fill="#09090B"/>
+
+  <!-- Bold "D" letterform -->
+  <text x="100" y="138"
+    font-family="-apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif"
+    font-size="104" font-weight="900" fill="#09090B" opacity="0.75"
+    text-anchor="middle">D</text>
+
+  <!-- Wordmark -->
+  <text x="182" y="120"
+    font-family="-apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif"
+    font-size="66" font-weight="800" fill="#FAFAFA" letter-spacing="-3">docket</text>
+
+  <!-- Tagline -->
+  <text x="184" y="148"
+    font-family="-apple-system, BlinkMacSystemFont, sans-serif"
+    font-size="11" font-weight="500" fill="#52525B" letter-spacing="6">FIELD MANAGEMENT</text>
+
+  <!-- Concept label -->
+  <text x="310" y="192"
+    font-family="-apple-system, sans-serif"
+    font-size="10" font-weight="400" fill="#3F3F46" letter-spacing="2" text-anchor="middle">CONCEPT 02 · THE MONOGRAM</text>
+</svg>

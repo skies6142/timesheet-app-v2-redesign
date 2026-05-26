@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Docket — Field Management for Australian Trades</title>
+  <meta name="description" content="Job scheduling, crew management, timesheets and invoices — all in one app. Built for Australian trade businesses." />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:#09090B; --surface:#18181B; --s2:#27272A; --s3:#3F3F46;
+      --border:#27272A; --b2:#3F3F46;
+      --amber:#FBBF24; --ag:rgba(251,191,36,0.14); --ad:rgba(251,191,36,0.08);
+      --text:#FAFAFA; --muted:#A1A1AA; --dim:#71717A; --dimmer:#52525B;
+      --r:14px; --rl:20px; --rxl:28px;
+    }
+    html { scroll-behavior: smooth; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; overflow-x: hidden; }
+    h1 { font-size: clamp(2.6rem,5.5vw,4.4rem); font-weight: 800; line-height: 1.07; letter-spacing: -0.03em; }
+    h2 { font-size: clamp(1.8rem,3.5vw,2.8rem); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; }
+    .text-amber { color: var(--amber); }
+    .container { max-width: 1100px; margin: 0 auto; padding: 0 28px; }
+
+    /* Buttons */
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-family: inherit; font-weight: 700; font-size: 0.95rem; border: none; cursor: pointer; text-decoration: none; border-radius: var(--r); transition: all 0.18s ease; white-space: nowrap; }
+    .btn-primary { background: var(--amber); color: #09090B; padding: 13px 26px; }
+    .btn-primary:hover { background: #fcd34d; transform: translateY(-1px); box-shadow: 0 8px 28px rgba(251,191,36,0.28); }
+    .btn-ghost { background: transparent; color: var(--muted); padding: 13px 22px; border: 1px solid var(--b2); }
+    .btn-ghost:hover { color: var(--text); border-color: var(--muted); }
+    .btn-lg { padding: 16px 34px; font-size: 1rem; border-radius: var(--rl); }
+
+    /* Nav */
+    .nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; transition: background 0.3s, border-color 0.3s; }
+    .nav.scrolled { background: rgba(9,9,11,0.9); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); }
+    .nav-inner { max-width: 1100px; margin: 0 auto; padding: 0 28px; height: 68px; display: flex; align-items: center; justify-content: space-between; }
+    .logo-link { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-word { font-size: 1.2rem; font-weight: 800; color: var(--text); letter-spacing: -0.04em; }
+    .nav-right { display: flex; align-items: center; gap: 10px; }
+    .nav-links { display: flex; gap: 6px; margin-right: 8px; }
+    .nav-links a { color: var(--muted); text-decoration: none; font-size: 0.88rem; font-weight: 500; padding: 8px 14px; border-radius: 10px; transition: color 0.15s; }
+    .nav-links a:hover { color: var(--text); }
+
+    /* Hero */
+    .hero { min-height: 100vh; display: flex; align-items: center; padding: 120px 28px 80px; position: relative; overflow: hidden; }
+    .hero-glow { position: absolute; top: -100px; right: -200px; width: 900px; height: 900px; background: radial-gradient(circle, rgba(251,191,36,0.055) 0%, transparent 65%); pointer-events: none; }
+    .hero-glow2 { position: absolute; bottom: -200px; left: -100px; width: 600px; height: 600px; background: radial-gradient(circle, rgba(251,191,36,0.03) 0%, transparent 70%); pointer-events: none; }
+    .hero-inner { max-width: 1100px; margin: 0 auto; width: 100%; display: grid; grid-template-columns: 1.1fr 0.9fr; align-items: center; gap: 72px; }
+    .hero-badge { display: inline-flex; align-items: center; gap: 8px; background: var(--ad); border: 1px solid rgba(251,191,36,0.2); color: var(--amber); font-size: 0.75rem; font-weight: 700; padding: 6px 14px; border-radius: 99px; letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 28px; }
+    .hero-badge-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--amber); animation: pulse 2s ease infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+    .hero-title { margin-bottom: 24px; }
+    .hero-sub { font-size: 1.12rem; color: var(--muted); max-width: 490px; margin-bottom: 44px; line-height: 1.75; }
+    .hero-actions { display: flex; gap: 14px; flex-wrap: wrap; align-items: center; }
+    .hero-note { font-size: 0.8rem; color: var(--dimmer); margin-top: 18px; }
+    .hero-visual { display: flex; justify-content: center; align-items: center; position: relative; }
+
+    /* Floating cards */
+    .fc-float { position: absolute; right: -28px; top: -44px; background: var(--surface); border: 1px solid var(--b2); border-radius: var(--r); padding: 11px 14px; width: 182px; animation: floatA 5s ease-in-out infinite; box-shadow: 0 20px 60px rgba(0,0,0,0.45); z-index: 2; }
+    @keyframes floatA { 0%,100%{transform:translateY(0) rotate(2.5deg)} 50%{transform:translateY(-10px) rotate(2.5deg)} }
+    .fc-label { font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--dimmer); font-weight: 700; margin-bottom: 5px; display: flex; align-items: center; gap: 5px; }
+    .fc-live { width: 6px; height: 6px; border-radius: 50%; background: #34D399; }
+    .fc-main { font-size: 0.84rem; font-weight: 700; color: var(--text); }
+    .fc-sub { font-size: 0.7rem; color: var(--dim); margin-top: 2px; }
+    .fc-float2 { position: absolute; left: -28px; bottom: 56px; background: var(--surface); border: 1px solid var(--b2); border-radius: var(--r); padding: 10px 13px; width: 160px; animation: floatB 5.5s ease-in-out infinite; box-shadow: 0 16px 48px rgba(0,0,0,0.45); z-index: 2; }
+    @keyframes floatB { 0%,100%{transform:translateY(0) rotate(-2deg)} 50%{transform:translateY(-8px) rotate(-2deg)} }
+    .fc2-row { display: flex; align-items: center; gap: 6px; margin-bottom: 5px; }
+    .fc2-row:last-child { margin-bottom: 0; }
+    .fc2-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+    .fc2-txt { font-size: 0.7rem; color: var(--muted); font-weight: 500; }
+
+    .phone-float { animation: phoneFloat 5s ease-in-out infinite; }
+    @keyframes phoneFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
+
+    /* ── Phone frame ─────────────────────────────────────────── */
+    .phone-body {
+      width: 272px; height: 560px;
+      background: #0c0c0e;
+      border-radius: 44px;
+      padding: 10px;
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.06), 0 40px 80px rgba(0,0,0,0.65), 0 0 0 6px rgba(255,255,255,0.02);
+      position: relative;
+    }
+    .phone-body::before {
+      content: ''; position: absolute; left: -3px; top: 118px;
+      width: 3px; height: 32px; background: #222224; border-radius: 2px 0 0 2px;
+      box-shadow: 0 44px 0 #222224;
+    }
+    .phone-body::after {
+      content: ''; position: absolute; right: -3px; top: 148px;
+      width: 3px; height: 58px; background: #222224; border-radius: 0 2px 2px 0;
+    }
+    .phone-screen { width: 100%; height: 100%; background: var(--bg); border-radius: 36px; overflow: hidden; display: flex; flex-direction: column; }
+
+    /* Status bar */
+    .ph-status { flex-shrink: 0; height: 40px; display: flex; align-items: center; justify-content: space-between; padding: 0 18px 0 20px; }
+    .ph-time { font-size: 13px; font-weight: 600; color: var(--text); letter-spacing: -0.01em; }
+    .ph-icons { display: flex; align-items: center; gap: 5px; }
+    .ph-signal { display: flex; align-items: flex-end; gap: 1.5px; height: 12px; }
+    .ph-signal span { display: block; width: 2.5px; border-radius: 1px; background: var(--text); }
+    .ph-battery { width: 20px; height: 10px; border: 1.5px solid rgba(255,255,255,0.45); border-radius: 2.5px; position: relative; }
+    .ph-battery::after { content: ''; position: absolute; right: -3.5px; top: 50%; transform: translateY(-50%); width: 2px; height: 5px; background: rgba(255,255,255,0.45); border-radius: 0 1px 1px 0; }
+    .ph-battery-fill { position: absolute; inset: 1.5px; right: 1.5px; background: var(--text); border-radius: 1px; width: 65%; }
+
+    /* Org header */
+    .ph-org-hd { flex-shrink: 0; padding: 5px 14px 8px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+    .ph-org-name { font-size: 14px; font-weight: 700; color: var(--text); letter-spacing: -0.02em; }
+    .ph-org-sub { font-size: 9.5px; color: var(--dimmer); margin-top: 1px; }
+    .ph-invite { background: var(--surface); border: 1px solid var(--border); border-radius: 7px; padding: 3px 8px; font-size: 9.5px; font-weight: 700; color: var(--muted); letter-spacing: 2px; }
+
+    /* Tab bar — 5 tabs */
+    .ph-tabs { flex-shrink: 0; padding: 5px 8px; }
+    .ph-tab-track { background: var(--surface); border-radius: 10px; display: flex; padding: 2px; gap: 1px; }
+    .ph-tab { flex: 1; text-align: center; padding: 5px 0; border-radius: 8px; font-size: 8.5px; font-weight: 600; color: var(--dim); cursor: pointer; border: none; background: transparent; font-family: inherit; transition: all 0.15s; -webkit-tap-highlight-color: transparent; white-space: nowrap; }
+    .ph-tab.active { background: var(--s3); color: var(--text); }
+
+    /* Content panes */
+    .ph-content { flex: 1; position: relative; overflow: hidden; }
+    .tab-pane { position: absolute; inset: 0; opacity: 0; transform: translateX(8px); transition: opacity 0.18s, transform 0.18s; pointer-events: none; overflow: hidden; }
+    .tab-pane.active { opacity: 1; transform: none; pointer-events: auto; }
+    .content-fade { position: absolute; bottom: 0; left: 0; right: 0; height: 44px; background: linear-gradient(to bottom, transparent, #09090B); pointer-events: none; z-index: 5; }
+
+    /* Calendar pane */
+    .cal-nav { display: flex; align-items: center; justify-content: space-between; padding: 6px 10px 3px; }
+    .cal-nav-btn { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; color: var(--muted); font-size: 13px; cursor: pointer; width: 26px; height: 26px; display:flex; align-items:center; justify-content:center; line-height: 1; }
+    .cal-month-lbl { font-size: 13px; font-weight: 700; color: var(--text); letter-spacing: -0.01em; }
+    .cal-dh { display: grid; grid-template-columns: repeat(7,1fr); padding: 2px 5px 1px; }
+    .cal-dh span { text-align: center; font-size: 8px; color: var(--dimmer); font-weight: 600; padding: 1px 0; }
+    .cal-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 2px; padding: 0 5px 4px; }
+    /* Day cells with jobs — card style matching the real app */
+    .dc { display: flex; flex-direction: column; align-items: center; justify-content: space-between; height: 54px; border-radius: 8px; border: 1.5px solid; padding: 4px 2px 5px; cursor: default; }
+    .dc.sc { border-color: #D97706; background: rgba(217,119,6,0.12); } /* Scheduled */
+    .dc.ip { border-color: #0EA5E9; background: rgba(14,165,233,0.10); } /* In Progress */
+    .dc.cp { border-color: #10B981; background: rgba(16,185,129,0.10); } /* Completed */
+    .dc-num { font-size: 11px; font-weight: 700; color: var(--text); line-height: 1; }
+    .dc-who { font-size: 7px; font-weight: 700; letter-spacing: 0.04em; }
+    .dc.sc .dc-who { color: #FBBF24; }
+    .dc.ip .dc-who { color: #38BDF8; }
+    .dc.cp .dc-who { color: #34D399; }
+    .dc-dot { width: 5px; height: 5px; border-radius: 50%; }
+    .dc.sc .dc-dot { background: #FBBF24; }
+    .dc.ip .dc-dot { background: #38BDF8; }
+    .dc.cp .dc-dot { background: #34D399; }
+    /* Plain day — no job */
+    .dp { display: flex; align-items: center; justify-content: center; height: 54px; font-size: 11px; font-weight: 500; cursor: default; }
+    .dp.wd { color: var(--muted); }
+    .dp.we { color: var(--dimmer); }
+    .dp.empty { }
+    /* Today highlight on a job cell */
+    .dc.today-cell { box-shadow: 0 0 0 1.5px rgba(255,255,255,0.25); }
+    .dc.today-cell .dc-num { color: var(--amber); }
+
+    /* Members pane */
+    .mem-inv-bar { display: flex; align-items: center; justify-content: space-between; padding: 8px 14px 7px; border-bottom: 1px solid var(--border); }
+    .mem-inv-lbl { font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--dimmer); font-weight: 700; }
+    .mem-inv-code { font-size: 10.5px; font-weight: 700; color: var(--muted); letter-spacing: 2.5px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 3px 9px; }
+    .mem-list { padding: 3px 8px; }
+    .mem-row { display: flex; align-items: center; gap: 9px; padding: 7px 5px; border-bottom: 1px solid rgba(39,39,42,0.6); }
+    .mem-row:last-child { border-bottom: none; }
+    .mem-av { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 9.5px; font-weight: 700; color: rgba(255,255,255,0.9); flex-shrink: 0; }
+    .mem-det { flex: 1; min-width: 0; }
+    .mem-nm { font-size: 11px; font-weight: 600; color: var(--text); }
+    .mem-rl { font-size: 9px; color: var(--dim); margin-top: 1px; }
+    .role-pill { font-size: 7.5px; font-weight: 700; padding: 2px 7px; border-radius: 99px; flex-shrink: 0; letter-spacing: 0.03em; }
+    .rp-own { background: rgba(251,191,36,0.15); color: var(--amber); }
+    .rp-adm { background: rgba(96,165,250,0.12); color: #60A5FA; }
+    .rp-emp { background: rgba(52,211,153,0.1); color: #34D399; }
+    .rp-sub { background: rgba(161,161,170,0.1); color: var(--muted); }
+
+    /* Notes pane */
+    .notes-pad { padding: 8px; }
+    .note-crd { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 10px 11px; margin-bottom: 6px; }
+    .note-crd-ttl { font-size: 11px; font-weight: 700; color: var(--text); margin-bottom: 3px; }
+    .note-vis { font-size: 7.5px; font-weight: 600; color: var(--dimmer); background: var(--s2); border-radius: 99px; padding: 1px 7px; display: inline-block; margin-bottom: 7px; }
+    .note-ci { display: flex; align-items: flex-start; gap: 7px; padding: 3px 0; }
+    .ci-box { width: 13px; height: 13px; border-radius: 3px; border: 1.5px solid var(--b2); flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+    .ci-box.chk { background: var(--amber); border-color: var(--amber); }
+    .ci-txt { font-size: 9.5px; color: var(--muted); line-height: 1.4; }
+    .ci-txt.done { color: var(--dimmer); text-decoration: line-through; }
+    .note-snip { font-size: 9px; color: var(--dim); line-height: 1.5; }
+
+    /* Bottom nav — 5 items with labels */
+    .ph-bot-nav { flex-shrink: 0; height: 52px; border-top: 1px solid var(--border); display: flex; align-items: stretch; }
+    .ph-nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; cursor: pointer; }
+    .ph-nav-lbl { font-size: 7px; font-weight: 600; color: var(--dimmer); letter-spacing: 0.04em; }
+    .ph-nav-item.active .ph-nav-lbl { color: var(--amber); }
+
+    /* Beta strip */
+    .beta-strip { border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 20px 28px; }
+    .beta-strip-inner { max-width: 1100px; margin: 0 auto; display: flex; align-items: center; justify-content: center; gap: 14px; flex-wrap: wrap; text-align: center; }
+    .beta-pulse { width: 8px; height: 8px; border-radius: 50%; background: var(--amber); animation: pulse 2s ease infinite; flex-shrink: 0; }
+    .beta-txt { font-size: 0.875rem; color: var(--muted); }
+    .beta-txt strong { color: var(--text); }
+    .beta-lnk { font-size: 0.875rem; color: var(--amber); font-weight: 700; text-decoration: none; }
+    .beta-lnk:hover { text-decoration: underline; }
+
+    /* Sections */
+    .section { padding: 110px 28px; }
+    .section-kicker { font-size: 0.72rem; font-weight: 700; color: var(--amber); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 14px; }
+    .section-head { margin-bottom: 72px; }
+    .section-head.center { text-align: center; }
+    .section-head.center .section-sub { margin: 12px auto 0; }
+    .section-sub { font-size: 1.05rem; color: var(--muted); max-width: 540px; margin-top: 12px; line-height: 1.75; }
+    .features-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 18px; }
+    .feature-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--rl); padding: 30px; transition: border-color 0.2s, transform 0.25s; }
+    .feature-card:hover { border-color: rgba(251,191,36,0.3); transform: translateY(-3px); }
+    .feat-icon { width: 42px; height: 42px; border-radius: 12px; background: var(--ad); border: 1px solid rgba(251,191,36,0.14); display: flex; align-items: center; justify-content: center; margin-bottom: 20px; }
+    .feat-title { font-size: 0.97rem; font-weight: 700; margin-bottom: 8px; }
+    .feat-desc { font-size: 0.875rem; color: var(--muted); line-height: 1.7; }
+
+    .hiw-bg { background: var(--surface); }
+    .hiw-steps { display: grid; grid-template-columns: repeat(3,1fr); gap: 48px; position: relative; }
+    .hiw-steps::before { content: ''; position: absolute; top: 28px; left: calc(16.67% + 14px); right: calc(16.67% + 14px); height: 1px; background: var(--amber); opacity: 0.15; }
+    .hiw-step { text-align: center; }
+    .step-num { width: 56px; height: 56px; border-radius: 50%; background: var(--amber); color: #09090B; font-size: 1.3rem; font-weight: 900; display: flex; align-items: center; justify-content: center; margin: 0 auto 22px; position: relative; z-index: 1; }
+    .step-title { font-size: 1rem; font-weight: 700; margin-bottom: 10px; }
+    .step-desc { font-size: 0.875rem; color: var(--muted); line-height: 1.7; }
+
+    .for-who-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+    .who-card { border-radius: var(--rxl); padding: 44px; border: 1px solid var(--border); background: var(--surface); }
+    .who-card.featured { border-color: rgba(251,191,36,0.22); background: linear-gradient(140deg, var(--surface) 0%, rgba(251,191,36,0.04) 100%); }
+    .who-tag { display: inline-block; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--amber); margin-bottom: 14px; background: var(--ad); padding: 4px 12px; border-radius: 99px; border: 1px solid rgba(251,191,36,0.16); }
+    .who-title { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 10px; }
+    .who-sub { font-size: 0.9rem; color: var(--muted); margin-bottom: 32px; line-height: 1.7; }
+    .who-list { list-style: none; display: flex; flex-direction: column; gap: 13px; }
+    .who-list li { display: flex; align-items: flex-start; gap: 12px; font-size: 0.88rem; color: var(--muted); }
+    .who-check { width: 18px; height: 18px; border-radius: 50%; background: var(--amber); flex-shrink: 0; display: flex; align-items: center; justify-content: center; margin-top: 1px; }
+
+    .cta-section { padding: 130px 28px; text-align: center; position: relative; overflow: hidden; }
+    .cta-glow { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 700px; height: 500px; background: radial-gradient(ellipse, rgba(251,191,36,0.07) 0%, transparent 70%); pointer-events: none; }
+    .cta-inner { max-width: 660px; margin: 0 auto; position: relative; }
+    .cta-sub { color: var(--muted); font-size: 1.08rem; margin-bottom: 44px; line-height: 1.75; }
+    .cta-actions { display: flex; align-items: center; justify-content: center; gap: 14px; flex-wrap: wrap; }
+    .cta-note { margin-top: 22px; color: var(--dimmer); font-size: 0.82rem; }
+
+    footer { border-top: 1px solid var(--border); padding: 52px 28px; }
+    .footer-inner { max-width: 1100px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
+    .footer-left { display: flex; align-items: center; gap: 28px; flex-wrap: wrap; }
+    .footer-copy { font-size: 0.82rem; color: var(--dimmer); }
+    .footer-links { display: flex; gap: 22px; }
+    .footer-links a { color: var(--dimmer); font-size: 0.82rem; text-decoration: none; transition: color 0.15s; }
+    .footer-links a:hover { color: var(--muted); }
+
+    /* Scroll reveal */
+    .reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.6s ease, transform 0.6s ease; }
+    .reveal.in { opacity: 1; transform: none; }
+    .reveal-d1 { transition-delay: 0.08s; }
+    .reveal-d2 { transition-delay: 0.16s; }
+    .reveal-d3 { transition-delay: 0.24s; }
+    .reveal-d4 { transition-delay: 0.32s; }
+    .reveal-d5 { transition-delay: 0.40s; }
+    .hero-badge  { animation: fadeUp 0.55s ease 0.05s both; }
+    .hero-title  { animation: fadeUp 0.55s ease 0.15s both; }
+    .hero-sub    { animation: fadeUp 0.55s ease 0.25s both; }
+    .hero-actions{ animation: fadeUp 0.55s ease 0.32s both; }
+    .hero-note   { animation: fadeUp 0.55s ease 0.38s both; }
+    .hero-visual { animation: fadeUp 0.7s  ease 0.2s  both; }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(28px)} to{opacity:1;transform:none} }
+
+    @media(max-width:900px){
+      .hero-inner { grid-template-columns: 1fr; text-align: center; gap: 56px; }
+      .hero-sub { margin-left: auto; margin-right: auto; }
+      .hero-actions { justify-content: center; }
+      .hero-note { text-align: center; }
+      .hero-visual { order: -1; }
+      .fc-float { right: -10px; top: -32px; }
+      .fc-float2 { left: -10px; }
+      .features-grid { grid-template-columns: 1fr 1fr; }
+      .hiw-steps { grid-template-columns: 1fr; gap: 36px; }
+      .hiw-steps::before { display: none; }
+      .for-who-grid { grid-template-columns: 1fr; }
+    }
+    @media(max-width:580px){
+      .features-grid { grid-template-columns: 1fr; }
+      .nav-links { display: none; }
+      .hero { padding: 100px 20px 64px; }
+      .section { padding: 80px 20px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav class="nav" id="nav">
+  <div class="nav-inner">
+    <a href="/" class="logo-link">
+      <svg width="32" height="32" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+        <defs><clipPath id="nc"><rect width="200" height="200" rx="46"/></clipPath></defs>
+        <g clip-path="url(#nc)">
+          <rect width="200" height="200" fill="#18181B"/>
+          <ellipse cx="83" cy="104" rx="68" ry="58" fill="#FBBF24" opacity="0.07"/>
+          <g transform="rotate(10,100,105)"><rect x="44" y="22" width="110" height="144" rx="15" fill="#27272A"/><rect x="44" y="22" width="110" height="22" rx="15" fill="#3F3F46"/></g>
+          <g transform="rotate(4.5,100,105)"><rect x="36" y="14" width="110" height="144" rx="15" fill="#FBBF24" opacity="0.32"/></g>
+          <rect x="26" y="6" width="112" height="146" rx="15" fill="#FBBF24"/>
+          <rect x="26" y="6" width="112" height="24" rx="15" fill="white" opacity="0.08"/>
+          <rect x="39" y="34" width="66" height="11" rx="5" fill="#78350F" opacity="0.55"/>
+          <rect x="39" y="53" width="52" height="7" rx="3" fill="#78350F" opacity="0.28"/>
+          <rect x="39" y="66" width="62" height="7" rx="3" fill="#78350F" opacity="0.28"/>
+          <line x1="30" y1="100" x2="132" y2="100" stroke="#78350F" stroke-width="2.5" stroke-dasharray="6,4" opacity="0.40"/>
+          <polyline points="37,121 59,142 112,104" stroke="#78350F" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.65"/>
+        </g>
+      </svg>
+      <span class="logo-word">docket</span>
+    </a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="#features">Features</a>
+        <a href="#how-it-works">How it works</a>
+        <a href="#beta">Beta</a>
+      </div>
+      <a href="#" class="btn btn-ghost" style="padding:9px 18px;font-size:0.85rem">Sign in</a>
+      <a href="#" class="btn btn-primary" style="padding:9px 20px;font-size:0.85rem">Get started free</a>
+    </div>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-glow"></div>
+  <div class="hero-glow2"></div>
+  <div class="hero-inner">
+
+    <div class="hero-content">
+      <div class="hero-badge">
+        <span class="hero-badge-dot"></span>
+        Open beta · Free to use
+      </div>
+      <h1 class="hero-title">
+        Everyone knows<br>
+        <span class="text-amber">what's on today.</span>
+      </h1>
+      <p class="hero-sub">
+        Docket keeps your whole crew on the same page — job scheduling, timesheets, invoices and notes, all in one app. No group chats, no spreadsheets, no paper dockets on the dash.
+      </p>
+      <div class="hero-actions">
+        <a href="#" class="btn btn-primary btn-lg">Get Docket free</a>
+        <a href="#features" class="btn btn-ghost btn-lg">See what's in it</a>
+      </div>
+      <p class="hero-note">No credit card · Works on iPhone &amp; Android · Free during beta</p>
+    </div>
+
+    <!-- Interactive phone -->
+    <div class="hero-visual">
+
+      <!-- Top-right card: check-in -->
+      <div class="fc-float">
+        <div class="fc-label"><span class="fc-live"></span>Just checked in</div>
+        <div class="fc-main">Jake K.</div>
+        <div class="fc-sub">Bathroom Reno · Bondi Beach</div>
+      </div>
+
+      <!-- Bottom-left card: job status -->
+      <div class="fc-float2">
+        <div class="fc2-row"><span class="fc2-dot" style="background:#60A5FA"></span><span class="fc2-txt">Bathroom Reno — In progress</span></div>
+        <div class="fc2-row"><span class="fc2-dot" style="background:#FBBF24"></span><span class="fc2-txt">Deck Install — Tomorrow</span></div>
+        <div class="fc2-row"><span class="fc2-dot" style="background:#34D399"></span><span class="fc2-txt">Fence Repair — Done</span></div>
+      </div>
+
+      <div class="phone-float">
+        <div class="phone-body">
+          <div class="phone-screen">
+
+            <!-- Status bar -->
+            <div class="ph-status">
+              <span class="ph-time">9:41</span>
+              <div class="ph-icons">
+                <div class="ph-signal">
+                  <span style="height:4px;opacity:0.35"></span>
+                  <span style="height:7px;opacity:0.55"></span>
+                  <span style="height:10px;opacity:0.75"></span>
+                  <span style="height:12px"></span>
+                </div>
+                <div class="ph-battery" style="margin-left:6px">
+                  <div class="ph-battery-fill"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Org header -->
+            <div class="ph-org-hd">
+              <div>
+                <div class="ph-org-name">Builders Co.</div>
+                <div class="ph-org-sub">Admin · 5 Members</div>
+              </div>
+            </div>
+
+            <!-- Segmented tabs (5 — matching real app) -->
+            <div class="ph-tabs">
+              <div class="ph-tab-track">
+                <button class="ph-tab active" data-pane="calendar">Calendar</button>
+                <button class="ph-tab" data-pane="members">Members</button>
+                <button class="ph-tab" data-pane="notes">Notes</button>
+                <button class="ph-tab" data-pane="invoices">Invoices</button>
+                <button class="ph-tab" data-pane="reports">Reports</button>
+              </div>
+            </div>
+
+            <!-- Swappable content -->
+            <div class="ph-content">
+
+              <!-- Calendar — card-style cells matching the real app -->
+              <div class="tab-pane active" id="pane-calendar">
+                <div class="cal-nav">
+                  <button class="cal-nav-btn">‹</button>
+                  <span class="cal-month-lbl">May 2026</span>
+                  <button class="cal-nav-btn">›</button>
+                </div>
+                <div class="cal-dh">
+                  <span>MON</span><span>TUE</span><span>WED</span><span>THU</span><span>FRI</span><span>SAT</span><span>SUN</span>
+                </div>
+                <div class="cal-grid">
+                  <!-- Wk 1: May 1 = Thu; blanks for Mon/Tue/Wed -->
+                  <div class="dp empty"></div><div class="dp empty"></div><div class="dp empty"></div>
+                  <div class="dp wd">1</div>
+                  <div class="dp wd">2</div>
+                  <div class="dp we">3</div>
+                  <div class="dp we">4</div>
+                  <!-- Wk 2: 5–11 | jobs 7(W),8(T),9(F) = Scheduled -->
+                  <div class="dp wd">5</div>
+                  <div class="dp wd">6</div>
+                  <div class="dc sc"><span class="dc-num">7</span><span class="dc-who">YOU</span><span class="dc-dot"></span></div>
+                  <div class="dc sc"><span class="dc-num">8</span><span class="dc-who">YOU</span><span class="dc-dot"></span></div>
+                  <div class="dc sc"><span class="dc-num">9</span><span class="dc-who">YOU</span><span class="dc-dot"></span></div>
+                  <div class="dp we">10</div>
+                  <div class="dp we">11</div>
+                  <!-- Wk 3: 12–18 | jobs 14(W),15(T) = In Progress -->
+                  <div class="dp wd">12</div>
+                  <div class="dp wd">13</div>
+                  <div class="dc ip"><span class="dc-num">14</span><span class="dc-who">YOU</span><span class="dc-dot"></span></div>
+                  <div class="dc ip"><span class="dc-num">15</span><span class="dc-who">YOU</span><span class="dc-dot"></span></div>
+                  <div class="dp wd">16</div>
+                  <div class="dp we">17</div>
+                  <div class="dp we">18</div>
+                  <!-- Wk 4: 19–25 | jobs 20(T),21(W),22(T) = Completed -->
+                  <div class="dp wd">19</div>
+                  <div class="dc cp"><span class="dc-num">20</span><span class="dc-who">YOU</span><span class="dc-dot"></span></div>
+                  <div class="dc cp"><span class="dc-num">21</span><span class="dc-who">YOU</span><span class="dc-dot"></span></div>
+                  <div class="dc cp"><span class="dc-num">22</span><span class="dc-who">YOU</span><span class="dc-dot"></span></div>
+                  <div class="dp wd">23</div>
+                  <div class="dp we">24</div>
+                  <div class="dp we">25</div>
+                  <!-- Wk 5: 26(today),27,28 | jobs 26,27 = Scheduled -->
+                  <div class="dc sc today-cell"><span class="dc-num">26</span><span class="dc-who">YOU</span><span class="dc-dot"></span></div>
+                  <div class="dc sc"><span class="dc-num">27</span><span class="dc-who">YOU</span><span class="dc-dot"></span></div>
+                  <div class="dp wd">28</div>
+                  <div class="dp wd">29</div>
+                  <div class="dp wd">30</div>
+                  <div class="dp we">31</div>
+                  <div class="dp empty"></div>
+                </div>
+                <!-- Legend row -->
+                <div style="display:flex;align-items:center;gap:10px;padding:4px 7px 0;flex-wrap:wrap">
+                  <span style="display:flex;align-items:center;gap:3px;font-size:7.5px;color:var(--dimmer)"><span style="width:6px;height:6px;border-radius:50%;background:#FBBF24;display:inline-block"></span>Scheduled</span>
+                  <span style="display:flex;align-items:center;gap:3px;font-size:7.5px;color:var(--dimmer)"><span style="width:6px;height:6px;border-radius:50%;background:#38BDF8;display:inline-block"></span>In Progress</span>
+                  <span style="display:flex;align-items:center;gap:3px;font-size:7.5px;color:var(--dimmer)"><span style="width:6px;height:6px;border-radius:50%;background:#34D399;display:inline-block"></span>Completed</span>
+                </div>
+                <div class="content-fade"></div>
+              </div><!-- /calendar pane -->
+
+              <!-- Members -->
+              <div class="tab-pane" id="pane-members">
+                <div class="mem-inv-bar">
+                  <span class="mem-inv-lbl">Invite code</span>
+                  <span class="mem-inv-code">HX4R2K</span>
+                </div>
+                <div class="mem-list">
+                  <div class="mem-row">
+                    <div class="mem-av" style="background:#92400E">JK</div>
+                    <div class="mem-det"><div class="mem-nm">Jake K.</div><div class="mem-rl">You · Owner</div></div>
+                    <div class="role-pill rp-own">Owner</div>
+                  </div>
+                  <div class="mem-row">
+                    <div class="mem-av" style="background:#1e3a5f">MT</div>
+                    <div class="mem-det"><div class="mem-nm">Mike T.</div><div class="mem-rl">Admin</div></div>
+                    <div class="role-pill rp-adm">Admin</div>
+                  </div>
+                  <div class="mem-row">
+                    <div class="mem-av" style="background:#064E3B">SR</div>
+                    <div class="mem-det"><div class="mem-nm">Sarah R.</div><div class="mem-rl">Employee · on site</div></div>
+                    <div class="role-pill rp-emp">Employee</div>
+                  </div>
+                  <div class="mem-row">
+                    <div class="mem-av" style="background:#3B1D8A">DW</div>
+                    <div class="mem-det"><div class="mem-nm">Dave W.</div><div class="mem-rl">Employee</div></div>
+                    <div class="role-pill rp-emp">Employee</div>
+                  </div>
+                  <div class="mem-row">
+                    <div class="mem-av" style="background:#1F2937">TB</div>
+                    <div class="mem-det"><div class="mem-nm">Tom B.</div><div class="mem-rl">Subcontractor</div></div>
+                    <div class="role-pill rp-sub">Sub</div>
+                  </div>
+                </div>
+                <div class="content-fade"></div>
+              </div><!-- /members pane -->
+
+              <!-- Notes -->
+              <div class="tab-pane" id="pane-notes">
+                <div class="notes-pad">
+                  <div class="note-crd">
+                    <div class="note-crd-ttl">Site Safety Checklist</div>
+                    <span class="note-vis">All Members</span>
+                    <div class="note-ci">
+                      <div class="ci-box chk"><svg width="8" height="8" viewBox="0 0 10 10"><polyline points="2,5 4,7 8,3" stroke="#09090B" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg></div>
+                      <span class="ci-txt done">PPE required on all sites</span>
+                    </div>
+                    <div class="note-ci">
+                      <div class="ci-box chk"><svg width="8" height="8" viewBox="0 0 10 10"><polyline points="2,5 4,7 8,3" stroke="#09090B" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg></div>
+                      <span class="ci-txt done">Toolbox talk done</span>
+                    </div>
+                    <div class="note-ci">
+                      <div class="ci-box"></div>
+                      <span class="ci-txt">First aid kit checked</span>
+                    </div>
+                    <div class="note-ci">
+                      <div class="ci-box"></div>
+                      <span class="ci-txt">Site hazards documented</span>
+                    </div>
+                    <div class="note-ci">
+                      <div class="ci-box"></div>
+                      <span class="ci-txt">Emergency contacts posted</span>
+                    </div>
+                  </div>
+                  <div class="note-crd">
+                    <div class="note-crd-ttl">Material Order — Week 3</div>
+                    <span class="note-vis">Owner + Admin</span>
+                    <div class="note-snip">Timber delivery confirmed for Tue. Call supplier re: tiles backordered from Sydney...</div>
+                  </div>
+                </div>
+                <div class="content-fade"></div>
+              </div><!-- /notes pane -->
+
+              <!-- Invoices placeholder -->
+              <div class="tab-pane" id="pane-invoices">
+                <div style="padding:10px 10px 0">
+                  <div style="font-size:10px;font-weight:700;color:var(--text);margin-bottom:8px">Submissions</div>
+                  <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:9px 11px;margin-bottom:6px">
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start">
+                      <div>
+                        <div style="font-size:10.5px;font-weight:700;color:var(--text)">Deck Installation</div>
+                        <div style="font-size:9px;color:var(--dim);margin-top:1px">Sarah R. · 7.5 hrs</div>
+                      </div>
+                      <span style="font-size:7.5px;font-weight:700;padding:2px 7px;border-radius:99px;background:rgba(251,191,36,0.12);color:var(--amber)">Pending</span>
+                    </div>
+                    <div style="font-size:9px;color:var(--dimmer);margin-top:5px">$712.50 · submitted Mon</div>
+                  </div>
+                  <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:9px 11px;margin-bottom:6px">
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start">
+                      <div>
+                        <div style="font-size:10.5px;font-weight:700;color:var(--text)">Bathroom Reno</div>
+                        <div style="font-size:9px;color:var(--dim);margin-top:1px">Jake K. · 12 hrs</div>
+                      </div>
+                      <span style="font-size:7.5px;font-weight:700;padding:2px 7px;border-radius:99px;background:rgba(52,211,153,0.1);color:#34D399">Approved</span>
+                    </div>
+                    <div style="font-size:9px;color:var(--dimmer);margin-top:5px">$1,380 · paid Fri</div>
+                  </div>
+                </div>
+                <div class="content-fade"></div>
+              </div>
+
+              <!-- Reports placeholder -->
+              <div class="tab-pane" id="pane-reports">
+                <div style="padding:10px 10px 0">
+                  <div style="font-size:10px;font-weight:700;color:var(--text);margin-bottom:8px">This week</div>
+                  <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:6px">
+                    <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+                      <span style="font-size:9px;color:var(--dim)">Total hours</span>
+                      <span style="font-size:11px;font-weight:700;color:var(--text)">38.5 hrs</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+                      <span style="font-size:9px;color:var(--dim)">Jobs completed</span>
+                      <span style="font-size:11px;font-weight:700;color:var(--text)">3</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between">
+                      <span style="font-size:9px;color:var(--dim)">Total invoiced</span>
+                      <span style="font-size:11px;font-weight:700;color:var(--amber)">$4,200</span>
+                    </div>
+                  </div>
+                  <div style="font-size:9.5px;font-weight:600;color:var(--text);margin:8px 0 5px">By worker</div>
+                  <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden">
+                    <div style="padding:7px 11px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center"><span style="font-size:9.5px;color:var(--muted)">Jake K.</span><span style="font-size:9.5px;font-weight:700;color:var(--text)">18h</span></div>
+                    <div style="padding:7px 11px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center"><span style="font-size:9.5px;color:var(--muted)">Sarah R.</span><span style="font-size:9.5px;font-weight:700;color:var(--text)">12.5h</span></div>
+                    <div style="padding:7px 11px;display:flex;justify-content:space-between;align-items:center"><span style="font-size:9.5px;color:var(--muted)">Dave W.</span><span style="font-size:9.5px;font-weight:700;color:var(--text)">8h</span></div>
+                  </div>
+                </div>
+                <div class="content-fade"></div>
+              </div>
+
+            </div><!-- /ph-content -->
+
+            <!-- Bottom nav — 5 items matching real app -->
+            <div class="ph-bot-nav">
+              <!-- TIMER -->
+              <div class="ph-nav-item">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#52525B" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                <span class="ph-nav-lbl">TIMER</span>
+              </div>
+              <!-- WORK -->
+              <div class="ph-nav-item">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#52525B" stroke-width="1.8" stroke-linecap="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+                <span class="ph-nav-lbl">WORK</span>
+              </div>
+              <!-- STATS -->
+              <div class="ph-nav-item">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#52525B" stroke-width="1.8" stroke-linecap="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                <span class="ph-nav-lbl">STATS</span>
+              </div>
+              <!-- TEAM (active) -->
+              <div class="ph-nav-item active">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#FBBF24" stroke-width="1.8" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                <span class="ph-nav-lbl" style="color:var(--amber)">TEAM</span>
+              </div>
+              <!-- SETTINGS -->
+              <div class="ph-nav-item">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#52525B" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                <span class="ph-nav-lbl">SETTINGS</span>
+              </div>
+            </div>
+
+          </div><!-- /phone-screen -->
+        </div><!-- /phone-body -->
+      </div><!-- /phone-float -->
+    </div><!-- /hero-visual -->
+
+  </div>
+</section>
+
+<!-- Beta strip -->
+<div class="beta-strip" id="beta">
+  <div class="beta-strip-inner">
+    <div class="beta-pulse"></div>
+    <p class="beta-txt">Docket is in <strong>open beta</strong> — completely free while we build it out with early Australian trade businesses. No credit card, no catch.</p>
+    <a href="#" class="beta-lnk">Join the beta →</a>
+  </div>
+</div>
+
+<!-- Features -->
+<section class="section" id="features" style="background:var(--bg)">
+  <div class="container">
+    <div class="section-head center">
+      <div class="section-kicker">What's in it</div>
+      <h2>Everything your crew needs in one place</h2>
+      <p class="section-sub">Replaces the group chat, the spreadsheet, and the pile of paper dockets on the dash.</p>
+    </div>
+    <div class="features-grid">
+
+      <div class="feature-card reveal">
+        <div class="feat-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FBBF24" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        </div>
+        <div class="feat-title">Job Calendar</div>
+        <div class="feat-desc">Schedule jobs on a visual calendar. Add client name, number, location and job notes. See the whole week at a glance and tap a day to see what's on.</div>
+      </div>
+
+      <div class="feature-card reveal reveal-d1">
+        <div class="feat-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FBBF24" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M21 21v-2a4 4 0 0 0-3-3.87"/></svg>
+        </div>
+        <div class="feat-title">Crew Management</div>
+        <div class="feat-desc">Assign workers to jobs and manage roles — owner, admin, employee, subcontractor. Share your 6-digit invite code and crew join in seconds.</div>
+      </div>
+
+      <div class="feature-card reveal reveal-d2">
+        <div class="feat-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FBBF24" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        </div>
+        <div class="feat-title">Notes &amp; Checklists</div>
+        <div class="feat-desc">Shared notes for your team. Make checklists, drag items to reorder them, and control who can view or edit each note. Everything syncs live.</div>
+      </div>
+
+      <div class="feature-card reveal">
+        <div class="feat-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FBBF24" stroke-width="2" stroke-linecap="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+        </div>
+        <div class="feat-title">Invoice Submissions</div>
+        <div class="feat-desc">Workers submit invoice reports from their phone. Owners approve, reject or mark as paid — no more chasing paperwork at the end of the week.</div>
+      </div>
+
+      <div class="feature-card reveal reveal-d1">
+        <div class="feat-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FBBF24" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+        <div class="feat-title">Timesheets</div>
+        <div class="feat-desc">Built-in timer for clocking on and off. Auto-calculates hours and pay. Runs in the background with notification controls so nothing gets missed.</div>
+      </div>
+
+      <div class="feature-card reveal reveal-d2">
+        <div class="feat-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FBBF24" stroke-width="2" stroke-linecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        </div>
+        <div class="feat-title">Job Check-ins</div>
+        <div class="feat-desc">Workers check in and out at each job. You see live status — who's on site, who's wrapped up, and who hasn't clocked on yet.</div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- How it works -->
+<section class="section hiw-bg" id="how-it-works">
+  <div class="container">
+    <div class="section-head center">
+      <div class="section-kicker">How it works</div>
+      <h2>Up and running in a few minutes</h2>
+      <p class="section-sub">No training session, no setup fees. Sign up, add a job, share your invite code.</p>
+    </div>
+    <div class="hiw-steps">
+      <div class="hiw-step reveal">
+        <div class="step-num">1</div>
+        <div class="step-title">Create your organisation</div>
+        <div class="step-desc">Sign up, name your business, and you're in. Share your 6-digit invite code with your crew — they're on in seconds.</div>
+      </div>
+      <div class="hiw-step reveal reveal-d2">
+        <div class="step-num">2</div>
+        <div class="step-title">Add jobs &amp; assign crew</div>
+        <div class="step-desc">Schedule jobs on the calendar with client details and location. Tap to assign whoever's working that day.</div>
+      </div>
+      <div class="hiw-step reveal reveal-d4">
+        <div class="step-num">3</div>
+        <div class="step-title">Track hours &amp; invoices</div>
+        <div class="step-desc">Workers clock on, track hours, and submit invoices when done. You approve and keep everyone across the work.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- For who -->
+<section class="section" id="pricing">
+  <div class="container">
+    <div class="section-head center">
+      <div class="section-kicker">Built for everyone on the job</div>
+      <h2>Owners run it. The whole crew uses it.</h2>
+      <p class="section-sub">Docket is designed for the person running the show — but every role gets exactly what they need and nothing they don't.</p>
+    </div>
+    <div class="for-who-grid">
+
+      <div class="who-card featured reveal">
+        <div class="who-tag">Business Owner / Admin</div>
+        <div class="who-title">You're in control</div>
+        <div class="who-sub">Full access to every feature. Schedule jobs, manage your crew, and keep tabs on everything from one place. Admins get the same access so you're not the only one holding it all together.</div>
+        <ul class="who-list">
+          <li><span class="who-check"><svg width="10" height="10" viewBox="0 0 14 14" fill="none"><polyline points="2,7 5,10 12,4" stroke="#09090B" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Create and manage all jobs</li>
+          <li><span class="who-check"><svg width="10" height="10" viewBox="0 0 14 14" fill="none"><polyline points="2,7 5,10 12,4" stroke="#09090B" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Approve or reject invoice submissions</li>
+          <li><span class="who-check"><svg width="10" height="10" viewBox="0 0 14 14" fill="none"><polyline points="2,7 5,10 12,4" stroke="#09090B" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>View timesheet reports by worker or job</li>
+          <li><span class="who-check"><svg width="10" height="10" viewBox="0 0 14 14" fill="none"><polyline points="2,7 5,10 12,4" stroke="#09090B" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Set note visibility and edit permissions</li>
+          <li><span class="who-check"><svg width="10" height="10" viewBox="0 0 14 14" fill="none"><polyline points="2,7 5,10 12,4" stroke="#09090B" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Manage crew roles and access</li>
+          <li><span class="who-check"><svg width="10" height="10" viewBox="0 0 14 14" fill="none"><polyline points="2,7 5,10 12,4" stroke="#09090B" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>See live check-in status across all sites</li>
+        </ul>
+      </div>
+
+      <div class="who-card reveal reveal-d2">
+        <div class="who-tag">Employee / Subcontractor</div>
+        <div class="who-title">Just turn up and tap</div>
+        <div class="who-sub">See your jobs for the day, clock on, track your hours, and submit your invoice when the work is done. No calls, no paperwork, no guessing what's on.</div>
+        <ul class="who-list">
+          <li><span class="who-check"><svg width="10" height="10" viewBox="0 0 14 14" fill="none"><polyline points="2,7 5,10 12,4" stroke="#09090B" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>See your assigned jobs for the week</li>
+          <li><span class="who-check"><svg width="10" height="10" viewBox="0 0 14 14" fill="none"><polyline points="2,7 5,10 12,4" stroke="#09090B" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Check in and out at the job site</li>
+          <li><span class="who-check"><svg width="10" height="10" viewBox="0 0 14 14" fill="none"><polyline points="2,7 5,10 12,4" stroke="#09090B" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Built-in timer with notification controls</li>
+          <li><span class="who-check"><svg width="10" height="10" viewBox="0 0 14 14" fill="none"><polyline points="2,7 5,10 12,4" stroke="#09090B" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Submit invoice reports straight from the app</li>
+          <li><span class="who-check"><svg width="10" height="10" viewBox="0 0 14 14" fill="none"><polyline points="2,7 5,10 12,4" stroke="#09090B" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Access shared notes and checklists</li>
+          <li><span class="who-check"><svg width="10" height="10" viewBox="0 0 14 14" fill="none"><polyline points="2,7 5,10 12,4" stroke="#09090B" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Works on iPhone and Android as a PWA</li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
+  <div class="cta-glow"></div>
+  <div class="cta-inner reveal">
+    <div class="section-kicker" style="margin-bottom:20px">Free during beta</div>
+    <h2 style="margin-bottom:18px">Be one of the first<br>crews on Docket.</h2>
+    <p class="cta-sub">We're building this with early Australian trade businesses — your feedback shapes the product. It's completely free while we're in beta.</p>
+    <div class="cta-actions">
+      <a href="#" class="btn btn-primary btn-lg">Get Docket free today</a>
+      <a href="#features" class="btn btn-ghost btn-lg">Learn more</a>
+    </div>
+    <p class="cta-note">Installs like an app · No App Store needed · Works on iPhone &amp; Android</p>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-left">
+      <a href="/" class="logo-link">
+        <svg width="26" height="26" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+          <defs><clipPath id="fc"><rect width="200" height="200" rx="46"/></clipPath></defs>
+          <g clip-path="url(#fc)">
+            <rect width="200" height="200" fill="#18181B"/>
+            <g transform="rotate(10,100,105)"><rect x="44" y="22" width="110" height="144" rx="15" fill="#27272A"/><rect x="44" y="22" width="110" height="22" rx="15" fill="#3F3F46"/></g>
+            <g transform="rotate(4.5,100,105)"><rect x="36" y="14" width="110" height="144" rx="15" fill="#FBBF24" opacity="0.32"/></g>
+            <rect x="26" y="6" width="112" height="146" rx="15" fill="#FBBF24"/>
+            <rect x="26" y="6" width="112" height="24" rx="15" fill="white" opacity="0.08"/>
+            <rect x="39" y="34" width="66" height="11" rx="5" fill="#78350F" opacity="0.55"/>
+            <line x1="30" y1="100" x2="132" y2="100" stroke="#78350F" stroke-width="2.5" stroke-dasharray="6,4" opacity="0.40"/>
+            <polyline points="37,121 59,142 112,104" stroke="#78350F" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.65"/>
+          </g>
+        </svg>
+        <span class="logo-word">docket</span>
+      </a>
+      <p class="footer-copy">© 2026 Docket. Built for Australian trades.</p>
+    </div>
+    <div class="footer-links">
+      <a href="#">Privacy</a>
+      <a href="#">Terms</a>
+      <a href="#">Contact</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // Nav scroll
+  const nav = document.getElementById('nav');
+  window.addEventListener('scroll', () => nav.classList.toggle('scrolled', window.scrollY > 20), { passive: true });
+
+  // Scroll reveal
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+  }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+  document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+  // Smooth anchor scroll
+  document.querySelectorAll('a[href^="#"]').forEach(a => {
+    a.addEventListener('click', e => {
+      const id = a.getAttribute('href').slice(1);
+      if (!id) return;
+      const el = document.getElementById(id);
+      if (el) { e.preventDefault(); el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+    });
+  });
+
+  // Phone tab switching
+  const tabs = document.querySelectorAll('.ph-tab');
+  const panes = document.querySelectorAll('.tab-pane');
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      const target = tab.dataset.pane;
+      tabs.forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      panes.forEach(p => {
+        p.classList.toggle('active', p.id === 'pane-' + target);
+      });
+    });
+  });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,183 @@
+<svg viewBox="0 0 720 440" xmlns="http://www.w3.org/2000/svg" width="720" height="440">
+
+  <!-- Sheet background -->
+  <rect width="720" height="440" fill="#09090B" rx="20"/>
+
+  <!-- Header -->
+  <text x="360" y="32"
+    font-family="-apple-system, BlinkMacSystemFont, sans-serif"
+    font-size="11" font-weight="500" fill="#3F3F46" letter-spacing="3" text-anchor="middle">
+    APP ICON PREVIEW · SAME MARK AT EVERY SIZE
+  </text>
+
+  <!--
+    ═══════════════════════════════════════════════════════════════
+    Each icon is a nested <svg> with viewBox="0 0 200 200".
+    The content is identical — only x/y/width/height differ.
+    A local <clipPath> inside each nested SVG handles the
+    rounded corners proportionally at every size.
+    ═══════════════════════════════════════════════════════════════
+  -->
+
+  <!-- ─── XL · App Store · 200×200 ───────────────────────────── -->
+  <svg x="60" y="50" width="200" height="200" viewBox="0 0 200 200">
+    <defs>
+      <clipPath id="cx">
+        <rect width="200" height="200" rx="46"/>
+      </clipPath>
+    </defs>
+    <g clip-path="url(#cx)">
+      <rect width="200" height="200" fill="#18181B"/>
+      <ellipse cx="83" cy="104" rx="68" ry="58" fill="#FBBF24" opacity="0.07"/>
+      <g transform="rotate(10, 100, 105)">
+        <rect x="44" y="22" width="110" height="144" rx="15" fill="#27272A"/>
+        <rect x="44" y="22" width="110" height="22"  rx="15" fill="#3F3F46"/>
+      </g>
+      <g transform="rotate(4.5, 100, 105)">
+        <rect x="36" y="14" width="110" height="144" rx="15" fill="#FBBF24" opacity="0.32"/>
+      </g>
+      <rect x="26" y="6"  width="112" height="146" rx="15" fill="#FBBF24"/>
+      <rect x="26" y="6"  width="112" height="24"  rx="15" fill="white" opacity="0.08"/>
+      <rect x="39" y="34" width="66"  height="11"  rx="5"  fill="#78350F" opacity="0.55"/>
+      <rect x="39" y="53" width="52"  height="7"   rx="3"  fill="#78350F" opacity="0.28"/>
+      <rect x="39" y="66" width="62"  height="7"   rx="3"  fill="#78350F" opacity="0.28"/>
+      <rect x="39" y="79" width="44"  height="7"   rx="3"  fill="#78350F" opacity="0.28"/>
+      <line x1="30" y1="100" x2="132" y2="100" stroke="#78350F" stroke-width="2.5" stroke-dasharray="6,4" opacity="0.40"/>
+      <polyline points="37,121 59,142 112,104" stroke="#78350F" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.65"/>
+    </g>
+  </svg>
+  <text x="160" y="272" font-family="-apple-system, sans-serif" font-size="10" fill="#52525B" letter-spacing="1" text-anchor="middle">App Store · 1024×1024</text>
+
+  <!-- ─── LG · Home Screen · 140×140 ─────────────────────────── -->
+  <svg x="318" y="78" width="140" height="140" viewBox="0 0 200 200">
+    <defs>
+      <clipPath id="cl">
+        <rect width="200" height="200" rx="46"/>
+      </clipPath>
+    </defs>
+    <g clip-path="url(#cl)">
+      <rect width="200" height="200" fill="#18181B"/>
+      <ellipse cx="83" cy="104" rx="68" ry="58" fill="#FBBF24" opacity="0.07"/>
+      <g transform="rotate(10, 100, 105)">
+        <rect x="44" y="22" width="110" height="144" rx="15" fill="#27272A"/>
+        <rect x="44" y="22" width="110" height="22"  rx="15" fill="#3F3F46"/>
+      </g>
+      <g transform="rotate(4.5, 100, 105)">
+        <rect x="36" y="14" width="110" height="144" rx="15" fill="#FBBF24" opacity="0.32"/>
+      </g>
+      <rect x="26" y="6"  width="112" height="146" rx="15" fill="#FBBF24"/>
+      <rect x="26" y="6"  width="112" height="24"  rx="15" fill="white" opacity="0.08"/>
+      <rect x="39" y="34" width="66"  height="11"  rx="5"  fill="#78350F" opacity="0.55"/>
+      <rect x="39" y="53" width="52"  height="7"   rx="3"  fill="#78350F" opacity="0.28"/>
+      <rect x="39" y="66" width="62"  height="7"   rx="3"  fill="#78350F" opacity="0.28"/>
+      <rect x="39" y="79" width="44"  height="7"   rx="3"  fill="#78350F" opacity="0.28"/>
+      <line x1="30" y1="100" x2="132" y2="100" stroke="#78350F" stroke-width="2.5" stroke-dasharray="6,4" opacity="0.40"/>
+      <polyline points="37,121 59,142 112,104" stroke="#78350F" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.65"/>
+    </g>
+  </svg>
+  <text x="388" y="238" font-family="-apple-system, sans-serif" font-size="10" fill="#52525B" letter-spacing="1" text-anchor="middle">Home Screen · 180×180</text>
+
+  <!-- ─── MD · Spotlight · 96×96 ──────────────────────────────── -->
+  <svg x="514" y="100" width="96" height="96" viewBox="0 0 200 200">
+    <defs>
+      <clipPath id="cm">
+        <rect width="200" height="200" rx="46"/>
+      </clipPath>
+    </defs>
+    <g clip-path="url(#cm)">
+      <rect width="200" height="200" fill="#18181B"/>
+      <ellipse cx="83" cy="104" rx="68" ry="58" fill="#FBBF24" opacity="0.07"/>
+      <g transform="rotate(10, 100, 105)">
+        <rect x="44" y="22" width="110" height="144" rx="15" fill="#27272A"/>
+        <rect x="44" y="22" width="110" height="22"  rx="15" fill="#3F3F46"/>
+      </g>
+      <g transform="rotate(4.5, 100, 105)">
+        <rect x="36" y="14" width="110" height="144" rx="15" fill="#FBBF24" opacity="0.32"/>
+      </g>
+      <rect x="26" y="6"  width="112" height="146" rx="15" fill="#FBBF24"/>
+      <rect x="26" y="6"  width="112" height="24"  rx="15" fill="white" opacity="0.08"/>
+      <rect x="39" y="34" width="66"  height="11"  rx="5"  fill="#78350F" opacity="0.55"/>
+      <rect x="39" y="53" width="52"  height="7"   rx="3"  fill="#78350F" opacity="0.28"/>
+      <rect x="39" y="66" width="62"  height="7"   rx="3"  fill="#78350F" opacity="0.28"/>
+      <rect x="39" y="79" width="44"  height="7"   rx="3"  fill="#78350F" opacity="0.28"/>
+      <line x1="30" y1="100" x2="132" y2="100" stroke="#78350F" stroke-width="2.5" stroke-dasharray="6,4" opacity="0.40"/>
+      <polyline points="37,121 59,142 112,104" stroke="#78350F" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.65"/>
+    </g>
+  </svg>
+  <text x="562" y="215" font-family="-apple-system, sans-serif" font-size="10" fill="#52525B" letter-spacing="1" text-anchor="middle">Spotlight · 120×120</text>
+
+  <!-- ─── SM · Notification · 58×58 ──────────────────────────── -->
+  <svg x="626" y="119" width="58" height="58" viewBox="0 0 200 200">
+    <defs>
+      <clipPath id="cs">
+        <rect width="200" height="200" rx="46"/>
+      </clipPath>
+    </defs>
+    <g clip-path="url(#cs)">
+      <rect width="200" height="200" fill="#18181B"/>
+      <ellipse cx="83" cy="104" rx="68" ry="58" fill="#FBBF24" opacity="0.07"/>
+      <g transform="rotate(10, 100, 105)">
+        <rect x="44" y="22" width="110" height="144" rx="15" fill="#27272A"/>
+        <rect x="44" y="22" width="110" height="22"  rx="15" fill="#3F3F46"/>
+      </g>
+      <g transform="rotate(4.5, 100, 105)">
+        <rect x="36" y="14" width="110" height="144" rx="15" fill="#FBBF24" opacity="0.32"/>
+      </g>
+      <rect x="26" y="6"  width="112" height="146" rx="15" fill="#FBBF24"/>
+      <rect x="26" y="6"  width="112" height="24"  rx="15" fill="white" opacity="0.08"/>
+      <rect x="39" y="34" width="66"  height="11"  rx="5"  fill="#78350F" opacity="0.55"/>
+      <rect x="39" y="53" width="52"  height="7"   rx="3"  fill="#78350F" opacity="0.28"/>
+      <rect x="39" y="66" width="62"  height="7"   rx="3"  fill="#78350F" opacity="0.28"/>
+      <rect x="39" y="79" width="44"  height="7"   rx="3"  fill="#78350F" opacity="0.28"/>
+      <line x1="30" y1="100" x2="132" y2="100" stroke="#78350F" stroke-width="2.5" stroke-dasharray="6,4" opacity="0.40"/>
+      <polyline points="37,121 59,142 112,104" stroke="#78350F" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.65"/>
+    </g>
+  </svg>
+  <text x="655" y="196" font-family="-apple-system, sans-serif" font-size="10" fill="#52525B" letter-spacing="1" text-anchor="middle">Notif. · 60×60</text>
+
+  <!-- ─── Phone home-screen mockup ──────────────────────────── -->
+  <rect x="60" y="298" width="600" height="106" rx="14" fill="#18181B" opacity="0.55"/>
+
+  <!-- Docket icon in phone row -->
+  <svg x="88" y="318" width="60" height="60" viewBox="0 0 200 200">
+    <defs>
+      <clipPath id="cp">
+        <rect width="200" height="200" rx="46"/>
+      </clipPath>
+    </defs>
+    <g clip-path="url(#cp)">
+      <rect width="200" height="200" fill="#18181B"/>
+      <ellipse cx="83" cy="104" rx="68" ry="58" fill="#FBBF24" opacity="0.07"/>
+      <g transform="rotate(10, 100, 105)">
+        <rect x="44" y="22" width="110" height="144" rx="15" fill="#27272A"/>
+        <rect x="44" y="22" width="110" height="22"  rx="15" fill="#3F3F46"/>
+      </g>
+      <g transform="rotate(4.5, 100, 105)">
+        <rect x="36" y="14" width="110" height="144" rx="15" fill="#FBBF24" opacity="0.32"/>
+      </g>
+      <rect x="26" y="6"  width="112" height="146" rx="15" fill="#FBBF24"/>
+      <rect x="26" y="6"  width="112" height="24"  rx="15" fill="white" opacity="0.08"/>
+      <rect x="39" y="34" width="66"  height="11"  rx="5"  fill="#78350F" opacity="0.55"/>
+      <rect x="39" y="53" width="52"  height="7"   rx="3"  fill="#78350F" opacity="0.28"/>
+      <rect x="39" y="66" width="62"  height="7"   rx="3"  fill="#78350F" opacity="0.28"/>
+      <rect x="39" y="79" width="44"  height="7"   rx="3"  fill="#78350F" opacity="0.28"/>
+      <line x1="30" y1="100" x2="132" y2="100" stroke="#78350F" stroke-width="2.5" stroke-dasharray="6,4" opacity="0.40"/>
+      <polyline points="37,121 59,142 112,104" stroke="#78350F" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.65"/>
+    </g>
+  </svg>
+  <text x="118" y="394" font-family="-apple-system, sans-serif" font-size="10" fill="#71717A" text-anchor="middle">Docket</text>
+
+  <!-- Placeholder app slots -->
+  <rect x="168" y="318" width="60" height="60" rx="14" fill="#27272A" opacity="0.45"/>
+  <rect x="248" y="318" width="60" height="60" rx="14" fill="#27272A" opacity="0.45"/>
+  <rect x="328" y="318" width="60" height="60" rx="14" fill="#27272A" opacity="0.45"/>
+  <rect x="408" y="318" width="60" height="60" rx="14" fill="#27272A" opacity="0.45"/>
+  <rect x="488" y="318" width="60" height="60" rx="14" fill="#27272A" opacity="0.45"/>
+  <rect x="568" y="318" width="60" height="60" rx="14" fill="#27272A" opacity="0.45"/>
+
+  <!-- Footer -->
+  <text x="360" y="425" font-family="-apple-system, sans-serif" font-size="10" fill="#3F3F46" letter-spacing="2" text-anchor="middle">
+    THE STACK · NESTED SVG · IDENTICAL CONTENT AT EVERY SIZE
+  </text>
+
+</svg>

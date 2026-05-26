@@ -76,7 +76,7 @@ export default function SetupModal({ onComplete }) {
 
       await window.storage.set('settings:config', config);
       await window.storage.set('settings:invoice-counter', 0);
-      addToast('Welcome to TimeSheet!', 'success');
+      addToast('Welcome to Docket!', 'success');
       onComplete(config);
     } catch (err) {
       addToast('Setup failed. Please try again.', 'error');
@@ -94,7 +94,7 @@ export default function SetupModal({ onComplete }) {
             <div className="w-14 h-14 bg-amber-400/10 rounded-2xl flex items-center justify-center mx-auto mb-3">
               <span className="text-3xl">⏱</span>
             </div>
-            <h1 className="text-xl font-bold text-zinc-50">Welcome to TimeSheet</h1>
+            <h1 className="text-xl font-bold text-zinc-50">Welcome to Docket</h1>
             <p className="text-sm text-zinc-400 mt-1">Let's get you set up in 30 seconds</p>
           </div>
 
