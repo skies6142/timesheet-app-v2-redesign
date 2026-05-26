@@ -2082,18 +2082,21 @@ function NotesView({ orgId, isOwner, isAdmin, members = [], addToast }) {
 
   const onNotePtrDown = (e) => {
     if (!canEdit) return;
-    const handle = e.target.closest('[data-dh]');
-    if (!handle) return;
-    const row = handle.closest('[data-ci]');
+    if (e.target.closest('button, textarea, input')) return;
+    const row = e.target.closest('[data-ci]');
     if (!row) return;
     const idx = parseInt(row.dataset.ci, 10);
-    handle.setPointerCapture(e.pointerId);
-    noteDragRef.current = { pointerId: e.pointerId, fromIdx: idx, insertAt: idx };
-    setNoteDragState({ fromIdx: idx, insertAt: idx });
+    noteDragRef.current = { pointerId: e.pointerId, fromIdx: idx, insertAt: idx, startY: e.clientY, active: false };
   };
   const onNotePtrMove = (e) => {
     const d = noteDragRef.current;
     if (d.pointerId === undefined) return;
+    if (!d.active) {
+      if (Math.abs(e.clientY - d.startY) < 6) return;
+      d.active = true;
+      e.currentTarget.setPointerCapture(d.pointerId);
+      setNoteDragState({ fromIdx: d.fromIdx, insertAt: d.fromIdx });
+    }
     const rows = [...e.currentTarget.querySelectorAll('[data-ci]')];
     const y = e.clientY;
     let insertAt = rows.length;
@@ -2109,10 +2112,10 @@ function NotesView({ orgId, isOwner, isAdmin, members = [], addToast }) {
   const onNotePtrUp = () => {
     const d = noteDragRef.current;
     if (d.pointerId === undefined) return;
-    const { fromIdx, insertAt } = d;
+    const { fromIdx, insertAt, active } = d;
     noteDragRef.current = {};
     setNoteDragState(null);
-    if (insertAt !== fromIdx && insertAt !== fromIdx + 1) {
+    if (active && insertAt !== fromIdx && insertAt !== fromIdx + 1) {
       setEditItems(prev => {
         const arr = [...prev];
         const [moved] = arr.splice(fromIdx, 1);
@@ -2353,22 +2356,21 @@ function NotesView({ orgId, isOwner, isAdmin, members = [], addToast }) {
               {/* Checklist items */}
               <div
                 className="px-5 pt-2 pb-4"
+                style={canEdit ? { touchAction: 'none' } : undefined}
                 onPointerDown={onNotePtrDown}
                 onPointerMove={onNotePtrMove}
                 onPointerUp={onNotePtrUp}
                 onPointerCancel={onNotePtrUp}
               >
-                {editItems.map((item, idx) => {
+                {(() => {
+                  const dragIsNoOp = noteDragState && (noteDragState.insertAt === noteDragState.fromIdx || noteDragState.insertAt === noteDragState.fromIdx + 1);
+                  return editItems.map((item, idx) => {
                   const isDragging = noteDragState?.fromIdx === idx;
-                  const isNoOp = noteDragState && (noteDragState.insertAt === noteDragState.fromIdx || noteDragState.insertAt === noteDragState.fromIdx + 1);
-                  const showIndicator = noteDragState && !isNoOp && noteDragState.insertAt === idx;
+                  const showIndicator = noteDragState && !dragIsNoOp && noteDragState.insertAt === idx;
                   return (
                     <Fragment key={item.id}>
                       {showIndicator && (
-                        <div className="flex items-center gap-2 my-1 pointer-events-none">
-                          <div className="w-2 h-2 rounded-full bg-amber-400 shrink-0" />
-                          <div className="flex-1 h-0.5 bg-amber-400 rounded-full" />
-                        </div>
+                        <div className="h-10 rounded-lg border-2 border-amber-400 bg-amber-400/5 my-0.5 pointer-events-none" />
                       )}
                       <div
                         data-ci={idx}
@@ -2422,12 +2424,10 @@ function NotesView({ orgId, isOwner, isAdmin, members = [], addToast }) {
                       </div>
                     </Fragment>
                   );
-                })}
+                  });
+                })()}
                 {noteDragState && !(noteDragState.insertAt === noteDragState.fromIdx || noteDragState.insertAt === noteDragState.fromIdx + 1) && noteDragState.insertAt === editItems.length && (
-                  <div className="flex items-center gap-2 my-1 pointer-events-none">
-                    <div className="w-2 h-2 rounded-full bg-amber-400 shrink-0" />
-                    <div className="flex-1 h-0.5 bg-amber-400 rounded-full" />
-                  </div>
+                  <div className="h-10 rounded-lg border-2 border-amber-400 bg-amber-400/5 my-0.5 pointer-events-none" />
                 )}
 
                 {/* Add item */}

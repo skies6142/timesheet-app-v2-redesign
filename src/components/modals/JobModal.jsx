@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, Fragment } from 'react';
 import { X, MapPin, FileText, Users, Camera, Mic, StopCircle, Trash2, Plus, Check, ChevronLeft, ChevronRight, CalendarDays, GripVertical, Phone, User } from 'lucide-react';
 import { addMonths, subMonths, format, parseISO } from 'date-fns';
 import * as orgApi from '../../lib/orgApi';
@@ -52,7 +52,7 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
 
   // Checklist drag-to-reorder
   const checkDragRef = useRef({});
-  const [checkDragOver, setCheckDragOver] = useState(null);
+  const [checkDragState, setCheckDragState] = useState(null);
   const descTextareaRef               = useRef(null);
 
   // Location autocomplete
@@ -363,36 +363,44 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
   // ── Checklist drag-to-reorder ──────────────────────────────────
   const onCheckPtrDown = (e) => {
     if (!canEdit) return;
-    const handle = e.target.closest('[data-dh]');
-    if (!handle) return;
-    const row = handle.closest('[data-ci]');
+    if (e.target.closest('button, textarea, input')) return;
+    const row = e.target.closest('[data-ci]');
     if (!row) return;
     const idx = parseInt(row.dataset.ci, 10);
-    handle.setPointerCapture(e.pointerId);
-    checkDragRef.current = { pointerId: e.pointerId, fromIdx: idx, overIdx: idx };
-    setCheckDragOver(idx);
+    checkDragRef.current = { pointerId: e.pointerId, fromIdx: idx, insertAt: idx, startY: e.clientY, active: false };
   };
   const onCheckPtrMove = (e) => {
     const d = checkDragRef.current;
     if (d.pointerId === undefined) return;
-    const el = document.elementFromPoint(e.clientX, e.clientY);
-    const row = el?.closest('[data-ci]');
-    if (row) {
-      const idx = parseInt(row.dataset.ci, 10);
-      if (!isNaN(idx) && idx !== d.overIdx) { d.overIdx = idx; setCheckDragOver(idx); }
+    if (!d.active) {
+      if (Math.abs(e.clientY - d.startY) < 6) return;
+      d.active = true;
+      e.currentTarget.setPointerCapture(d.pointerId);
+      setCheckDragState({ fromIdx: d.fromIdx, insertAt: d.fromIdx });
+    }
+    const rows = [...e.currentTarget.querySelectorAll('[data-ci]')];
+    const y = e.clientY;
+    let insertAt = rows.length;
+    for (let i = 0; i < rows.length; i++) {
+      const r = rows[i].getBoundingClientRect();
+      if (y < r.top + r.height / 2) { insertAt = i; break; }
+    }
+    if (insertAt !== d.insertAt) {
+      d.insertAt = insertAt;
+      setCheckDragState({ fromIdx: d.fromIdx, insertAt });
     }
   };
   const onCheckPtrUp = () => {
     const d = checkDragRef.current;
     if (d.pointerId === undefined) return;
-    const { fromIdx, overIdx } = d;
+    const { fromIdx, insertAt, active } = d;
     checkDragRef.current = {};
-    setCheckDragOver(null);
-    if (fromIdx !== overIdx) {
+    setCheckDragState(null);
+    if (active && insertAt !== fromIdx && insertAt !== fromIdx + 1) {
       setDescItems(prev => {
         const arr = [...prev];
         const [moved] = arr.splice(fromIdx, 1);
-        arr.splice(overIdx, 0, moved);
+        arr.splice(insertAt > fromIdx ? insertAt - 1 : insertAt, 0, moved);
         return arr;
       });
     }
@@ -863,59 +871,75 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
 
               {/* Checklist items */}
               <div
-                className="px-4 pt-1 pb-2 space-y-0.5"
+                className="px-4 pt-1 pb-2"
+                style={canEdit ? { touchAction: 'none' } : undefined}
                 onPointerDown={onCheckPtrDown}
                 onPointerMove={onCheckPtrMove}
                 onPointerUp={onCheckPtrUp}
+                onPointerCancel={onCheckPtrUp}
               >
-                {descItems.map((item, idx) => (
-                  <div
-                    key={item.id}
-                    data-ci={idx}
-                    className={`flex items-start gap-2 py-1.5 rounded-lg transition-colors ${checkDragOver === idx && checkDragRef.current.fromIdx !== idx ? 'bg-amber-400/8 border-t border-amber-400/30' : ''}`}
-                  >
-                    {canEdit && (
-                      <span data-dh className="shrink-0 mt-1 touch-none cursor-grab active:cursor-grabbing text-zinc-600 hover:text-zinc-400 select-none">
-                        <GripVertical size={13} />
-                      </span>
-                    )}
-                    <button onClick={() => canTickItems && handleToggleDescItem(idx)} disabled={!canTickItems} className="shrink-0 mt-0.5">
-                      {item.checked ? (
-                        <div className="w-5 h-5 rounded-full bg-amber-400 flex items-center justify-center">
-                          <Check size={11} className="text-zinc-950" strokeWidth={3} />
+                {(() => {
+                  const dragIsNoOp = checkDragState && (checkDragState.insertAt === checkDragState.fromIdx || checkDragState.insertAt === checkDragState.fromIdx + 1);
+                  return descItems.map((item, idx) => {
+                    const isDragging = checkDragState?.fromIdx === idx;
+                    const showIndicator = checkDragState && !dragIsNoOp && checkDragState.insertAt === idx;
+                    return (
+                      <Fragment key={item.id}>
+                        {showIndicator && (
+                          <div className="h-9 rounded-lg border-2 border-amber-400 bg-amber-400/5 my-0.5 pointer-events-none" />
+                        )}
+                        <div
+                          data-ci={idx}
+                          className={`flex items-start gap-2 py-1.5 rounded-lg transition-opacity ${isDragging ? 'opacity-30' : 'opacity-100'}`}
+                        >
+                          {canEdit && (
+                            <span data-dh className="shrink-0 mt-1 touch-none cursor-grab active:cursor-grabbing text-zinc-600 hover:text-zinc-400 select-none">
+                              <GripVertical size={13} />
+                            </span>
+                          )}
+                          <button onClick={() => canTickItems && handleToggleDescItem(idx)} disabled={!canTickItems} className="shrink-0 mt-0.5">
+                            {item.checked ? (
+                              <div className="w-5 h-5 rounded-full bg-amber-400 flex items-center justify-center">
+                                <Check size={11} className="text-zinc-950" strokeWidth={3} />
+                              </div>
+                            ) : (
+                              <div className={`w-5 h-5 rounded-full border-2 border-zinc-600 transition-colors ${canTickItems ? 'hover:border-zinc-400' : 'opacity-40'}`} />
+                            )}
+                          </button>
+                          {canEdit ? (
+                            <textarea
+                              ref={el => {
+                                descItemRefs.current[idx] = el;
+                                if (el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; }
+                              }}
+                              value={item.text}
+                              onChange={e => {
+                                handleDescItemText(idx, e.target.value);
+                                e.target.style.height = 'auto';
+                                e.target.style.height = e.target.scrollHeight + 'px';
+                              }}
+                              onKeyDown={e => handleDescItemKeyDown(e, idx)}
+                              placeholder="Item…"
+                              rows={1}
+                              style={{ minHeight: '1.5rem' }}
+                              className={`flex-1 bg-transparent text-sm focus:outline-none placeholder-zinc-600 resize-none overflow-hidden leading-normal ${item.checked ? 'text-zinc-500 line-through' : 'text-zinc-100'}`}
+                            />
+                          ) : (
+                            <p className={`flex-1 text-sm leading-normal break-words ${item.checked ? 'text-zinc-500 line-through' : 'text-zinc-200'}`}>{item.text}</p>
+                          )}
+                          {canEdit && (
+                            <button onClick={() => handleDeleteDescItem(idx)} className="w-6 h-6 flex items-center justify-center text-zinc-700 hover:text-red-400 rounded-lg shrink-0 mt-0.5">
+                              <X size={13} />
+                            </button>
+                          )}
                         </div>
-                      ) : (
-                        <div className={`w-5 h-5 rounded-full border-2 border-zinc-600 transition-colors ${canTickItems ? 'hover:border-zinc-400' : 'opacity-40'}`} />
-                      )}
-                    </button>
-                    {canEdit ? (
-                      <textarea
-                        ref={el => {
-                          descItemRefs.current[idx] = el;
-                          if (el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; }
-                        }}
-                        value={item.text}
-                        onChange={e => {
-                          handleDescItemText(idx, e.target.value);
-                          e.target.style.height = 'auto';
-                          e.target.style.height = e.target.scrollHeight + 'px';
-                        }}
-                        onKeyDown={e => handleDescItemKeyDown(e, idx)}
-                        placeholder="Item…"
-                        rows={1}
-                        style={{ minHeight: '1.5rem' }}
-                        className={`flex-1 bg-transparent text-sm focus:outline-none placeholder-zinc-600 resize-none overflow-hidden leading-normal ${item.checked ? 'text-zinc-500 line-through' : 'text-zinc-100'}`}
-                      />
-                    ) : (
-                      <p className={`flex-1 text-sm leading-normal break-words ${item.checked ? 'text-zinc-500 line-through' : 'text-zinc-200'}`}>{item.text}</p>
-                    )}
-                    {canEdit && (
-                      <button onClick={() => handleDeleteDescItem(idx)} className="w-6 h-6 flex items-center justify-center text-zinc-700 hover:text-red-400 rounded-lg shrink-0 mt-0.5">
-                        <X size={13} />
-                      </button>
-                    )}
-                  </div>
-                ))}
+                      </Fragment>
+                    );
+                  });
+                })()}
+                {checkDragState && !(checkDragState.insertAt === checkDragState.fromIdx || checkDragState.insertAt === checkDragState.fromIdx + 1) && checkDragState.insertAt === descItems.length && (
+                  <div className="h-9 rounded-lg border-2 border-amber-400 bg-amber-400/5 my-0.5 pointer-events-none" />
+                )}
                 {canEdit && (
                   <button onClick={handleAddDescItem}
                     className="flex items-center gap-2.5 py-2 text-zinc-600 hover:text-amber-400 transition-colors w-full text-left">
