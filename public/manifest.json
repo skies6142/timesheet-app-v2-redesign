@@ -1,7 +1,7 @@
 {
-  "name": "Docket",
-  "short_name": "Docket",
-  "description": "Field management for Australian trades — jobs, crew, timesheets and invoices.",
+  "name": "TimeSheet",
+  "short_name": "TimeSheet",
+  "description": "Professional timesheet tracking and invoicing for tradespeople",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#09090b",

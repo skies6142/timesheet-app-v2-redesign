@@ -39,7 +39,7 @@ async function showTimerNotification(timerData) {
       ? [{ action: 'resume', title: '▶  Resume'   }, { action: 'stop', title: '■  Clock Out' }]
       : [{ action: 'pause',  title: '⏸  Pause'    }, { action: 'stop', title: '■  Clock Out' }];
 
-    await reg.showNotification('Docket', {
+    await reg.showNotification('TimeSheet', {
       body,
       icon: '/icon-192.svg',
       badge: '/icon-192.svg',

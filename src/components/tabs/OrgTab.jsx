@@ -367,7 +367,7 @@ function OrgHeader({ org, role, memberCount, addToast }) {
   const inviteLink = `${window.location.origin}?join=${org.invite_code}`;
 
   const share = async () => {
-    const shareData = { title: `Join ${org.name} on Docket`, url: inviteLink };
+    const shareData = { title: `Join ${org.name} on TimeSheet`, url: inviteLink };
     if (navigator.share) {
       try { await navigator.share(shareData); } catch {}
     } else {
@@ -949,7 +949,7 @@ function MembersView({ org, members, onRefresh, addToast, isOwner }) {
   const inviteLink = `${window.location.origin}?join=${org.invite_code}`;
 
   const share = async () => {
-    const shareData = { title: `Join ${org.name} on Docket`, url: inviteLink };
+    const shareData = { title: `Join ${org.name} on TimeSheet`, url: inviteLink };
     if (navigator.share) {
       try { await navigator.share(shareData); return; } catch {}
     }
