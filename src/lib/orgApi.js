@@ -160,12 +160,14 @@ export async function getJob(jobId) {
   return data;
 }
 
-export async function createJob(orgId, { title, description, date, location, assignedUserIds = [], seriesId, color }) {
+export async function createJob(orgId, { title, description, date, location, clientName, clientPhone, assignedUserIds = [], seriesId, color }) {
   const { data: { user } } = await supabase.auth.getUser();
 
   const row = { org_id: orgId, title, description, date, location, created_by: user.id };
-  if (seriesId) row.series_id = seriesId;
-  if (color)    row.color     = color;
+  if (seriesId)    row.series_id   = seriesId;
+  if (color)       row.color       = color;
+  if (clientName)  row.client_name  = clientName;
+  if (clientPhone) row.client_phone = clientPhone;
 
   const { data: job, error } = await supabase
     .from('jobs')
@@ -190,13 +192,15 @@ export async function updateJobDescription(jobId, description) {
   if (error) throw error;
 }
 
-export async function updateJobSeries(seriesId, { title, description, location, status, color, assignedUserIds }) {
+export async function updateJobSeries(seriesId, { title, description, location, status, color, clientName, clientPhone, assignedUserIds }) {
   const update = {};
-  if (title !== undefined)       update.title       = title;
-  if (description !== undefined) update.description = description;
-  if (location !== undefined)    update.location    = location;
-  if (status !== undefined)      update.status      = status;
-  if (color !== undefined)       update.color       = color;
+  if (title !== undefined)       update.title        = title;
+  if (description !== undefined) update.description  = description;
+  if (location !== undefined)    update.location     = location;
+  if (status !== undefined)      update.status       = status;
+  if (color !== undefined)       update.color        = color;
+  if (clientName !== undefined)  update.client_name  = clientName;
+  if (clientPhone !== undefined) update.client_phone = clientPhone;
 
   if (Object.keys(update).length > 0) {
     const { error } = await supabase.from('jobs').update(update).eq('series_id', seriesId);
@@ -216,9 +220,11 @@ export async function updateJobSeries(seriesId, { title, description, location, 
   }
 }
 
-export async function updateJob(jobId, { title, description, date, location, status, color, assignedUserIds }) {
+export async function updateJob(jobId, { title, description, date, location, status, color, clientName, clientPhone, assignedUserIds }) {
   const update = { title, description, date, location, status };
-  if (color !== undefined) update.color = color;
+  if (color !== undefined)       update.color        = color;
+  if (clientName !== undefined)  update.client_name  = clientName;
+  if (clientPhone !== undefined) update.client_phone = clientPhone;
   const { error } = await supabase
     .from('jobs')
     .update(update)

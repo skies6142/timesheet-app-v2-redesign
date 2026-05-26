@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { X, MapPin, FileText, Users, Camera, Mic, StopCircle, Trash2, Plus, Check, ChevronLeft, ChevronRight, CalendarDays } from 'lucide-react';
+import { X, MapPin, FileText, Users, Camera, Mic, StopCircle, Trash2, Plus, Check, ChevronLeft, ChevronRight, CalendarDays, GripVertical, Phone, User } from 'lucide-react';
 import { addMonths, subMonths, format, parseISO } from 'date-fns';
 import * as orgApi from '../../lib/orgApi';
 import { supabase } from '../../lib/supabase';
@@ -43,10 +43,16 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
   const [date, setDate]               = useState(defaultDate || '');
   const [extraDates, setExtraDates]   = useState([]);
   const [location, setLocation]       = useState('');
+  const [clientName, setClientName]   = useState('');
+  const [clientPhone, setClientPhone] = useState('');
   const [status, setStatus]           = useState('scheduled');
   const [color, setColor]             = useState('amber');
   const [assignedIds, setAssignedIds] = useState([]);
   const descItemRefs                  = useRef([]);
+
+  // Checklist drag-to-reorder
+  const checkDragRef = useRef({});
+  const [checkDragOver, setCheckDragOver] = useState(null);
   const descTextareaRef               = useRef(null);
 
   // Location autocomplete
@@ -137,6 +143,8 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
       setExtraDates([]);
       setLocation(job.location || '');
       setLocationInput(job.location || '');
+      setClientName(job.client_name || '');
+      setClientPhone(job.client_phone || '');
       setStatus(job.status || 'scheduled');
       setColor(job.color || 'amber');
       setAssignedIds(job.job_assignments?.map(a => a.user_id) || []);
@@ -148,6 +156,8 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
       setExtraDates([]);
       setLocation('');
       setLocationInput('');
+      setClientName('');
+      setClientPhone('');
       setStatus('scheduled');
       setColor('amber');
       setAssignedIds([]);
@@ -258,7 +268,8 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
         const jobs = await Promise.all(allDates.map(d =>
           orgApi.createJob(orgId, {
             title: title.trim(), description, date: d,
-            location: location.trim(), assignedUserIds: assignedIds, seriesId, color,
+            location: location.trim(), clientName: clientName.trim(), clientPhone: clientPhone.trim(),
+            assignedUserIds: assignedIds, seriesId, color,
           })
         ));
         for (const createdJob of jobs) {
@@ -272,14 +283,16 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
       } else if (editScope === 'series' && hasSeries) {
         await orgApi.updateJobSeries(job.series_id, {
           title: title.trim(), description,
-          location: location.trim(), status, color, assignedUserIds: assignedIds,
+          location: location.trim(), clientName: clientName.trim(), clientPhone: clientPhone.trim(),
+          status, color, assignedUserIds: assignedIds,
         });
         addToast('All days in series updated', 'success');
         onSaved();
       } else {
         await orgApi.updateJob(job.id, {
           title: title.trim(), description, date,
-          location: location.trim(), status, color, assignedUserIds: assignedIds,
+          location: location.trim(), clientName: clientName.trim(), clientPhone: clientPhone.trim(),
+          status, color, assignedUserIds: assignedIds,
         });
         addToast('Job saved', 'success');
         onSaved();
@@ -346,6 +359,44 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
 
   const toggleAssign = (uid) =>
     setAssignedIds(ids => ids.includes(uid) ? ids.filter(i => i !== uid) : [...ids, uid]);
+
+  // ── Checklist drag-to-reorder ──────────────────────────────────
+  const onCheckPtrDown = (e) => {
+    if (!canEdit) return;
+    const handle = e.target.closest('[data-dh]');
+    if (!handle) return;
+    const row = handle.closest('[data-ci]');
+    if (!row) return;
+    const idx = parseInt(row.dataset.ci, 10);
+    handle.setPointerCapture(e.pointerId);
+    checkDragRef.current = { pointerId: e.pointerId, fromIdx: idx, overIdx: idx };
+    setCheckDragOver(idx);
+  };
+  const onCheckPtrMove = (e) => {
+    const d = checkDragRef.current;
+    if (d.pointerId === undefined) return;
+    const el = document.elementFromPoint(e.clientX, e.clientY);
+    const row = el?.closest('[data-ci]');
+    if (row) {
+      const idx = parseInt(row.dataset.ci, 10);
+      if (!isNaN(idx) && idx !== d.overIdx) { d.overIdx = idx; setCheckDragOver(idx); }
+    }
+  };
+  const onCheckPtrUp = () => {
+    const d = checkDragRef.current;
+    if (d.pointerId === undefined) return;
+    const { fromIdx, overIdx } = d;
+    checkDragRef.current = {};
+    setCheckDragOver(null);
+    if (fromIdx !== overIdx) {
+      setDescItems(prev => {
+        const arr = [...prev];
+        const [moved] = arr.splice(fromIdx, 1);
+        arr.splice(overIdx, 0, moved);
+        return arr;
+      });
+    }
+  };
 
   // ── Checklist helpers ──────────────────────────────────────────
   const handleAddDescItem = () => {
@@ -698,6 +749,45 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
             </div>
           )}
 
+          {/* Client Name + Phone */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs text-zinc-500 uppercase tracking-widest mb-1.5">
+                <User size={11} className="inline mr-1" />Client Name
+              </label>
+              {canEdit ? (
+                <input
+                  value={clientName}
+                  onChange={e => setClientName(e.target.value)}
+                  placeholder="Client name…"
+                  className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-amber-400/50"
+                />
+              ) : (
+                <p className="text-zinc-300 text-sm">{clientName || '—'}</p>
+              )}
+            </div>
+            <div>
+              <label className="block text-xs text-zinc-500 uppercase tracking-widest mb-1.5">
+                <Phone size={11} className="inline mr-1" />Client Phone
+              </label>
+              {canEdit ? (
+                <input
+                  type="tel"
+                  value={clientPhone}
+                  onChange={e => setClientPhone(e.target.value)}
+                  placeholder="0400 000 000"
+                  className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-amber-400/50"
+                />
+              ) : (
+                clientPhone ? (
+                  <a href={`tel:${clientPhone}`} className="text-amber-400 text-sm">{clientPhone}</a>
+                ) : (
+                  <p className="text-zinc-300 text-sm">—</p>
+                )
+              )}
+            </div>
+          </div>
+
           {/* Location + map */}
           <div>
             <label className="block text-xs text-zinc-500 uppercase tracking-widest mb-1.5">
@@ -772,9 +862,23 @@ export default function JobModal({ isOpen, onClose, onSaved, job, defaultDate, o
               )}
 
               {/* Checklist items */}
-              <div className="px-4 pt-1 pb-2 space-y-0.5">
+              <div
+                className="px-4 pt-1 pb-2 space-y-0.5"
+                onPointerDown={onCheckPtrDown}
+                onPointerMove={onCheckPtrMove}
+                onPointerUp={onCheckPtrUp}
+              >
                 {descItems.map((item, idx) => (
-                  <div key={item.id} className="flex items-start gap-3 py-1.5">
+                  <div
+                    key={item.id}
+                    data-ci={idx}
+                    className={`flex items-start gap-2 py-1.5 rounded-lg transition-colors ${checkDragOver === idx && checkDragRef.current.fromIdx !== idx ? 'bg-amber-400/8 border-t border-amber-400/30' : ''}`}
+                  >
+                    {canEdit && (
+                      <span data-dh className="shrink-0 mt-1 touch-none cursor-grab active:cursor-grabbing text-zinc-600 hover:text-zinc-400 select-none">
+                        <GripVertical size={13} />
+                      </span>
+                    )}
                     <button onClick={() => canTickItems && handleToggleDescItem(idx)} disabled={!canTickItems} className="shrink-0 mt-0.5">
                       {item.checked ? (
                         <div className="w-5 h-5 rounded-full bg-amber-400 flex items-center justify-center">

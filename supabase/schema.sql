@@ -233,3 +233,34 @@ create policy "inv_update_org_owner" on public.invoice_submissions for update
 
 -- create policy "media_delete_uploader" on storage.objects for delete
 --   using (bucket_id = 'job-media' and auth.uid()::text = (storage.foldername(name))[1]);
+
+-- ── Migrations (run in Supabase SQL editor when upgrading) ────
+-- Add admin role support
+alter table public.org_members drop constraint if exists org_members_role_check;
+alter table public.org_members add constraint org_members_role_check
+  check (role in ('owner', 'admin', 'employee', 'subcontractor'));
+
+-- Add client contact fields to jobs
+alter table public.jobs add column if not exists client_name text;
+alter table public.jobs add column if not exists client_phone text;
+
+-- Also update RLS so admins can insert/update/delete jobs
+drop policy if exists "jobs_insert_owner" on public.jobs;
+drop policy if exists "jobs_update_owner" on public.jobs;
+drop policy if exists "jobs_delete_owner" on public.jobs;
+
+create policy "jobs_insert_owner" on public.jobs for insert
+  with check (exists (
+    select 1 from public.org_members m
+    where m.org_id = org_id and m.user_id = auth.uid() and m.role in ('owner', 'admin')
+  ));
+create policy "jobs_update_owner" on public.jobs for update
+  using (exists (
+    select 1 from public.org_members m
+    where m.org_id = jobs.org_id and m.user_id = auth.uid() and m.role in ('owner', 'admin')
+  ));
+create policy "jobs_delete_owner" on public.jobs for delete
+  using (exists (
+    select 1 from public.org_members m
+    where m.org_id = jobs.org_id and m.user_id = auth.uid() and m.role in ('owner', 'admin')
+  ));

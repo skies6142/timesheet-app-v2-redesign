@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { Building2, Share2, Copy, Check, X, Plus, Users, ChevronLeft, ChevronRight, Download, SlidersHorizontal, Search, StickyNote, Pencil, Eye, Lock, MoreVertical, CalendarDays, LayoutList } from 'lucide-react';
+import { Building2, Share2, Copy, Check, X, Plus, Users, ChevronLeft, ChevronRight, Download, SlidersHorizontal, Search, StickyNote, Pencil, Eye, Lock, MoreVertical, CalendarDays, LayoutList, GripVertical } from 'lucide-react';
 import { format, parseISO, addMonths, subMonths } from 'date-fns';
 import { useAuth } from '../../context/AuthContext';
 import { useApp } from '../../context/AppContext';
@@ -29,7 +29,9 @@ export default function OrgTab() {
 
   const [orgData, setOrgData]       = useState(null); // { org, role, members }
   const [loading, setLoading]       = useState(true);
-  const [activeView, setActiveView] = useState('calendar');
+  const [activeView, setActiveView] = useState(() => {
+    try { return localStorage.getItem('orgActiveView') || 'calendar'; } catch { return 'calendar'; }
+  });
 
   // Auth modal
   const [showAuth, setShowAuth]   = useState(false);
@@ -150,6 +152,10 @@ export default function OrgTab() {
     setSelectedJob(null);
     setJobModalDate(null);
   };
+
+  useEffect(() => {
+    try { localStorage.setItem('orgActiveView', activeView); } catch {}
+  }, [activeView]);
 
   const handleJobSaved = useCallback(() => {
     closeJobModal();
@@ -310,7 +316,7 @@ export default function OrgTab() {
           />
         )}
         {activeView === 'members' && canManage && (
-          <MembersView org={orgData.org} members={orgData.members} onRefresh={loadOrg} addToast={addToast} isOwner={isOwner} />
+          <MembersView org={orgData.org} members={orgData.members} onRefresh={loadOrg} addToast={addToast} isOwner={canManage} />
         )}
         {activeView === 'invoices' && (
           <InvoicesView
@@ -379,7 +385,7 @@ function OrgHeader({ org, role, memberCount, addToast }) {
           <p className="font-bold text-zinc-50">{org.name}</p>
           <p className="text-xs text-zinc-500 capitalize">{role} · {memberCount} member{memberCount !== 1 ? 's' : ''}</p>
         </div>
-        {role === 'owner' && (
+        {(role === 'owner' || role === 'admin') && (
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1.5 bg-zinc-800 border border-zinc-700 rounded-lg px-2.5 py-1.5">
               <span className="font-mono text-xs font-bold text-zinc-200 tracking-[0.25em]">{org.invite_code}</span>
@@ -1933,6 +1939,8 @@ function NotesView({ orgId, isOwner, isAdmin, members = [], addToast }) {
   const textareaRef                     = useRef(null);
   const sheetRef                        = useRef(null);
   const swipeRef                        = useRef(null);
+  const noteDragRef                     = useRef({});
+  const [noteDragOver, setNoteDragOver] = useState(null);
 
   const handleSheetTouchStart = (e) => {
     swipeRef.current = { startY: e.touches[0].clientY, dy: 0 };
@@ -2072,6 +2080,43 @@ function NotesView({ orgId, isOwner, isAdmin, members = [], addToast }) {
   const handleDeleteItem = (idx) =>
     setEditItems(prev => prev.filter((_, i) => i !== idx));
 
+  const onNotePtrDown = (e) => {
+    if (!canEdit) return;
+    const handle = e.target.closest('[data-dh]');
+    if (!handle) return;
+    const row = handle.closest('[data-ci]');
+    if (!row) return;
+    const idx = parseInt(row.dataset.ci, 10);
+    handle.setPointerCapture(e.pointerId);
+    noteDragRef.current = { pointerId: e.pointerId, fromIdx: idx, overIdx: idx };
+    setNoteDragOver(idx);
+  };
+  const onNotePtrMove = (e) => {
+    const d = noteDragRef.current;
+    if (d.pointerId === undefined) return;
+    const el = document.elementFromPoint(e.clientX, e.clientY);
+    const row = el?.closest('[data-ci]');
+    if (row) {
+      const idx = parseInt(row.dataset.ci, 10);
+      if (!isNaN(idx) && idx !== d.overIdx) { d.overIdx = idx; setNoteDragOver(idx); }
+    }
+  };
+  const onNotePtrUp = () => {
+    const d = noteDragRef.current;
+    if (d.pointerId === undefined) return;
+    const { fromIdx, overIdx } = d;
+    noteDragRef.current = {};
+    setNoteDragOver(null);
+    if (fromIdx !== overIdx) {
+      setEditItems(prev => {
+        const arr = [...prev];
+        const [moved] = arr.splice(fromIdx, 1);
+        arr.splice(overIdx, 0, moved);
+        return arr;
+      });
+    }
+  };
+
   const handleSave = async () => {
     setSaving(true);
     try {
@@ -2166,7 +2211,7 @@ function NotesView({ orgId, isOwner, isAdmin, members = [], addToast }) {
                           {doneCount}/{items.length}
                         </span>
                       )}
-                      {isOwner && (note.visibility !== 'everyone' || note.editable_by !== 'everyone') && (
+                      {(isOwner || isAdmin) && (note.visibility !== 'everyone' || note.editable_by !== 'everyone') && (
                         <div className="flex items-center gap-0.5 text-amber-400/60">
                           {note.visibility !== 'everyone' && <Eye size={11} />}
                           {note.editable_by !== 'everyone' && <Lock size={11} />}
@@ -2239,7 +2284,7 @@ function NotesView({ orgId, isOwner, isAdmin, members = [], addToast }) {
                 className={`flex-1 bg-transparent text-base font-semibold placeholder-zinc-500 focus:outline-none ${canEdit ? 'text-zinc-50' : 'text-zinc-400'}`}
               />
               <div className="flex items-center gap-1.5 shrink-0">
-                {editNote !== 'new' && isOwner && !confirmDelete && (
+                {editNote !== 'new' && (isOwner || isAdmin) && !confirmDelete && (
                   <button onClick={() => setConfirmDelete(true)}
                     className="text-red-400 hover:bg-red-400/10 rounded-lg px-2 py-1 text-xs font-semibold transition-colors">
                     Delete
@@ -2301,9 +2346,23 @@ function NotesView({ orgId, isOwner, isAdmin, members = [], addToast }) {
               </div>
 
               {/* Checklist items */}
-              <div className="px-5 pt-2 pb-4 space-y-0.5">
+              <div
+                className="px-5 pt-2 pb-4 space-y-0.5"
+                onPointerDown={onNotePtrDown}
+                onPointerMove={onNotePtrMove}
+                onPointerUp={onNotePtrUp}
+              >
                 {editItems.map((item, idx) => (
-                  <div key={item.id} className="flex items-start gap-3 py-2 border-b border-zinc-800/40 last:border-0">
+                  <div
+                    key={item.id}
+                    data-ci={idx}
+                    className={`flex items-start gap-3 py-2 border-b border-zinc-800/40 last:border-0 rounded-lg transition-colors ${noteDragOver === idx && noteDragRef.current.fromIdx !== idx ? 'bg-amber-400/8 border-t border-amber-400/30' : ''}`}
+                  >
+                    {canEdit && (
+                      <span data-dh className="shrink-0 mt-1 touch-none cursor-grab active:cursor-grabbing text-zinc-600 hover:text-zinc-400 select-none">
+                        <GripVertical size={13} />
+                      </span>
+                    )}
                     <button onClick={() => handleToggleItem(idx)} disabled={!canEdit} className="shrink-0 mt-0.5">
                       {item.checked ? (
                         <div className="w-6 h-6 rounded-full bg-amber-400 flex items-center justify-center shadow-sm shadow-amber-400/25">
@@ -2362,8 +2421,8 @@ function NotesView({ orgId, isOwner, isAdmin, members = [], addToast }) {
               </div>
             </div>
 
-            {/* Permissions (owner only) */}
-            {isOwner && (
+            {/* Permissions (owner/admin only) */}
+            {(isOwner || isAdmin) && (
               <div className="px-5 pt-3 pb-2 border-t border-zinc-800 space-y-4 shrink-0">
                 <p className="text-[10px] text-zinc-600 uppercase tracking-widest font-medium">Permissions</p>
 
@@ -2432,7 +2491,7 @@ function NotesView({ orgId, isOwner, isAdmin, members = [], addToast }) {
               ) : (
                 <div className="w-full flex items-center justify-center gap-2 py-3 text-zinc-600 text-sm">
                   <Lock size={14} />
-                  <span>View only — owner can edit</span>
+                  <span>View only</span>
                 </div>
               )}
             </div>
